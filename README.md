@@ -134,6 +134,23 @@ O Glassmorphism é mais presente no painel administrativo. Tabelas, formulários
 
 </details>
 
+<details>
+<summary><b>Responsividade e mobile</b> · planejado</summary>
+
+<br>
+
+A adaptação completa para dispositivos móveis está prevista para uma etapa futura do desenvolvimento. Diretrizes já definidas:
+
+- Abordagem mobile-first com Tailwind CSS: estilos base para telas pequenas, ampliados por breakpoints.
+- Menu lateral do painel como gaveta ou barra inferior em telas menores.
+- Tabelas extensas como cartões empilhados ou com rolagem horizontal contida no próprio componente.
+- Alvos de toque com no mínimo 44 px.
+- Rotinas de uso frequente no celular, como chamada digital e consulta de pagamentos, com fluxo de toque único.
+- Efeitos de Glassmorphism limitados a poucos elementos, pelo custo de `backdrop-filter` em aparelhos mais simples.
+- Validação em dispositivos reais, além do modo responsivo do navegador.
+
+</details>
+
 ---
 
 ## Funcionalidades
@@ -372,6 +389,7 @@ CREATE TABLE monthly_payments (
 - [ ] Módulo da Tesouraria
 - [ ] Módulo da Secretaria e frequência
 - [ ] Quadro de membros e perfil do membro
+- [ ] Adaptação para dispositivos móveis (planejada)
 
 ---
 
