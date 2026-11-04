@@ -20,6 +20,11 @@ Plataforma digital para apresentar a história do Capítulo, aproximar a comunid
 ## Sumário
 
 - [Sobre o projeto](#sobre-o-projeto)
+- [Identidade visual e experiência](#identidade-visual-e-experiência)
+  - [Paleta institucional](#paleta-institucional)
+  - [Direção visual do portal público](#direção-visual-do-portal-público)
+  - [Direção visual da área restrita](#direção-visual-da-área-restrita)
+  - [Componentes e interações](#componentes-e-interações)
 - [Funcionalidades](#funcionalidades)
   - [Portal público](#portal-público)
   - [Área restrita](#área-restrita)
@@ -45,6 +50,85 @@ A solução está dividida em duas partes:
 | **Sistema interno** | Área autenticada para apoiar as rotinas administrativas, financeiras e secretariais do Capítulo. |
 
 O sistema interno adota o modelo **RBAC (Role-Based Access Control)**, no qual as permissões são definidas de acordo com a função de cada usuário.
+
+## Identidade visual e experiência
+
+A interface deverá ter uma identidade própria, reconhecível e consistente com o Capítulo. A referência estética é um design institucional contemporâneo, com acabamento elegante, tipografia bem trabalhada, imagens em destaque, transparências e microinterações — sem reproduzir diretamente a identidade visual de outros sites.
+
+A experiência será dividida em duas linguagens complementares:
+
+- **Portal público:** institucional, acolhedor e histórico, com composição editorial, fotografias e predominância do verde.
+- **Área restrita:** tecnológica e funcional, com dashboard moderno, painéis translúcidos e efeitos de Glassmorphism aplicados com moderação.
+
+### Paleta institucional
+
+O verde é a cor principal da identidade do Capítulo e deve ter presença predominante em toda a plataforma. O dourado funciona como cor de destaque; branco e tons claros garantem contraste e respiro visual.
+
+| Cor | Código | Aplicação |
+|---|---|---|
+| **Verde institucional** | `#087443` | Cor principal, botões, links ativos e elementos de identidade. |
+| **Verde profundo** | `#064D32` | Cabeçalho, rodapé, fundos escuros e navegação. |
+| **Dourado** | `#D9AA45` | Detalhes, divisores, ícones e chamadas de destaque. |
+| **Branco** | `#FFFFFF` | Superfícies e áreas de conteúdo. |
+| **Verde acinzentado claro** | `#F2F5F1` | Fundos alternativos e cartões em páginas claras. |
+
+**Diretrizes de uso:**
+
+- O verde deve ser imediatamente reconhecível como a cor dominante.
+- O dourado deve ser usado com equilíbrio, sem competir com o verde.
+- O branco e os tons claros devem manter a leitura confortável.
+- Gradientes podem combinar verdes da paleta, sem introduzir cores que descaracterizem a identidade.
+- O brasão oficial deve ser preservado: não redesenhar, distorcer, recolorir ou substituir seus elementos.
+
+### Direção visual do portal público
+
+O portal deve transmitir tradição, fraternidade e continuidade histórica com uma apresentação moderna.
+
+- **Cabeçalho:** navegação limpa, brasão original, nome do Capítulo e acesso à área restrita.
+- **Destaque inicial (hero):** seção ampla com fotografia institucional, título marcante e chamada para conhecer o Capítulo.
+- **História:** linha do tempo visual com datas, gestões e acontecimentos relevantes.
+- **Ordem DeMolay:** conteúdo institucional organizado em seções de leitura agradável.
+- **Gestões:** cartões com identificação da gestão, período e fotografia ou composição visual correspondente.
+- **Galeria:** imagens em grade responsiva, com visualização ampliada.
+- **Notícias e atividades:** cartões editoriais para registros e novidades.
+- **Contato:** seção objetiva com canais de comunicação.
+- **Rodapé:** identificação institucional, navegação complementar e informações relevantes.
+
+A composição deve alternar fundos verde profundo e superfícies claras, usando dourado em pequenos detalhes. Fotografias reais do Capítulo devem ter destaque, sem excesso de elementos decorativos.
+
+### Direção visual da área restrita
+
+A área autenticada terá uma linguagem de dashboard SaaS, com visual mais tecnológico e foco na produtividade.
+
+O conceito principal é o **Glassmorphism**: painéis com transparência, desfoque de fundo, bordas sutis e iluminação discreta. O efeito deve complementar a interface, não prejudicar a leitura.
+
+- **Plano de fundo:** tons escuros de verde, com gradientes suaves.
+- **Menu lateral:** navegação persistente, ícones consistentes e indicação clara da seção ativa.
+- **Cabeçalho do painel:** título da página, identificação do usuário e ações rápidas.
+- **Cards de indicadores:** números em destaque, descrições curtas e ícones.
+- **Painéis:** superfícies translúcidas com `backdrop-filter`, bordas discretas e contraste adequado.
+- **Gráficos:** visualizações limpas para frequência, movimentação financeira e indicadores administrativos.
+- **Tabelas:** leitura objetiva, filtros, busca e estados visuais para registros.
+- **Formulários:** campos consistentes, validação clara e mensagens de retorno.
+- **Responsividade:** menu adaptável para telas menores, sem perda de funcionalidades.
+
+O Glassmorphism será mais presente no painel administrativo. Não é necessário aplicar transparência em todos os elementos: tabelas, formulários e conteúdos densos devem priorizar legibilidade.
+
+### Componentes e interações
+
+Os elementos visuais devem ser reutilizáveis para manter consistência entre páginas e módulos.
+
+| Componente | Diretriz |
+|---|---|
+| **Botões** | Estados de hover, foco, carregamento e desabilitado; verde como ação principal. |
+| **Cards** | Cantos discretamente arredondados, espaçamento consistente e bordas suaves. |
+| **Navegação** | Estado ativo evidente, ícones Lucide e comportamento responsivo. |
+| **Modais** | Fundo sobreposto, hierarquia clara e fechamento acessível. |
+| **Notificações** | Mensagens objetivas para sucesso, erro e confirmação. |
+| **Gráficos** | Legendas, unidades e informações acessíveis, sem excesso de efeitos. |
+| **Animações** | Transições curtas e suaves em entradas, menus e interações. |
+
+As animações devem ser discretas e respeitar a preferência do sistema por redução de movimento (`prefers-reduced-motion`). A interface também deve manter contraste, navegação por teclado, foco visível e semântica adequada.
 
 ## Funcionalidades
 
@@ -118,13 +202,17 @@ O controle de acesso é organizado em quatro perfis, associados às responsabili
 
 | Camada | Tecnologias |
 |---|---|
-| **Frontend** | Next.js, React, Tailwind CSS e Lucide Icons |
+| **Frontend** | Next.js, React, Tailwind CSS e Lucide React |
+| **Animações** | Framer Motion |
+| **Gráficos** | Recharts |
 | **Backend e autenticação** | Supabase e Supabase Auth |
 | **Banco de dados** | PostgreSQL |
 | **Segurança de dados** | Row Level Security (RLS) |
 | **Armazenamento** | Supabase Storage |
 | **Documentos PDF** | jspdf e html2pdf.js |
 | **Hospedagem** | Vercel (frontend) e Supabase Cloud (backend e banco de dados) |
+
+> Framer Motion e Recharts fazem parte da direção técnica prevista para as animações e visualizações do painel. Devem ser adicionados às dependências do projeto quando esses componentes forem implementados.
 
 ## Arquitetura da aplicação
 
@@ -138,6 +226,7 @@ Capítulo Professor Carvalho Neves Nº 500
 │   ├── História
 │   ├── Ordem DeMolay
 │   ├── Galeria de Gestões
+│   ├── Notícias e Atividades
 │   └── Contato
 │
 └── Área Restrita
