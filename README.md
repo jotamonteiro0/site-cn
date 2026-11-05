@@ -8,7 +8,7 @@ Plataforma digital para apresentar a história do Capítulo, aproximar a comunid
 
 <br>
 
-![Status](https://img.shields.io/badge/status-em_desenvolvimento-D9AA45?style=for-the-badge)
+![Status](https://img.shields.io/badge/status-em_desenvolvimento-E5AB38?style=for-the-badge)
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
@@ -55,25 +55,24 @@ O sistema interno adota o modelo **RBAC (Role-Based Access Control)**: as permis
 
 ## Identidade visual e experiência
 
-A interface terá identidade própria, reconhecível e consistente com o Capítulo: design institucional contemporâneo, com tipografia bem trabalhada, imagens em destaque, transparências e microinterações, sem reproduzir a identidade visual de outros sites.
+A interface terá identidade própria, reconhecível e consistente com o Capítulo, utilizando exclusivamente a paleta institucional oficial: verde acinzentado, verde oliva, amarelo e azul escuro. O design será contemporâneo, com tipografia bem trabalhada, imagens em destaque, transparências e microinterações, sem reproduzir a identidade visual de outros sites.
 
 | Ambiente | Linguagem |
 |---|---|
-| **Portal público** | Institucional, acolhedora e histórica, com composição editorial, fotografias e predominância do verde. |
-| **Área restrita** | Tecnológica e funcional, com dashboard moderno, painéis translúcidos e Glassmorphism aplicado com moderação. |
+| **Portal público** | Institucional, acolhedora e histórica, com composição editorial, fotografias e predominância do verde acinzentado (#1F4021), apoiado pelo verde oliva (#636347) e pelo amarelo (#E5AB38). |
+| **Área restrita** | Tecnológica e funcional, com dashboard moderno, painéis translúcidos e Glassmorphism aplicado com moderação, usando o verde acinzentado e o azul escuro (#1E3D58) como bases. |
 
 ### Paleta institucional
 
-| | Cor | Código | Aplicação |
+| | Cor oficial | Código | Aplicação sugerida |
 |:-:|---|---|---|
-| ![#087443](https://img.shields.io/badge/%E2%80%83%E2%80%83%E2%80%83%E2%80%83-087443?style=flat-square) | **Verde institucional** | `#087443` | Cor principal, botões, links ativos e elementos de identidade. |
-| ![#064D32](https://img.shields.io/badge/%E2%80%83%E2%80%83%E2%80%83%E2%80%83-064D32?style=flat-square) | **Verde profundo** | `#064D32` | Cabeçalho, rodapé, fundos escuros e navegação. |
-| ![#D9AA45](https://img.shields.io/badge/%E2%80%83%E2%80%83%E2%80%83%E2%80%83-D9AA45?style=flat-square) | **Dourado** | `#D9AA45` | Detalhes, divisores, ícones e chamadas de destaque. |
-| ![#FFFFFF](https://img.shields.io/badge/%E2%80%83%E2%80%83%E2%80%83%E2%80%83-FFFFFF?style=flat-square) | **Branco** | `#FFFFFF` | Superfícies e áreas de conteúdo. |
-| ![#F2F5F1](https://img.shields.io/badge/%E2%80%83%E2%80%83%E2%80%83%E2%80%83-F2F5F1?style=flat-square) | **Verde acinzentado claro** | `#F2F5F1` | Fundos alternativos e cartões em páginas claras. |
+| ![#1F4021](https://img.shields.io/badge/%E2%80%83%E2%80%83%E2%80%83%E2%80%83-1F4021?style=flat-square) | **Verde acinzentado** | `#1F4021` | Cor de identidade predominante, fundos institucionais e elementos principais. |
+| ![#636347](https://img.shields.io/badge/%E2%80%83%E2%80%83%E2%83%E2%80%83-636347?style=flat-square) | **Verde oliva** | `#636347` | Superfícies secundárias, áreas de apoio e variações de fundo. |
+| ![#E5AB38](https://img.shields.io/badge/%E2%80%83%E2%80%83%E2%80%83%E2%80%83-E5AB38?style=flat-square) | **Amarelo** | `#E5AB38` | Destaques, chamadas para ação, ícones e detalhes de interface. |
+| ![#1E3D58](https://img.shields.io/badge/%E2%80%83%E2%80%83%E2%83%E2%83-1E3D58?style=flat-square) | **Azul escuro** | `#1E3D58` | Contraste, navegação secundária e elementos de profundidade. |
 
 > [!IMPORTANT]
-> O brasão oficial deve ser preservado: não redesenhar, distorcer, recolorir ou substituir seus elementos. O verde é a cor dominante; o dourado é destaque e não deve competir com ele.
+> O brasão oficial deve ser preservado: não redesenhar, distorcer, recolorir ou substituir seus elementos. Os quatro códigos apresentados na paleta são as referências oficiais da identidade visual do Capítulo; não substituir por tons aproximados.
 
 <details>
 <summary><b>Direção visual do portal público</b></summary>
@@ -92,7 +91,7 @@ O portal deve transmitir tradição, fraternidade e continuidade histórica com 
 - **Contato:** seção objetiva com canais de comunicação.
 - **Rodapé:** identificação institucional, navegação complementar e informações relevantes.
 
-A composição alterna fundos verde profundo e superfícies claras, com dourado em pequenos detalhes. Fotografias reais do Capítulo têm destaque, sem excesso de elementos decorativos.
+A composição alterna fundos em verde acinzentado (#1F4021) e superfícies claras, com verde oliva (#636347), amarelo (#E5AB38) e azul escuro (#1E3D58) aplicados de forma equilibrada. Fotografias reais do Capítulo têm destaque, sem excesso de elementos decorativos.
 
 </details>
 
@@ -103,10 +102,10 @@ A composição alterna fundos verde profundo e superfícies claras, com dourado 
 
 Linguagem de dashboard SaaS, mais tecnológica e voltada à produtividade. O conceito principal é o **Glassmorphism**: painéis com transparência, desfoque de fundo, bordas sutis e iluminação discreta, sem prejudicar a leitura.
 
-- **Plano de fundo:** tons escuros de verde, com gradientes suaves.
+- **Plano de fundo:** tons escuros derivados do verde acinzentado (#1F4021), com gradientes suaves e pontos de contraste em azul escuro (#1E3D58).
 - **Menu lateral:** navegação persistente, ícones consistentes e indicação clara da seção ativa.
 - **Cabeçalho do painel:** título da página, identificação do usuário e ações rápidas.
-- **Cards de indicadores:** números em destaque, descrições curtas e ícones.
+- **Cards de indicadores:** números em destaque, descrições curtas e ícones; verde oliva (#636347) e amarelo (#E5AB38) funcionam como cores de apoio.
 - **Painéis:** superfícies translúcidas com `backdrop-filter`, bordas discretas e contraste adequado.
 - **Gráficos:** visualizações limpas para frequência, movimentação financeira e indicadores administrativos.
 - **Tabelas:** leitura objetiva, filtros, busca e estados visuais para registros.
