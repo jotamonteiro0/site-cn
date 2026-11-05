@@ -69,7 +69,7 @@ A interface terá identidade própria, reconhecível e consistente com o Capítu
 | ![#1F4021](https://img.shields.io/badge/%E2%80%83%E2%80%83%E2%80%83%E2%80%83-1F4021?style=flat-square) | **Verde acinzentado** | `#1F4021` | Cor de identidade predominante, fundos institucionais e elementos principais. |
 | ![#636347](https://img.shields.io/badge/%E2%80%83%E2%80%83%E2%83%E2%80%83-636347?style=flat-square) | **Verde oliva** | `#636347` | Superfícies secundárias, áreas de apoio e variações de fundo. |
 | ![#E5AB38](https://img.shields.io/badge/%E2%80%83%E2%80%83%E2%80%83%E2%80%83-E5AB38?style=flat-square) | **Amarelo** | `#E5AB38` | Destaques, chamadas para ação, ícones e detalhes de interface. |
-| ![#1E3D58](https://img.shields.io/badge/%E2%80%83%E2%80%83%E2%83%E2%83-1E3D58?style=flat-square) | **Azul escuro** | `#1E3D58` | Contraste, navegação secundária e elementos de profundidade. |
+| ![#1E3D58](https://img.shields.io/badge/%E2%80%83%E2%80%83%E2%80%83%E2%80%83-1E3D58?style=flat-square) | **Azul escuro** | `#1E3D58` | Contraste, navegação secundária e elementos de profundidade. |
 
 > [!IMPORTANT]
 > O brasão oficial deve ser preservado: não redesenhar, distorcer, recolorir ou substituir seus elementos. Os quatro códigos apresentados na paleta são as referências oficiais da identidade visual do Capítulo; não substituir por tons aproximados.
