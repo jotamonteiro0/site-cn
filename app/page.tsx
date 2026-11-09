@@ -2,6 +2,7 @@
 
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import Image from "next/image";
 import { 
   Heart, 
   Sparkles, 
@@ -14,8 +15,6 @@ import {
   BookOpen,
   Lock,
   Crown,
-  FileText,
-  Download,
   Mail,
   MapPin,
   Send
@@ -189,14 +188,24 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* GESTÃO XXIII */}
+            {/* GESTÃO XXIV — Past MC */}
             <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col group">
               <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex flex-col items-center justify-center p-4">
+                <Image
+                  src="/gestoes/jose-keltton.2026.1.jpg"
+                  alt="Foto oficial de José Keltton Cardoso da Silva Viana"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                  }}
+                />
                 <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded text-[10px] font-bold bg-white/20 text-white backdrop-blur-md">
-                  XXIII
+                  XXIV
                 </span>
                 <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/40 text-emerald-200 border border-white/10">
-                  2025.2
+                  2026.1
                 </span>
                 <div className="w-16 h-16 rounded-full bg-[#087443] border-2 border-[#D9AA45] flex items-center justify-center text-[#D9AA45] shadow-lg group-hover:scale-105 transition-transform">
                   <ShieldCheck className="w-8 h-8 text-[#D9AA45]" />
@@ -207,23 +216,33 @@ export default function Home() {
               </div>
               <div className="p-5 flex-1 flex flex-col justify-between">
                 <div>
-                  <span className="text-xs font-semibold text-[#087443]">Gestão XXIII</span>
+                  <span className="text-xs font-semibold text-[#087443]">Gestão XXIV</span>
                   <h4 className="font-bold text-gray-900 text-base mt-1">
-                    MC João Guilherme Martins Lopes Monteiro
+                    MC José Keltton Cardoso da Silva Viana
                   </h4>
-                  <p className="text-xs text-gray-500">Mestre Conselheiro</p>
+                  <p className="text-xs text-gray-500">Past MC</p>
                 </div>
               </div>
             </div>
 
-            {/* GESTÃO XXV */}
+            {/* GESTÃO XXV — Past MC */}
             <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col group">
               <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex flex-col items-center justify-center p-4">
+                <Image
+                  src="/gestoes/rafael-inacio.2026.2.jpg"
+                  alt="Foto oficial de Rafael Inácio do Nascimento de Morais"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                  }}
+                />
                 <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded text-[10px] font-bold bg-white/20 text-white backdrop-blur-md">
                   XXV
                 </span>
-                <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-400 text-[#04281A]">
-                  Atual • 2026.2
+                <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/40 text-emerald-200 border border-white/10">
+                  2026.2
                 </span>
                 <div className="w-16 h-16 rounded-full bg-[#087443] border-2 border-[#D9AA45] flex items-center justify-center text-[#D9AA45] shadow-lg group-hover:scale-105 transition-transform">
                   <ShieldCheck className="w-8 h-8 text-[#D9AA45]" />
@@ -238,19 +257,30 @@ export default function Home() {
                   <h4 className="font-bold text-gray-900 text-base mt-1">
                     MC Rafael Inácio do Nascimento de Morais
                   </h4>
-                  <p className="text-xs text-gray-500">Mestre Conselheiro Atual</p>
+                  <p className="text-xs text-gray-500">Past MC</p>
                 </div>
               </div>
             </div>
 
-            {/* GESTÃO XXVI */}
+            {/* GESTÃO XXVI — MC ATUAL (DESTAQUE) */}
             <div className="bg-white rounded-2xl overflow-hidden border-2 border-[#D9AA45] shadow-md hover:shadow-lg transition-all flex flex-col group">
               <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex flex-col items-center justify-center p-4">
+                <Image
+                  src="/gestoes/joao-guilherme.2027.1.jpg"
+                  alt="Foto oficial de João Guilherme Martins Lopes Monteiro"
+                  fill
+                  preload
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                  }}
+                />
                 <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded text-[10px] font-bold bg-[#D9AA45] text-[#04281A]">
                   XXVI
                 </span>
-                <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D9AA45] text-[#04281A]">
-                  Eleito • 2027.1
+                <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D9AA45] text-[#04281A] flex items-center gap-1">
+                  ★ MC Atual • 2027.1
                 </span>
                 <div className="w-16 h-16 rounded-full bg-[#087443] border-2 border-[#D9AA45] flex items-center justify-center text-[#D9AA45] shadow-lg group-hover:scale-105 transition-transform">
                   <Crown className="w-8 h-8 text-[#D9AA45]" />
@@ -261,11 +291,11 @@ export default function Home() {
               </div>
               <div className="p-5 flex-1 flex flex-col justify-between">
                 <div>
-                  <span className="text-xs font-bold text-[#D9AA45]">Gestão XXVI (Futura)</span>
+                  <span className="text-xs font-bold text-[#D9AA45]">Gestão XXVI</span>
                   <h4 className="font-bold text-gray-900 text-base mt-1">
                     MC João Guilherme Martins Lopes Monteiro
                   </h4>
-                  <p className="text-xs text-emerald-700 font-semibold">Mestre Conselheiro Eleito</p>
+                  <p className="text-xs text-emerald-700 font-semibold">Mestre Conselheiro Atual</p>
                 </div>
               </div>
             </div>
@@ -279,80 +309,6 @@ export default function Home() {
               <span>Ver Galeria Completa de Mestres Conselheiros (Todas as Gestões)</span>
               <ArrowRight className="w-4 h-4 text-[#D9AA45] group-hover:translate-x-1 transition-transform" />
             </Link>
-          </div>
-        </section>
-
-        {/* DOCUMENTOS OFICIAIS */}
-        <section id="documentos" className="py-20 bg-white border-y border-gray-200 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center max-w-2xl mx-auto mb-16">
-              <span className="text-xs uppercase tracking-widest text-[#087443] font-bold">
-                Acervo Institucional
-              </span>
-              <h2 className="text-3xl font-bold tracking-tight text-gray-900 mt-2 sm:text-4xl">
-                Documentos e Publicações
-              </h2>
-              <div className="w-16 h-1 bg-[#D9AA45] mx-auto mt-4 rounded-full" />
-              <p className="mt-4 text-base text-gray-600 leading-relaxed">
-                Transparência e conformidade regulamentar do Capítulo Professor Carvalho Neves Nº 500.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                {
-                  title: "Regimento Interno",
-                  desc: "Normas de conduta e funcionamento das sessões do Capítulo Nº 500.",
-                  type: "PDF (Oficial)",
-                  size: "1.2 MB"
-                },
-                {
-                  title: "Estatuto Social",
-                  desc: "Constituição jurídica e princípios institucionais do Capítulo.",
-                  type: "PDF (Oficial)",
-                  size: "950 KB"
-                },
-                {
-                  title: "Planejamento Anual",
-                  desc: "Cronograma de eventos, filantropias e atividades das gestões.",
-                  type: "PDF (Atual)",
-                  size: "820 KB"
-                },
-                {
-                  title: "Código de Ética",
-                  desc: "Diretrizes e preceitos morais da Ordem DeMolay Brasil / SisDM.",
-                  type: "PDF (Nacional)",
-                  size: "1.5 MB"
-                }
-              ].map((doc, idx) => (
-                <div
-                  key={idx}
-                  className="bg-[#F2F5F1] rounded-2xl p-6 border border-gray-200 hover:border-[#087443] transition-all flex flex-col justify-between group shadow-sm hover:shadow-md"
-                >
-                  <div>
-                    <div className="w-12 h-12 rounded-xl bg-[#087443]/10 border border-[#087443]/20 flex items-center justify-center text-[#087443] mb-4 group-hover:scale-110 transition-transform">
-                      <FileText className="w-6 h-6" />
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#D9AA45] bg-[#D9AA45]/15 px-2 py-0.5 rounded">
-                      {doc.type}
-                    </span>
-                    <h3 className="text-lg font-bold text-gray-900 mt-2 mb-1">
-                      {doc.title}
-                    </h3>
-                    <p className="text-xs text-gray-600 leading-relaxed">
-                      {doc.desc}
-                    </p>
-                  </div>
-                  <div className="mt-6 pt-4 border-t border-gray-200/60 flex items-center justify-between text-xs font-semibold text-[#087443]">
-                    <span className="text-gray-400 font-normal">{doc.size}</span>
-                    <button className="flex items-center gap-1 hover:text-[#064D32] transition-colors">
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Baixar</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
 
@@ -382,7 +338,7 @@ export default function Home() {
                   <p className="text-xs text-gray-600 mt-1 leading-relaxed">
                     Loja Maçônica Caridade II, Piauí — Brasil
                   </p>
-                  <p className="text-[11px] text-[#087443] font-semibold mt-1">Aos sábados, às 16:00</p>
+                  <p className="text-[11px] text-[#087443] font-semibold mt-1">Aos Domingos, às 09:00</p>
                 </div>
               </div>
 
@@ -393,7 +349,7 @@ export default function Home() {
                 <div>
                   <h4 className="font-bold text-sm text-gray-900">E-mail Institucional</h4>
                   <p className="text-xs text-gray-600 mt-1">
-                    contato@carvalhoneves500.org
+                    capitulo500@demolaybrasil.org.br
                   </p>
                   <p className="text-[11px] text-gray-400 mt-1">Retorno em até 48 horas úteis</p>
                 </div>

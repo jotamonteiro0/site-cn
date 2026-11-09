@@ -10,7 +10,6 @@ import {
   ArrowUpRight,
   ShieldAlert
 } from "lucide-react";
-import Link from "next/link";
 
 export default function DashboardPage() {
   const stats = [
@@ -37,8 +36,8 @@ export default function DashboardPage() {
     },
     {
       title: "Próxima Reunião",
-      value: "Sábado",
-      subtext: "15/11 às 16:00 • Grau DeMolay",
+      value: "Domingo",
+      subtext: "16/11 às 09:00 • Grau DeMolay",
       icon: Calendar,
       trend: "neutral",
     },

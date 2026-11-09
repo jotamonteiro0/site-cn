@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { 
@@ -12,7 +13,8 @@ import {
   User, 
   Award,
   ArrowLeft,
-  Sparkles
+  Sparkles,
+  Star
 } from "lucide-react";
 
 interface Gestao {
@@ -20,19 +22,21 @@ interface Gestao {
   romano: string;
   mc: string;
   periodo: string;
-  status: "Past MC" | "Atual" | "Eleito";
+  status: "Past MC" | "Atual";
   foto?: string;
   destaque?: boolean;
 }
 
+// Convenção de fotos: /gestoes/nome-sobrenome.ano.semestre.jpg
+// Ex: joao-guilherme.2027.1.jpg, rafael-inacio.2026.2.jpg
 const gestaoData: Gestao[] = [
   {
     numero: "XXVI",
     romano: "Gestão XXVI",
     mc: "João Guilherme Martins Lopes Monteiro",
     periodo: "2027.1",
-    status: "Eleito",
-    foto: "/gestoes/joao-guilherme-2027.jpg",
+    status: "Atual",
+    foto: "/gestoes/joao-guilherme.2027.1.jpg",
     destaque: true,
   },
   {
@@ -40,8 +44,8 @@ const gestaoData: Gestao[] = [
     romano: "Gestão XXV",
     mc: "Rafael Inácio do Nascimento de Morais",
     periodo: "2026.2",
-    status: "Atual",
-    foto: "/gestoes/rafael-inacio.jpg",
+    status: "Past MC",
+    foto: "/gestoes/rafael-inacio.2026.2.jpg",
     destaque: true,
   },
   {
@@ -50,7 +54,7 @@ const gestaoData: Gestao[] = [
     mc: "José Keltton Cardoso da Silva Viana",
     periodo: "2026.1",
     status: "Past MC",
-    foto: "/gestoes/jose-keltton.jpg",
+    foto: "/gestoes/jose-keltton.2026.1.jpg",
     destaque: true,
   },
   {
@@ -59,7 +63,7 @@ const gestaoData: Gestao[] = [
     mc: "João Guilherme Martins Lopes Monteiro",
     periodo: "2025.2",
     status: "Past MC",
-    foto: "/gestoes/joao-guilherme.jpg",
+    foto: "/gestoes/joao-guilherme.2025.2.jpg",
     destaque: true,
   },
   {
@@ -68,6 +72,7 @@ const gestaoData: Gestao[] = [
     mc: "Epaminondas Coutinho Feitosa Júnior",
     periodo: "2025.1",
     status: "Past MC",
+    foto: "/gestoes/epaminondas-coutinho.2025.1.jpg",
   },
   {
     numero: "XXI",
@@ -75,6 +80,7 @@ const gestaoData: Gestao[] = [
     mc: "Fábio Anicácio Brito Correia",
     periodo: "2024.2",
     status: "Past MC",
+    foto: "/gestoes/fabio-anicacio.2024.2.jpg",
   },
   {
     numero: "XX",
@@ -82,6 +88,7 @@ const gestaoData: Gestao[] = [
     mc: "Wesley de Sousa Pinheiro de Abreu",
     periodo: "2024.1",
     status: "Past MC",
+    foto: "/gestoes/wesley-abreu.2024.1.jpg",
   },
   {
     numero: "XIX",
@@ -89,6 +96,7 @@ const gestaoData: Gestao[] = [
     mc: "Caio Carvalho Fonseca Lima",
     periodo: "2023.2",
     status: "Past MC",
+    foto: "/gestoes/caio-carvalho.2023.2.jpg",
   },
   {
     numero: "XVIII",
@@ -96,6 +104,7 @@ const gestaoData: Gestao[] = [
     mc: "Wesley de Sousa Pinheiro de Abreu",
     periodo: "2023.1",
     status: "Past MC",
+    foto: "/gestoes/wesley-abreu.2023.1.jpg",
   },
   {
     numero: "XVII",
@@ -103,6 +112,7 @@ const gestaoData: Gestao[] = [
     mc: "Gabriel Dias",
     periodo: "2020.1",
     status: "Past MC",
+    foto: "/gestoes/gabriel-dias.2020.1.jpg",
   },
   {
     numero: "XVI",
@@ -110,6 +120,7 @@ const gestaoData: Gestao[] = [
     mc: "Vinícius Linhares",
     periodo: "2019.2",
     status: "Past MC",
+    foto: "/gestoes/vinicius-linhares.2019.2.jpg",
   },
   {
     numero: "XV",
@@ -117,6 +128,7 @@ const gestaoData: Gestao[] = [
     mc: "Gustavo Vilarinho",
     periodo: "2019.1",
     status: "Past MC",
+    foto: "/gestoes/gustavo-vilarinho.2019.1.jpg",
   },
   {
     numero: "XIV",
@@ -124,6 +136,7 @@ const gestaoData: Gestao[] = [
     mc: "Tomaz Neto",
     periodo: "2018.2",
     status: "Past MC",
+    foto: "/gestoes/tomaz-neto.2018.2.jpg",
   },
   {
     numero: "XIII",
@@ -131,6 +144,7 @@ const gestaoData: Gestao[] = [
     mc: "Ezequias Júnior",
     periodo: "2018.1",
     status: "Past MC",
+    foto: "/gestoes/ezequias-junior.2018.1.jpg",
   },
   {
     numero: "XII",
@@ -138,6 +152,7 @@ const gestaoData: Gestao[] = [
     mc: "Rafael Rocha",
     periodo: "2017.2",
     status: "Past MC",
+    foto: "/gestoes/rafael-rocha.2017.2.jpg",
   },
   {
     numero: "XI",
@@ -145,6 +160,7 @@ const gestaoData: Gestao[] = [
     mc: "Breno Correia",
     periodo: "2017.1",
     status: "Past MC",
+    foto: "/gestoes/breno-correia.2017.1.jpg",
   },
   {
     numero: "X",
@@ -152,6 +168,7 @@ const gestaoData: Gestao[] = [
     mc: "Cleilson Almeida",
     periodo: "2016.2",
     status: "Past MC",
+    foto: "/gestoes/cleilson-almeida.2016.2.jpg",
   },
   {
     numero: "IX",
@@ -159,6 +176,7 @@ const gestaoData: Gestao[] = [
     mc: "Ericles Guerra",
     periodo: "2016.1",
     status: "Past MC",
+    foto: "/gestoes/ericles-guerra.2016.1.jpg",
   },
   {
     numero: "VIII",
@@ -166,6 +184,7 @@ const gestaoData: Gestao[] = [
     mc: "Itamar Filho",
     periodo: "2015.2",
     status: "Past MC",
+    foto: "/gestoes/itamar-filho.2015.2.jpg",
   },
   {
     numero: "VII",
@@ -173,6 +192,7 @@ const gestaoData: Gestao[] = [
     mc: "Renandro Reis",
     periodo: "2015.1",
     status: "Past MC",
+    foto: "/gestoes/renandro-reis.2015.1.jpg",
   },
   {
     numero: "VI",
@@ -180,6 +200,7 @@ const gestaoData: Gestao[] = [
     mc: "Marcelo Negreiros Júnior",
     periodo: "2014.2",
     status: "Past MC",
+    foto: "/gestoes/marcelo-negreiros.2014.2.jpg",
   },
   {
     numero: "V",
@@ -187,6 +208,7 @@ const gestaoData: Gestao[] = [
     mc: "Victor Barros",
     periodo: "2014.1",
     status: "Past MC",
+    foto: "/gestoes/victor-barros.2014.1.jpg",
   },
   {
     numero: "IV",
@@ -194,6 +216,7 @@ const gestaoData: Gestao[] = [
     mc: "Arthur Cerqueira",
     periodo: "2013.2",
     status: "Past MC",
+    foto: "/gestoes/arthur-cerqueira.2013.2.jpg",
   },
   {
     numero: "III",
@@ -201,6 +224,7 @@ const gestaoData: Gestao[] = [
     mc: "Diógenes Quaresma",
     periodo: "2013.1",
     status: "Past MC",
+    foto: "/gestoes/diogenes-quaresma.2013.1.jpg",
   },
   {
     numero: "I / II",
@@ -208,6 +232,7 @@ const gestaoData: Gestao[] = [
     mc: "Tiago Moreira",
     periodo: "2012.1 / 2012.2",
     status: "Past MC",
+    foto: "/gestoes/tiago-moreira.2012.1.jpg",
     destaque: true,
   },
 ];
@@ -220,6 +245,15 @@ export default function GestoesPage() {
       g.mc.toLowerCase().includes(searchTerm.toLowerCase()) ||
       g.periodo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       g.romano.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Separa o MC Atual para destaque
+  const mcAtual = gestaoData.find((g) => g.status === "Atual");
+  const filteredWithoutAtual = filtered.filter((g) => g.status !== "Atual");
+  const showAtual = mcAtual && (searchTerm === "" ||
+    mcAtual.mc.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    mcAtual.periodo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    mcAtual.romano.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -270,7 +304,105 @@ export default function GestoesPage() {
           </div>
         </section>
 
-        {/* GRADE DE CARDS NO ESTILO GALERIA DE LÍDERES (PRIORADO 156) */}
+        {/* MC ATUAL EM DESTAQUE (ESTILO PRIORADO 156) */}
+        {showAtual && mcAtual && (
+          <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D9AA45]/15 border border-[#D9AA45]/30 text-[#D9AA45] text-xs font-bold uppercase tracking-widest">
+                <Star className="w-3.5 h-3.5" />
+                <span>Mestre Conselheiro Atual</span>
+              </div>
+            </div>
+
+            <div className="relative bg-white rounded-3xl overflow-hidden border-2 border-[#D9AA45] shadow-2xl group">
+              {/* Faixa dourada decorativa no topo */}
+              <div className="h-1.5 bg-gradient-to-r from-[#D9AA45] via-[#f0cc6a] to-[#D9AA45]" />
+
+              <div className="flex flex-col md:flex-row">
+                {/* Foto do MC Atual - Grande destaque */}
+                <div className="relative w-full md:w-80 aspect-[3/4] md:aspect-auto bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex items-center justify-center overflow-hidden shrink-0">
+                  {/* Badge Gestão */}
+                  <div className="absolute top-4 left-4 z-10">
+                    <span className="px-3 py-1.5 rounded-lg text-xs font-black bg-[#D9AA45] text-[#04281A] shadow-lg">
+                      {mcAtual.numero}
+                    </span>
+                  </div>
+
+                  {/* Badge MC Atual */}
+                  <div className="absolute top-4 right-4 z-10">
+                    <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#D9AA45] text-[#04281A] shadow-lg flex items-center gap-1.5">
+                      <Star className="w-3.5 h-3.5" />
+                      MC Atual
+                    </span>
+                  </div>
+
+                  {mcAtual.foto && (
+                    <Image
+                      src={mcAtual.foto}
+                      alt={`Foto oficial de ${mcAtual.mc}`}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 320px"
+                      className="z-[1] object-cover"
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                      }}
+                    />
+                  )}
+
+                  {/* Exibido até que a foto oficial seja adicionada à pasta public/gestoes. */}
+                  <div className="relative z-0 flex flex-col items-center justify-center p-8 text-center">
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-[#087443] to-[#0a9456] border-4 border-[#D9AA45] flex items-center justify-center text-[#D9AA45] shadow-2xl group-hover:scale-105 transition-transform duration-300 relative">
+                      <Crown className="w-14 h-14 text-[#D9AA45]" />
+                      <div className="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-full bg-[#D9AA45] border-2 border-white flex items-center justify-center text-[10px] font-black text-[#04281A]">
+                        MC
+                      </div>
+                    </div>
+                    <span className="text-[11px] uppercase tracking-widest text-[#D9AA45]/80 font-semibold mt-4">
+                      Espaço para Foto Oficial
+                    </span>
+                  </div>
+
+                  {/* Detalhe dourado na borda */}
+                  <div className="absolute bottom-0 inset-x-0 z-10 h-1 bg-gradient-to-r from-transparent via-[#D9AA45] to-transparent md:hidden" />
+                  <div className="hidden md:block absolute top-0 bottom-0 right-0 z-10 w-1 bg-gradient-to-b from-transparent via-[#D9AA45] to-transparent" />
+                </div>
+
+                {/* Informações do MC Atual */}
+                <div className="flex-1 p-8 md:p-10 flex flex-col justify-center">
+                  <div className="inline-flex items-center gap-2 text-xs font-bold text-[#D9AA45] uppercase tracking-widest mb-3">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Período {mcAtual.periodo}</span>
+                  </div>
+
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mb-2">
+                    {mcAtual.mc}
+                  </h2>
+
+                  <p className="text-sm text-[#087443] font-semibold mb-4">
+                    Mestre Conselheiro — {mcAtual.romano}
+                  </p>
+
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Responsável por conduzir os trabalhos e atividades do Capítulo Professor Carvalho Neves Nº 500 durante o período {mcAtual.periodo}, representando os ideais e virtudes da Ordem DeMolay.
+                  </p>
+
+                  <div className="mt-6 pt-4 border-t border-gray-100 flex items-center gap-4">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <Shield className="w-3.5 h-3.5 text-[#087443]" />
+                      <span>Capítulo Nº 500</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <Sparkles className="w-3.5 h-3.5 text-[#D9AA45]" />
+                      <span>Teresina — PI</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* GRADE DE CARDS - GESTÕES ANTERIORES */}
         <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
             <div>
@@ -285,33 +417,18 @@ export default function GestoesPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
-            {filtered.map((item, idx) => {
-              const isEleito = item.status === "Eleito";
-              const isAtual = item.status === "Atual";
-
+            {filteredWithoutAtual.map((item, idx) => {
               return (
                 <div
                   key={idx}
-                  className={`bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border flex flex-col group ${
-                    isEleito || isAtual
-                      ? "border-[#D9AA45] ring-2 ring-[#D9AA45]/20 shadow-md"
-                      : "border-gray-200/80 hover:border-[#087443]/40"
-                  }`}
+                  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200/80 hover:border-[#087443]/40 flex flex-col group"
                 >
-                  {/* ESPAÇO SUPERIOR PARA FOTO OFICIAL (ESTILO PRIORADO 156) */}
+                  {/* ESPAÇO SUPERIOR PARA FOTO OFICIAL */}
                   <div className="relative w-full aspect-[4/4] bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex items-center justify-center overflow-hidden border-b border-gray-100">
                     {/* Selo / Badge de Status */}
                     <div className="absolute top-3 right-3 z-10">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-md backdrop-blur-md ${
-                          isEleito
-                            ? "bg-[#D9AA45] text-[#04281A]"
-                            : isAtual
-                            ? "bg-emerald-400 text-[#04281A]"
-                            : "bg-black/40 text-emerald-100 border border-white/10"
-                        }`}
-                      >
-                        {item.status}
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-md backdrop-blur-md bg-black/40 text-emerald-100 border border-white/10">
+                        Past MC
                       </span>
                     </div>
 
@@ -322,8 +439,21 @@ export default function GestoesPage() {
                       </span>
                     </div>
 
-                    {/* Espaço para foto ou Placeholder com Insígnia */}
-                    <div className="relative flex flex-col items-center justify-center p-6 text-center">
+                    {item.foto && (
+                      <Image
+                        src={item.foto}
+                        alt={`Foto oficial de ${item.mc}, gestão ${item.periodo}`}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                        className="z-[1] object-cover"
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                        }}
+                      />
+                    )}
+
+                    {/* Exibido até que a foto oficial seja adicionada à pasta public/gestoes. */}
+                    <div className="relative z-0 flex flex-col items-center justify-center p-6 text-center">
                       <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#087443] to-[#0a9456] border-2 border-[#D9AA45] flex items-center justify-center text-[#D9AA45] shadow-xl group-hover:scale-110 transition-transform duration-300 relative">
                         <Crown className="w-10 h-10 text-[#D9AA45]" />
                         <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#064D32] border border-[#D9AA45] flex items-center justify-center text-[9px] font-black text-white">
@@ -336,7 +466,7 @@ export default function GestoesPage() {
                     </div>
 
                     {/* Detalhe Dourado na Divisória */}
-                    <div className="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#D9AA45] to-transparent" />
+                    <div className="absolute bottom-0 inset-x-0 z-10 h-1 bg-gradient-to-r from-transparent via-[#D9AA45] to-transparent" />
                   </div>
 
                   {/* INFORMAÇÕES DO MESTRE CONSELHEIRO */}
