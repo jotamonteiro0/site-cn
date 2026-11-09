@@ -120,4 +120,81 @@ create policy "own notifications" on public.notifications for select using (prof
 insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types) values
 ('brasao','brasao',true,5242880,array['image/png','image/jpeg','image/webp']),('gestoes','gestoes',true,10485760,array['image/png','image/jpeg','image/webp']),('atividades','atividades',true,10485760,array['image/png','image/jpeg','image/webp']),('membros','membros',false,5242880,array['image/png','image/jpeg','image/webp']),('documentos','documentos',false,26214400,array['application/pdf']),('comprovantes','comprovantes',false,10485760,array['application/pdf','image/png','image/jpeg']),('solicitacoes','solicitacoes',false,10485760,array['application/pdf','image/png','image/jpeg']),('declaracoes','declaracoes',false,5242880,array['application/pdf']) on conflict (id) do nothing;
 create policy "public media read" on storage.objects for select using (bucket_id in ('brasao','gestoes','atividades'));
-create policy "authenticated private upload" on storage.objects for insert to authenticated with check (bucket_id in ('membros','documentos','comprovantes','solicitacoes','declaracoes') and owner_id=auth.uid());
+create policy "authenticated private upload" on storage.objects for insert to authenticated with check (bucket_id in ('membros','documentos','comprovantes','solicitacoes','declaracoes') and owner_id=auth.uid()::text);
+
+-- Sincronização automática entre auth.users e public.profiles
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (id, full_name, email)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'full_name', ''),
+    new.email
+  )
+  on conflict (id) do update set
+    email = excluded.email,
+    full_name = case when profiles.full_name = '' or profiles.full_name is null then excluded.full_name else profiles.full_name end,
+    updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Políticas adicionais essenciais de leitura
+create policy "authenticated read user_roles" on public.user_roles
+  for select to authenticated using (true);
+
+create policy "public chapter settings" on public.chapter_settings
+  for select using (exists (
+    select 1 from public.chapters c
+    where c.id = chapter_settings.chapter_id and c.is_public and c.is_active
+  ));
+
+create policy "staff chapter memberships" on public.chapter_memberships
+  for select using (has_chapter_role(chapter_id, array['master', 'escrivao']));
+
+create policy "public managements" on public.managements
+  for select using (true);
+
+create policy "public management positions" on public.management_positions
+  for select using (true);
+
+create policy "public member management positions" on public.member_management_positions
+  for select using (true);
+
+-- Semente Oficial do Capítulo Piloto: Carvalho Neves Nº 500
+insert into public.chapters (id, slug, name, number, city, state, is_active, is_public)
+values (
+  '00000000-0000-0000-0000-000000000500',
+  'carvalho-neves-500',
+  'Capítulo Professor Carvalho Neves',
+  '500',
+  'Teresina',
+  'PI',
+  true,
+  true
+)
+on conflict (slug) do update set
+  name = excluded.name,
+  number = excluded.number,
+  city = excluded.city,
+  state = excluded.state,
+  is_active = excluded.is_active,
+  is_public = excluded.is_public;
+
+insert into public.chapter_settings (chapter_id, institutional_email, meeting_weekday, meeting_time, meeting_location, public_contact)
+values (
+  '00000000-0000-0000-0000-000000000500',
+  'contato@carvalhoneves500.org.br',
+  6,
+  '16:00:00',
+  'Loja Maçônica Caridade II Nº 02 - Teresina/PI',
+  '{"cidade": "Teresina - PI", "loja_patrocinadora": "A.R.L.S. Caridade II Nº 02"}'::jsonb
+)
+on conflict (chapter_id) do nothing;
+

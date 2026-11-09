@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { 
   Shield, 
   LayoutDashboard, 
@@ -18,10 +19,69 @@ import {
   ChevronRight
 } from "lucide-react";
 
-export function Sidebar() {
+export interface DashboardUser {
+  id: string;
+  email?: string;
+  fullName: string;
+  roleCode: string;
+  avatarPath?: string | null;
+}
+
+interface SidebarProps {
+  user?: DashboardUser | null;
+}
+
+const roleLabels: Record<string, string> = {
+  master: "Master / Admin",
+  escrivao: "Escrivão",
+  tesoureiro: "Tesoureiro",
+  membro: "Membro",
+};
+
+export function Sidebar({ user: initialUser }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<DashboardUser | null>(initialUser || null);
   const [isOpen, setIsOpen] = useState(false);
   const [viewAsMember, setViewAsMember] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, avatar_path")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          const { data: membership } = await supabase
+            .from("chapter_memberships")
+            .select("role_code")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
+            .maybeSingle();
+
+          setCurrentUser({
+            id: user.id,
+            email: user.email,
+            fullName: profile?.full_name || (user.user_metadata?.full_name as string) || user.email?.split("@")[0] || "Membro",
+            roleCode: membership?.role_code || "membro",
+            avatarPath: profile?.avatar_path,
+          });
+        }
+      } catch (err) {
+        console.error("Erro ao carregar dados do usuário na Sidebar:", err);
+      }
+    }
+
+    if (!initialUser) {
+      loadUser();
+    }
+  }, [initialUser]);
 
   const navigation = [
     { name: "Visão Geral", href: "/dashboard", icon: LayoutDashboard },
@@ -30,6 +90,29 @@ export function Sidebar() {
     { name: "Quadro de Membros", href: "/dashboard#membros", icon: Users },
     { name: "Meu Perfil", href: "/dashboard#perfil", icon: UserCircle },
   ];
+
+  const handleSignOut = async () => {
+    setIsLoggingOut(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.replace("/login");
+      router.refresh();
+    } catch (err) {
+      console.error("Erro ao encerrar sessão:", err);
+      setIsLoggingOut(false);
+    }
+  };
+
+  const getInitials = (name?: string) => {
+    if (!name) return "CN";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const currentRole = currentUser?.roleCode || "master";
+  const displayName = currentUser?.fullName || "Carregando...";
 
   return (
     <>
@@ -130,14 +213,14 @@ export function Sidebar() {
           {/* Cartão de Identificação do Membro */}
           <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-[#087443] border border-[#D9AA45] flex items-center justify-center font-bold text-white text-xs">
-              JG
+              {getInitials(displayName)}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-white truncate">
-                MC João Guilherme
+                {displayName}
               </p>
               <p className="text-[10px] text-[#D9AA45] font-medium truncate">
-                {viewAsMember ? "Visualizando como Membro" : "Perfil: Master / Admin"}
+                {viewAsMember ? "Visualizando como Membro" : `Perfil: ${roleLabels[currentRole] || currentRole}`}
               </p>
             </div>
           </div>
@@ -151,13 +234,14 @@ export function Sidebar() {
               <ExternalLink className="w-3.5 h-3.5" />
               <span>Ver Site</span>
             </Link>
-            <Link
-              href="/login"
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 transition-colors border border-red-500/20"
+            <button
+              onClick={handleSignOut}
+              disabled={isLoggingOut}
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 transition-colors border border-red-500/20 disabled:opacity-50 cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Sair</span>
-            </Link>
+              <span>{isLoggingOut ? "Saindo..." : "Sair"}</span>
+            </button>
           </div>
         </div>
       </aside>

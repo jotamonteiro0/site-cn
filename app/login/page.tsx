@@ -20,9 +20,29 @@ export default function LoginPage() {
     setError("");
     try {
       const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      let targetEmail = email.trim();
+
+      // Suporte a login tanto por e-mail quanto por CID oficial
+      if (!targetEmail.includes("@")) {
+        const { data: resolvedEmail, error: rpcError } = await supabase.rpc("get_email_by_cid", {
+          lookup_cid: targetEmail,
+        });
+
+        if (rpcError || !resolvedEmail) {
+          setError("CID não localizado ou inativo. Verifique o número ou utilize seu e-mail cadastrado.");
+          setIsLoading(false);
+          return;
+        }
+        targetEmail = resolvedEmail;
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: targetEmail,
+        password,
+      });
+
       if (signInError) {
-        setError("Não foi possível entrar. Verifique o e-mail e a senha.");
+        setError("Não foi possível entrar. Verifique os dados de acesso.");
         return;
       }
       router.replace("/dashboard");
