@@ -138,7 +138,7 @@ export default function LoginPage() {
         {/* Rodapé do card */}
         <div className="mt-8 pt-6 border-t border-white/10 text-center">
           <p className="text-xs text-emerald-200/70">
-            Capítulo Professor Carvalho Neves Nº 500 — Floriano/PI
+            Capítulo Professor Carvalho Neves Nº 500 — Teresina/PI
           </p>
         </div>
       </div>

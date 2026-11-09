@@ -74,7 +74,7 @@ export default function DashboardPage() {
             Painel Geral do Capítulo
           </h1>
           <p className="text-sm text-emerald-200/70 mt-1">
-            Capítulo Professor Carvalho Neves Nº 500 — Floriano/PI
+            Capítulo Professor Carvalho Neves Nº 500 — Teresina/PI
           </p>
         </div>
 

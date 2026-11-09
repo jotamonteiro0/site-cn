@@ -74,7 +74,7 @@ export default function Home() {
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-[#D9AA45]/40 text-xs font-semibold text-[#D9AA45] uppercase tracking-wider mb-6">
               <span>Fundado em 2012</span>
               <span>•</span>
-              <span>Floriano - PI</span>
+              <span>Teresina - PI</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight">
@@ -159,7 +159,7 @@ export default function Home() {
             </h2>
             <div className="w-16 h-1 bg-[#D9AA45] mx-auto mt-4 rounded-full" />
             <p className="mt-6 text-base text-gray-700 leading-relaxed text-left sm:text-justify">
-              O <strong>Capítulo Professor Carvalho Neves Nº 500</strong> honra a memória e o legado educacional, cívico e moral de seu patrono. Atuando na cidade de Floriano, Piauí, desde sua fundação em 2012, o Capítulo tem sido um polo vivo de aperfeiçoamento da juventude e de serviço à sociedade local.
+              O <strong>Capítulo Professor Carvalho Neves Nº 500</strong> honra a memória e o legado educacional, cívico e moral de seu patrono. Atuando na cidade de <strong>Teresina</strong>, Piauí, desde sua fundação em 2012, o Capítulo tem sido um polo vivo de aperfeiçoamento da juventude e de serviço à sociedade local.
             </p>
             <div className="mt-8 flex justify-center">
               <a
@@ -380,7 +380,7 @@ export default function Home() {
                 <div>
                   <h4 className="font-bold text-sm text-gray-900">Local das Sessões</h4>
                   <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                    Templo Maçônico de Floriano, Piauí — Brasil
+                    Loja Maçônica Caridade II, Piauí — Brasil
                   </p>
                   <p className="text-[11px] text-[#087443] font-semibold mt-1">Aos sábados, às 16:00</p>
                 </div>
