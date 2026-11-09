@@ -31,7 +31,7 @@ export function Header() {
           <Link href="#virtudes" className="hover:text-[#D9AA45] transition-colors">
             Ordem DeMolay
           </Link>
-          <Link href="#gestoes" className="hover:text-[#D9AA45] transition-colors">
+          <Link href="/gestoes" className="hover:text-[#D9AA45] transition-colors">
             Gestões
           </Link>
           <Link href="#contato" className="hover:text-[#D9AA45] transition-colors">

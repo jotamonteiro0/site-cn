@@ -10,7 +10,8 @@ import {
   Flag,
   ArrowRight,
   BookOpen,
-  Lock
+  Lock,
+  Crown
 } from "lucide-react";
 import Link from "next/link";
 
@@ -181,38 +182,96 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <div className="flex items-center justify-between text-xs font-semibold text-[#087443] mb-2">
-                <span>Gestão XXIII</span>
-                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">2025.2</span>
+            {/* GESTÃO XXIII */}
+            <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col group">
+              <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex flex-col items-center justify-center p-4">
+                <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded text-[10px] font-bold bg-white/20 text-white backdrop-blur-md">
+                  XXIII
+                </span>
+                <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/40 text-emerald-200 border border-white/10">
+                  2025.2
+                </span>
+                <div className="w-16 h-16 rounded-full bg-[#087443] border-2 border-[#D9AA45] flex items-center justify-center text-[#D9AA45] shadow-lg group-hover:scale-105 transition-transform">
+                  <ShieldCheck className="w-8 h-8 text-[#D9AA45]" />
+                </div>
+                <span className="text-[10px] uppercase tracking-wider text-[#D9AA45] font-semibold mt-2">
+                  Espaço para Foto Oficial
+                </span>
               </div>
-              <h4 className="font-bold text-gray-900 text-base mb-1">
-                MC João Guilherme Martins Lopes Monteiro
-              </h4>
-              <p className="text-xs text-gray-500">Mestre Conselheiro</p>
+              <div className="p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-[#087443]">Gestão XXIII</span>
+                  <h4 className="font-bold text-gray-900 text-base mt-1">
+                    MC João Guilherme Martins Lopes Monteiro
+                  </h4>
+                  <p className="text-xs text-gray-500">Mestre Conselheiro</p>
+                </div>
+              </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <div className="flex items-center justify-between text-xs font-semibold text-[#087443] mb-2">
-                <span>Gestão XXIV</span>
-                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">2026.1</span>
+            {/* GESTÃO XXV */}
+            <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col group">
+              <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex flex-col items-center justify-center p-4">
+                <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded text-[10px] font-bold bg-white/20 text-white backdrop-blur-md">
+                  XXV
+                </span>
+                <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-400 text-[#04281A]">
+                  Atual • 2026.2
+                </span>
+                <div className="w-16 h-16 rounded-full bg-[#087443] border-2 border-[#D9AA45] flex items-center justify-center text-[#D9AA45] shadow-lg group-hover:scale-105 transition-transform">
+                  <ShieldCheck className="w-8 h-8 text-[#D9AA45]" />
+                </div>
+                <span className="text-[10px] uppercase tracking-wider text-[#D9AA45] font-semibold mt-2">
+                  Espaço para Foto Oficial
+                </span>
               </div>
-              <h4 className="font-bold text-gray-900 text-base mb-1">
-                MC José Keltton Cardoso da Silva Viana
-              </h4>
-              <p className="text-xs text-gray-500">Mestre Conselheiro</p>
+              <div className="p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-[#087443]">Gestão XXV</span>
+                  <h4 className="font-bold text-gray-900 text-base mt-1">
+                    MC Rafael Inácio do Nascimento de Morais
+                  </h4>
+                  <p className="text-xs text-gray-500">Mestre Conselheiro Atual</p>
+                </div>
+              </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 border border-[#D9AA45]/50 shadow-sm bg-gradient-to-br from-white to-amber-50/30">
-              <div className="flex items-center justify-between text-xs font-semibold text-[#087443] mb-2">
-                <span className="font-bold text-[#D9AA45]">Gestão XXV</span>
-                <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold">2026.2</span>
+            {/* GESTÃO XXVI */}
+            <div className="bg-white rounded-2xl overflow-hidden border-2 border-[#D9AA45] shadow-md hover:shadow-lg transition-all flex flex-col group">
+              <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex flex-col items-center justify-center p-4">
+                <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded text-[10px] font-bold bg-[#D9AA45] text-[#04281A]">
+                  XXVI
+                </span>
+                <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D9AA45] text-[#04281A]">
+                  Eleito • 2027.1
+                </span>
+                <div className="w-16 h-16 rounded-full bg-[#087443] border-2 border-[#D9AA45] flex items-center justify-center text-[#D9AA45] shadow-lg group-hover:scale-105 transition-transform">
+                  <Crown className="w-8 h-8 text-[#D9AA45]" />
+                </div>
+                <span className="text-[10px] uppercase tracking-wider text-[#D9AA45] font-semibold mt-2">
+                  Espaço para Foto Oficial
+                </span>
               </div>
-              <h4 className="font-bold text-gray-900 text-base mb-1">
-                MC Rafael Inácio do Nascimento de Morais
-              </h4>
-              <p className="text-xs text-gray-500">Mestre Conselheiro</p>
+              <div className="p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  <span className="text-xs font-bold text-[#D9AA45]">Gestão XXVI (Futura)</span>
+                  <h4 className="font-bold text-gray-900 text-base mt-1">
+                    MC João Guilherme Martins Lopes Monteiro
+                  </h4>
+                  <p className="text-xs text-emerald-700 font-semibold">Mestre Conselheiro Eleito</p>
+                </div>
+              </div>
             </div>
+          </div>
+
+          <div className="mt-12 text-center">
+            <Link
+              href="/gestoes"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#087443] hover:bg-[#064D32] text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all border border-[#D9AA45]/50 group"
+            >
+              <span>Ver Galeria Completa de Mestres Conselheiros (Todas as Gestões)</span>
+              <ArrowRight className="w-4 h-4 text-[#D9AA45] group-hover:translate-x-1 transition-transform" />
+            </Link>
           </div>
         </section>
 

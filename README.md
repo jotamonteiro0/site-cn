@@ -433,6 +433,7 @@ Exemplo: **Gestão XXIII — MC João Guilherme Martins Lopes Monteiro (2025.2)*
 | XXIII | João Guilherme Martins Lopes Monteiro | 2025.2 |
 | XXIV | José Keltton Cardoso da Silva Viana | 2026.1 |
 | XXV | Rafael Inácio do Nascimento de Morais | 2026.2 |
+| XXVI | João Guilherme Martins Lopes Monteiro | 2027.1 |
 
 </details>
 

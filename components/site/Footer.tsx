@@ -27,7 +27,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-emerald-200/80">
               <li><a href="#historia" className="hover:text-[#D9AA45] transition-colors">História do Patrono</a></li>
               <li><a href="#virtudes" className="hover:text-[#D9AA45] transition-colors">Sete Virtudes Cardeais</a></li>
-              <li><a href="#gestoes" className="hover:text-[#D9AA45] transition-colors">Histórico de Gestões</a></li>
+              <li><a href="/gestoes" className="hover:text-[#D9AA45] transition-colors">Histórico de Gestões</a></li>
               <li><a href="/login" className="hover:text-[#D9AA45] transition-colors">Acesso ao Painel de Gestão</a></li>
             </ul>
           </div>
