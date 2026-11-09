@@ -16,7 +16,7 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-[#064D32] text-white border-b border-[#087443]/50 shadow-md">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#064D32]/90 text-white shadow-md backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Identificação Institucional */}
         <Link href="/" className="flex items-center gap-3 group">

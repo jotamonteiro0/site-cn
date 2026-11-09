@@ -69,7 +69,7 @@ export default function Home() {
         <section className="relative bg-gradient-to-b from-[#064D32] to-[#087443] text-white py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#D9AA45_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
 
-          <div className="max-w-4xl mx-auto text-center relative z-10">
+          <div className="relative z-10 mx-auto max-w-4xl rounded-3xl border border-white/10 bg-white/[0.03] px-5 py-10 text-center shadow-2xl backdrop-blur-sm sm:px-10 sm:py-14">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-[#D9AA45]/40 text-xs font-semibold text-[#D9AA45] uppercase tracking-wider mb-6">
               <span>Fundado em 2012</span>
               <span>•</span>
