@@ -1,3 +1,5 @@
+"use client";
+
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { 
@@ -11,7 +13,12 @@ import {
   ArrowRight,
   BookOpen,
   Lock,
-  Crown
+  Crown,
+  FileText,
+  Download,
+  Mail,
+  MapPin,
+  Send
 } from "lucide-react";
 import Link from "next/link";
 
@@ -272,6 +279,179 @@ export default function Home() {
               <span>Ver Galeria Completa de Mestres Conselheiros (Todas as Gestões)</span>
               <ArrowRight className="w-4 h-4 text-[#D9AA45] group-hover:translate-x-1 transition-transform" />
             </Link>
+          </div>
+        </section>
+
+        {/* DOCUMENTOS OFICIAIS */}
+        <section id="documentos" className="py-20 bg-white border-y border-gray-200 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center max-w-2xl mx-auto mb-16">
+              <span className="text-xs uppercase tracking-widest text-[#087443] font-bold">
+                Acervo Institucional
+              </span>
+              <h2 className="text-3xl font-bold tracking-tight text-gray-900 mt-2 sm:text-4xl">
+                Documentos e Publicações
+              </h2>
+              <div className="w-16 h-1 bg-[#D9AA45] mx-auto mt-4 rounded-full" />
+              <p className="mt-4 text-base text-gray-600 leading-relaxed">
+                Transparência e conformidade regulamentar do Capítulo Professor Carvalho Neves Nº 500.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                {
+                  title: "Regimento Interno",
+                  desc: "Normas de conduta e funcionamento das sessões do Capítulo Nº 500.",
+                  type: "PDF (Oficial)",
+                  size: "1.2 MB"
+                },
+                {
+                  title: "Estatuto Social",
+                  desc: "Constituição jurídica e princípios institucionais do Capítulo.",
+                  type: "PDF (Oficial)",
+                  size: "950 KB"
+                },
+                {
+                  title: "Planejamento Anual",
+                  desc: "Cronograma de eventos, filantropias e atividades das gestões.",
+                  type: "PDF (Atual)",
+                  size: "820 KB"
+                },
+                {
+                  title: "Código de Ética",
+                  desc: "Diretrizes e preceitos morais da Ordem DeMolay Brasil / SisDM.",
+                  type: "PDF (Nacional)",
+                  size: "1.5 MB"
+                }
+              ].map((doc, idx) => (
+                <div
+                  key={idx}
+                  className="bg-[#F2F5F1] rounded-2xl p-6 border border-gray-200 hover:border-[#087443] transition-all flex flex-col justify-between group shadow-sm hover:shadow-md"
+                >
+                  <div>
+                    <div className="w-12 h-12 rounded-xl bg-[#087443]/10 border border-[#087443]/20 flex items-center justify-center text-[#087443] mb-4 group-hover:scale-110 transition-transform">
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#D9AA45] bg-[#D9AA45]/15 px-2 py-0.5 rounded">
+                      {doc.type}
+                    </span>
+                    <h3 className="text-lg font-bold text-gray-900 mt-2 mb-1">
+                      {doc.title}
+                    </h3>
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      {doc.desc}
+                    </p>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-gray-200/60 flex items-center justify-between text-xs font-semibold text-[#087443]">
+                    <span className="text-gray-400 font-normal">{doc.size}</span>
+                    <button className="flex items-center gap-1 hover:text-[#064D32] transition-colors">
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Baixar</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CONTATO */}
+        <section id="contato" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="text-xs uppercase tracking-widest text-[#087443] font-bold">
+              Fale Conosco
+            </span>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 mt-2 sm:text-4xl">
+              Canais de Contato
+            </h2>
+            <div className="w-16 h-1 bg-[#D9AA45] mx-auto mt-4 rounded-full" />
+            <p className="mt-4 text-base text-gray-600 leading-relaxed">
+              Dúvidas sobre ingresso, parcerias institucionais ou mensagens à diretoria do Capítulo.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="space-y-4">
+              <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-[#087443]/10 text-[#087443] flex items-center justify-center shrink-0">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-gray-900">Local das Sessões</h4>
+                  <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                    Templo Maçônico de Floriano, Piauí — Brasil
+                  </p>
+                  <p className="text-[11px] text-[#087443] font-semibold mt-1">Aos sábados, às 16:00</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-[#087443]/10 text-[#087443] flex items-center justify-center shrink-0">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-gray-900">E-mail Institucional</h4>
+                  <p className="text-xs text-gray-600 mt-1">
+                    contato@carvalhoneves500.org
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-1">Retorno em até 48 horas úteis</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-2 bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-6">
+                Envie uma mensagem ao Mestre Conselheiro
+              </h3>
+              <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert("Mensagem institucional simulada enviada com sucesso!"); }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Seu Nome</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Nome completo"
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#087443]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Seu E-mail</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="seu.email@exemplo.com"
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#087443]"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Assunto</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Informações sobre ingresso de novos membros"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#087443]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Mensagem</label>
+                  <textarea
+                    rows={4}
+                    required
+                    placeholder="Escreva sua mensagem aqui..."
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#087443]"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#087443] hover:bg-[#064D32] text-white font-semibold text-sm transition-all shadow-md"
+                >
+                  <Send className="w-4 h-4 text-[#D9AA45]" />
+                  <span>Enviar Mensagem</span>
+                </button>
+              </form>
+            </div>
           </div>
         </section>
 
