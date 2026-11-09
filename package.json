@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "sync:gestoes": "node scripts/sync-gestoes-readme.mjs",
+    "build": "node scripts/sync-gestoes-readme.mjs && next build",
     "start": "next start",
     "lint": "eslint"
   },
