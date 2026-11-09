@@ -22,14 +22,14 @@ export default function LoginPage() {
       const supabase = createClient();
       let targetEmail = email.trim();
 
-      // Suporte a login tanto por e-mail quanto por CID oficial
+      // Suporte a login tanto por e-mail quanto por ID oficial
       if (!targetEmail.includes("@")) {
         const { data: resolvedEmail, error: rpcError } = await supabase.rpc("get_email_by_cid", {
           lookup_cid: targetEmail,
         });
 
         if (rpcError || !resolvedEmail) {
-          setError("CID não localizado ou inativo. Verifique o número ou utilize seu e-mail cadastrado.");
+          setError("ID não localizado ou inativo. Verifique o número ou utilize seu e-mail cadastrado.");
           setIsLoading(false);
           return;
         }
@@ -93,7 +93,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-xs font-semibold text-emerald-100 uppercase tracking-wider mb-2">
-              E-mail ou CID
+              E-mail ou ID
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-300">
@@ -104,7 +104,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu.email@exemplo.com ou 12345"
+                placeholder="seu.email@exemplo.com ou 123378"
                 className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-sm text-white placeholder-emerald-200/50 focus:outline-none focus:ring-2 focus:ring-[#D9AA45] focus:border-transparent transition-all"
               />
             </div>

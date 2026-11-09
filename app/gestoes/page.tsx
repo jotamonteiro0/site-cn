@@ -72,7 +72,7 @@ const gestaoData: Gestao[] = [
     mc: "Epaminondas Coutinho Feitosa Júnior",
     periodo: "2025.1",
     status: "Past MC",
-    foto: "/gestoes/epaminondas-coutinho.2025.1.jpg",
+    foto: "/gestoes/epaminondas-junior.2025.1.jpg",
   },
   {
     numero: "XXI",
