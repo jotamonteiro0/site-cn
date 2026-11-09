@@ -45,7 +45,7 @@ export default function PrivacidadePage() {
               1. Identificação do Controlador
             </h2>
             <p>
-              O <strong>Capítulo Professor Carvalho Neves Nº 500</strong> da Ordem DeMolay, com sede em Teresina - PI, patrocinado pela A.R.L.S. Caridade II Nº 02, atua como controlador dos dados pessoais tratados através da plataforma oficial <strong>Sistema CN (site-cn)</strong>.
+              O <strong>Capítulo Professor Carvalho Neves Nº 500</strong> da Ordem DeMolay, com sede em Teresina - PI, patrocinado pela A∴R∴L∴S∴ Caridade II nº 135, atua como controlador dos dados pessoais tratados através da plataforma oficial <strong>Sistema CN (site-cn)</strong>.
             </p>
           </section>
 

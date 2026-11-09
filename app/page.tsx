@@ -336,7 +336,7 @@ export default function Home() {
                 <div>
                   <h4 className="font-bold text-sm text-gray-900">Local das Sessões</h4>
                   <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                    Loja Maçônica Caridade II, Piauí — Brasil
+                    A∴R∴L∴S∴ Caridade II nº 135, Teresina/PI — Brasil
                   </p>
                   <p className="text-[11px] text-[#087443] font-semibold mt-1">Aos Domingos, às 09:00</p>
                 </div>

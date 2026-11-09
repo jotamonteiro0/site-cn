@@ -85,10 +85,10 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
 
   const navigation = [
     { name: "Visão Geral", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Tesouraria", href: "/dashboard#tesouraria", icon: Wallet, badge: "6 pendentes" },
-    { name: "Frequência & Atas", href: "/dashboard#frequencia", icon: ClipboardCheck },
-    { name: "Quadro de Membros", href: "/dashboard#membros", icon: Users },
-    { name: "Meu Perfil", href: "/dashboard#perfil", icon: UserCircle },
+    { name: "Calendário & Chamada", href: "/dashboard/chamada", icon: ClipboardCheck },
+    { name: "Quadro de Membros", href: "/dashboard/membros", icon: Users },
+    { name: "Conselho Consultivo", href: "/dashboard/conselho", icon: Shield },
+    { name: "Tesouraria", href: "/dashboard/tesouraria", icon: Wallet, badge: "Em breve" },
   ];
 
   const handleSignOut = async () => {

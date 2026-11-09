@@ -60,7 +60,7 @@ export default function TermosPage() {
             <ul className="list-disc list-inside space-y-1 pl-2 text-sm text-gray-600">
               <li>Membros ativos e regulares do Capítulo (Iniciáticos e DeMolays);</li>
               <li>Seniores DeMolays vinculados aos trabalhos capitulares;</li>
-              <li>Membros do Conselho Consultivo e Maçons da Loja Patrocinadora (A.R.L.S. Caridade II Nº 02).</li>
+              <li>Membros do Conselho Consultivo e Maçons da Loja Patrocinadora (A∴R∴L∴S∴ Caridade II nº 135).</li>
             </ul>
           </section>
 
