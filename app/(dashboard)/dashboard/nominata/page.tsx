@@ -700,13 +700,20 @@ export default function NominataPage() {
         </div>
       </div>
 
-      {/* MODAL: CADASTRAR NOVA GESTÃO */}
+      {/* MODAL: CADASTRAR NOVA GESTÃO COM GLASSMORPHISM ESTILO IOS */}
       {isNewManagementModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md p-6 rounded-2xl bg-[#064D32] border border-white/20 shadow-2xl space-y-4 text-white">
-            <div className="flex items-center gap-2">
-              <PlusCircle className="w-6 h-6 text-[#D9AA45]" />
-              <h3 className="text-lg font-bold">Cadastrar Nova Gestão</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-[#D9AA45]/20 border border-[#D9AA45]/40 flex items-center justify-center text-[#D9AA45] shadow-lg shadow-[#D9AA45]/15">
+                <PlusCircle className="w-5 h-5 text-[#D9AA45]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white tracking-tight">Cadastrar Nova Gestão</h3>
+                <p className="text-xs text-emerald-200/80">
+                  Capítulo Professor Carvalho Neves Nº 500
+                </p>
+              </div>
             </div>
             <p className="text-xs text-emerald-200/80">
               Cadastre um novo período administrativo (semestre). A nominata virá pré-carregada com todos os 18 cargos ritualísticos.
@@ -761,18 +768,18 @@ export default function NominataPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-white/10">
                 <button
                   type="button"
                   onClick={() => setIsNewManagementModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold cursor-pointer transition-all border border-white/10"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isCreatingMgmt}
-                  className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#D9AA45] via-[#E5BC5C] to-[#D9AA45] hover:brightness-110 active:scale-95 text-[#04281A] font-extrabold text-xs cursor-pointer disabled:opacity-50 transition-all shadow-[0_4px_16px_rgba(217,170,69,0.3)] hover:shadow-[0_6px_22px_rgba(217,170,69,0.45)]"
                 >
                   {isCreatingMgmt ? "Cadastrando..." : "Cadastrar Gestão"}
                 </button>

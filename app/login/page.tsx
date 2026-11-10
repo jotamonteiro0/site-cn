@@ -425,8 +425,8 @@ export default function LoginPage() {
 
       {/* MODAL DE PRIMEIRO ACESSO / CRIAÇÃO DE SENHA PESSOAL */}
       {isFirstAccessOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-[#04281A] border border-[#D9AA45] rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-white space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="ios-glass-card rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-white space-y-4 animate-in zoom-in-95">
             <button
               onClick={() => setIsFirstAccessOpen(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-white text-xs cursor-pointer"

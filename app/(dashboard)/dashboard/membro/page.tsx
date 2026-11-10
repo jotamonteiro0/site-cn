@@ -1681,8 +1681,8 @@ export default function MemberSelfServicePage() {
 
       {/* MODAL: JUSTIFICAR AUSÊNCIA */}
       {isRsvpModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#04281A] border border-amber-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="ios-glass-card rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl animate-in zoom-in-95">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-amber-400" />
               Justificar Ausência na Reunião
@@ -1696,20 +1696,20 @@ export default function MemberSelfServicePage() {
               onChange={(e) => setRsvpNotes(e.target.value)}
               placeholder="Ex: Compromisso acadêmico inadiável / viagem a trabalho..."
               rows={4}
-              className="w-full mt-4 bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-400"
+              className="w-full mt-4 bg-white/[0.06] backdrop-blur-md border border-white/15 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-400"
             />
 
             <div className="flex items-center justify-end gap-3 mt-4">
               <button
                 onClick={() => setIsRsvpModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs text-gray-400 hover:text-white cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs text-gray-300 hover:text-white cursor-pointer active:scale-95 transition-all"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleJustifyPresence}
                 disabled={isSubmittingRsvp || !rsvpNotes.trim()}
-                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#D9AA45] via-[#E5BC5C] to-[#D9AA45] hover:brightness-110 text-[#04281A] text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-md active:scale-95"
               >
                 {isSubmittingRsvp ? "Enviando..." : "Registrar Justificativa"}
               </button>
@@ -1720,8 +1720,8 @@ export default function MemberSelfServicePage() {
 
       {/* MODAL: PAGAR MENSALIDADE PIX / INFINITEPAY */}
       {isPayModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#04281A] border border-[#D9AA45]/40 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="ios-glass-card rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl animate-in zoom-in-95">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <QrCode className="w-5 h-5 text-[#D9AA45]" />
@@ -1775,8 +1775,8 @@ export default function MemberSelfServicePage() {
 
       {/* MODAL: NOVA SOLICITAÇÃO AVULSA AO CAPÍTULO */}
       {isNewRequestModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#04281A] border border-[#D9AA45]/40 rounded-2xl p-6 max-w-lg w-full shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="ios-glass-card rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl animate-in zoom-in-95">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Send className="w-5 h-5 text-[#D9AA45]" />
@@ -1825,7 +1825,7 @@ export default function MemberSelfServicePage() {
 
       {/* MODAL: VISUALIZAR DECLARAÇÃO OFICIAL (PDF PRONTO COM MODELO EXATO) */}
       {viewDeclaration && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in overflow-y-auto">
           <div className="bg-white text-gray-900 border border-gray-300 rounded-2xl max-w-2xl w-full p-8 sm:p-12 shadow-2xl relative my-8 print:m-0 print:p-0 print:border-none print:shadow-none print:w-full">
             {/* Botão de Fechar na Tela */}
             <button

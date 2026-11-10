@@ -1293,8 +1293,8 @@ export default function ChamadaPage() {
 
       {/* MODAL: ADICIONAR / EDITAR REUNIÃO */}
       {isMeetingModalOpen && editingMeeting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md p-6 rounded-2xl bg-[#064D32] border border-white/20 shadow-2xl space-y-4 text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
             <h3 className="text-lg font-bold">
               {editingMeeting.id ? "Editar Dados da Reunião" : "Cadastrar Nova Reunião"}
             </h3>
@@ -1380,8 +1380,8 @@ export default function ChamadaPage() {
 
       {/* MODAL: ADICIONAR DEMOLAY VISITANTE (ID, NOME COMPLETO, CAPÍTULO) */}
       {isDemolayVisitorModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md p-6 rounded-2xl bg-[#064D32] border border-blue-500/40 shadow-2xl space-y-4 text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-300" />
               <h3 className="text-lg font-bold">Adicionar DeMolay Visitante</h3>
@@ -1461,8 +1461,8 @@ export default function ChamadaPage() {
 
       {/* MODAL: ADICIONAR MAÇOM VISITANTE */}
       {isMasonVisitorModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md p-6 rounded-2xl bg-[#064D32] border border-purple-500/40 shadow-2xl space-y-4 text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center gap-2">
               <Compass className="w-5 h-5 text-purple-300" />
               <h3 className="text-lg font-bold">Adicionar Maçom Visitante</h3>
@@ -1554,8 +1554,8 @@ export default function ChamadaPage() {
 
       {/* MODAL: CONVOCAÇÃO OFICIAL FORMATADA */}
       {isConvocationModalOpen && selectedMeeting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg p-6 rounded-2xl bg-[#064D32] border border-white/20 shadow-2xl space-y-4 text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-lg p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <Mail className="w-5 h-5 text-[#D9AA45]" />

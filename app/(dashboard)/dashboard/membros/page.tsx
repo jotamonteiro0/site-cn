@@ -474,17 +474,21 @@ export default function MembrosPage() {
         </div>
       </div>
 
-      {/* MODAL: HABILITAR NOVO MEMBRO */}
+      {/* MODAL: HABILITAR NOVO MEMBRO COM GLASSMORPHISM ESTILO IOS */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg p-6 rounded-2xl bg-[#064D32] border border-white/20 shadow-2xl space-y-4 text-white">
-            <div className="flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-[#D9AA45]" />
-              <h3 className="text-lg font-bold">Habilitar Novo Membro no Capítulo</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-lg p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-[#D9AA45]/20 border border-[#D9AA45]/40 flex items-center justify-center text-[#D9AA45] shadow-lg shadow-[#D9AA45]/15">
+                <UserPlus className="w-5 h-5 text-[#D9AA45]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white tracking-tight">Habilitar Novo Membro no Capítulo</h3>
+                <p className="text-xs text-emerald-200/70">
+                  Capítulo Professor Carvalho Neves Nº 500
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-emerald-200/70">
-              Cadastre o irmão ou tio no Capítulo 500 com e-mail para acesso imediato e controle de maioridade.
-            </p>
 
             <form onSubmit={handleCreateMember} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -629,18 +633,18 @@ export default function MembrosPage() {
                 </p>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-white/10">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold cursor-pointer transition-all border border-white/10"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#D9AA45] via-[#E5BC5C] to-[#D9AA45] hover:brightness-110 active:scale-95 text-[#04281A] font-extrabold text-xs cursor-pointer disabled:opacity-50 transition-all shadow-[0_4px_16px_rgba(217,170,69,0.3)] hover:shadow-[0_6px_22px_rgba(217,170,69,0.45)]"
                 >
                   {isSaving ? "Habilitando..." : "Habilitar Membro & Acesso"}
                 </button>

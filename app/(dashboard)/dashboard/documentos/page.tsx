@@ -16,7 +16,6 @@ import {
   Sparkles,
   Download,
   Upload,
-  Info,
   Paperclip,
   Trash2,
   Printer,
@@ -267,7 +266,6 @@ export default function DashboardDocumentosPage() {
   const [saveSuccessMsg, setSaveSuccessMsg] = useState("");
   const [docFile, setDocFile] = useState<File | null>(null);
   const [uploadedDocs, setUploadedDocs] = useState<DocumentRecord[]>([]);
-  const [showGuide, setShowGuide] = useState(true);
 
   // Anexos customizados por ID de documento (armazenados em localStorage e Supabase)
   const [attachments, setAttachments] = useState<Record<string, string>>({});
@@ -673,46 +671,6 @@ export default function DashboardDocumentosPage() {
         <div className="p-3.5 rounded-xl bg-emerald-900/40 border border-emerald-500/50 text-emerald-200 text-xs flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-emerald-400" />
           <span>{saveSuccessMsg}</span>
-        </div>
-      )}
-
-      {/* BANNER GUIA COM GLASSMORPHISM: ONDE SUBIR DOCUMENTOS */}
-      {showGuide && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-[#064D32]/70 backdrop-blur-xl border border-[#D9AA45]/30 shadow-xl space-y-3 relative overflow-hidden animate-in fade-in">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-2.5 text-[#D9AA45]">
-              <Info className="w-5 h-5 shrink-0" />
-              <h2 className="text-sm font-bold text-white">
-                Onde e Como Subir Documentos para Serem Visualizados?
-              </h2>
-            </div>
-            <button
-              onClick={() => setShowGuide(false)}
-              className="text-xs text-white/50 hover:text-white transition-colors cursor-pointer"
-            >
-              Fechar aviso
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-emerald-100/90 leading-relaxed">
-            <div className="p-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 space-y-1">
-              <span className="font-bold text-[#D9AA45] block">1. Pelo Próprio Painel</span>
-              <p>
-                Use o botão <strong>&ldquo;Cadastrar Documento&rdquo;</strong> acima. Você pode anexar qualquer arquivo PDF oficial. O documento fica disponível instantaneamente no acervo de todos os membros.
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 space-y-1">
-              <span className="font-bold text-[#D9AA45] block">2. No Supabase Storage</span>
-              <p>
-                No painel Supabase, acesse <strong>Storage &gt; bucket &ldquo;documentos&rdquo;</strong> (para atas, editais e resoluções) ou <strong>&ldquo;declaracoes&rdquo;</strong>.
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 space-y-1">
-              <span className="font-bold text-[#D9AA45] block">3. Arquivos Estáticos no Código</span>
-              <p>
-                Documentos fixos ou manuais do SCDB podem ser salvos na pasta <strong>public/documentos/</strong> do projeto para acesso direto sem autenticação.
-              </p>
-            </div>
-          </div>
         </div>
       )}
 

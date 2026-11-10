@@ -855,8 +855,8 @@ export default function TesourariaPage() {
 
       {/* MODAL: PIX & INFINITEPAY AUTOMÁTICO */}
       {isPixModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg p-6 rounded-2xl bg-[#064D32] border border-white/20 shadow-2xl space-y-4 text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-lg p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <QrCode className="w-5 h-5 text-[#D9AA45]" />
@@ -945,8 +945,8 @@ export default function TesourariaPage() {
 
       {/* MODAL: GERAR MENSALIDADES DO MÊS */}
       {isGenerateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md p-6 rounded-2xl bg-[#064D32] border border-white/20 shadow-2xl space-y-4 text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center gap-2">
               <PlusCircle className="w-6 h-6 text-[#D9AA45]" />
               <h3 className="text-lg font-bold">Gerar Mensalidades em Lote</h3>
@@ -1009,8 +1009,8 @@ export default function TesourariaPage() {
 
       {/* MODAL: GERAR RELATÓRIO MENSAL CONSOLIDADO (ARRECADADO, ESPERADO, INADIMPLÊNCIA) */}
       {isReportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in overflow-y-auto">
-          <div className="w-full max-w-3xl my-8 p-6 sm:p-8 rounded-3xl bg-[#04281A] border-2 border-[#D9AA45] text-white shadow-2xl space-y-6 relative print:border-none print:shadow-none print:p-0 print:my-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-3xl my-8 p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-[#064D32]/95 via-[#04281A]/95 to-[#021810]/95 backdrop-blur-2xl border border-[#D9AA45]/50 text-white shadow-[0_20px_60px_-15px_rgba(4,40,26,0.8),0_0_40px_rgba(217,170,69,0.2)] space-y-6 relative print:border-none print:shadow-none print:p-0 print:my-0 animate-in zoom-in-95">
             {/* Botão de Fechar */}
             <button
               onClick={() => setIsReportModalOpen(false)}
@@ -1178,8 +1178,8 @@ export default function TesourariaPage() {
 
       {/* MODAL: ALTERAR VALOR DA MENSALIDADE */}
       {isPriceModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md p-6 rounded-2xl bg-[#064D32] border border-[#D9AA45] shadow-2xl space-y-4 text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center gap-2">
               <DollarSign className="w-6 h-6 text-[#D9AA45]" />
               <h3 className="text-lg font-bold">Alterar Valor das Mensalidades</h3>
@@ -1258,8 +1258,8 @@ export default function TesourariaPage() {
 
       {/* MODAL: DECLARAÇÃO DE QUITAÇÃO OFICIAL */}
       {quitacaoMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
-          <div className="w-full max-w-2xl p-8 rounded-2xl bg-[#04281A] border-2 border-[#D9AA45] text-white shadow-2xl space-y-6 relative print:border-none print:shadow-none print:p-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-2xl p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-[#064D32]/95 via-[#04281A]/95 to-[#021810]/95 backdrop-blur-2xl border border-[#D9AA45]/50 text-white shadow-[0_20px_60px_-15px_rgba(4,40,26,0.8),0_0_40px_rgba(217,170,69,0.2)] space-y-6 relative print:border-none print:shadow-none print:p-0 animate-in zoom-in-95">
             {/* Botão de Fechar */}
             <button
               onClick={() => setQuitacaoMember(null)}

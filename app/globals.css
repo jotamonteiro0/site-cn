@@ -55,11 +55,34 @@ body {
   box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
 }
 
-/* Modais e Overlays com Glassmorphism Temático */
+/* Modais e Overlays com Glassmorphism Temático Estilo iOS */
 .glass-overlay {
-  background: radial-gradient(circle at center, rgba(6, 77, 50, 0.55) 0%, rgba(2, 24, 16, 0.78) 100%);
+  background: radial-gradient(circle at 50% 30%, rgba(8, 116, 67, 0.48) 0%, rgba(4, 40, 26, 0.72) 50%, rgba(2, 24, 16, 0.85) 100%);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+.ios-glass-card {
+  background: linear-gradient(135deg, rgba(6, 77, 50, 0.7) 0%, rgba(4, 40, 26, 0.88) 100%);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(217, 170, 69, 0.35);
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.65), 0 0 35px rgba(217, 170, 69, 0.15), inset 0 1px 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.ios-glass-btn {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ios-glass-btn:hover {
+  transform: translateY(-1.5px);
+}
+
+.ios-glass-btn:active {
+  transform: scale(0.97);
 }
 
 .glass-button-gold {
@@ -67,29 +90,39 @@ body {
   color: #04281a;
   border: 1px solid rgba(255, 255, 255, 0.25);
   box-shadow: 0 4px 14px rgba(217, 170, 69, 0.25);
-  transition: all 0.2s ease-in-out;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-button-gold:hover {
   background: linear-gradient(135deg, rgba(235, 195, 95, 1), rgba(217, 170, 69, 1));
   box-shadow: 0 6px 20px rgba(217, 170, 69, 0.4);
-  transform: translateY(-1px);
+  transform: translateY(-1.5px);
+}
+
+.glass-button-gold:active {
+  transform: scale(0.97);
 }
 
 .glass-button-emerald {
   background: rgba(8, 116, 67, 0.25);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   color: #6ee7b7;
   border: 1px solid rgba(110, 231, 183, 0.35);
-  transition: all 0.2s ease-in-out;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-button-emerald:hover {
   background: rgba(8, 116, 67, 0.45);
   border-color: rgba(110, 231, 183, 0.6);
   color: #ffffff;
-  transform: translateY(-1px);
+  transform: translateY(-1.5px);
+  box-shadow: 0 0 18px rgba(110, 231, 183, 0.25);
+}
+
+.glass-button-emerald:active {
+  transform: scale(0.97);
 }
 
 /* Regras de Impressão Oficial de Documentos & Declarações (A4) */
