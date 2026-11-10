@@ -19,7 +19,8 @@ import {
   Info,
   Paperclip,
   Trash2,
-  Printer
+  Printer,
+  AlertTriangle
 } from "lucide-react";
 
 interface DocumentRecord {
@@ -77,6 +78,12 @@ const scdbGeneralManuals = [
     description: "Compêndio oficial com a legislação, estatuto, regulamento geral e orientações administrativas nacionais.",
     type: "Legislação & Normas",
     fileName: "Vade Mecum DeMolay.pdf",
+  },
+  {
+    title: "Compêndio das Supremas Instruções",
+    description: "Compilação oficial de decretos, instruções normativas e resoluções emitidas pelo Supremo Conselho DeMolay Brasil.",
+    type: "Instruções Normativas",
+    fileName: "Compêndio das Supremas Instruções.pdf",
   },
   {
     title: "Plano Pedagógico - Supremo Conselho DeMolay Brasil",
@@ -267,6 +274,9 @@ export default function DashboardDocumentosPage() {
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   // Documento selecionado para visualização/impressão oficial
   const [viewingDoc, setViewingDoc] = useState<DocumentRecord | null>(null);
+  // Modal de confirmação com design capitular para exclusão
+  const [docToDelete, setDocToDelete] = useState<DocumentRecord | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [newDoc, setNewDoc] = useState({
     title: "",
@@ -323,8 +333,9 @@ export default function DashboardDocumentosPage() {
     loadRole();
   }, []);
 
-  // Membro não publica documento; somente administração (Master e Escrivão)
+  // Membro não publica, não substitui e não apaga documento; somente Master e Escrivão
   const canPublish = userRole === "master" || userRole === "escrivao";
+  const canManageDocs = userRole === "master" || userRole === "escrivao";
 
   // Monta catálogo consolidado
   const allCatalog = useMemo(() => {
@@ -411,8 +422,31 @@ export default function DashboardDocumentosPage() {
     });
   }, [allCatalog, activeTab, selectedManagement, searchTerm]);
 
-  // Handler: Master anexa ou substitui arquivo de documento existente
+  // Handler: Download direto do arquivo PDF para a máquina do usuário
+  const handleDownloadDoc = (doc: DocumentRecord) => {
+    if (!doc.downloadUrl) {
+      setViewingDoc(doc);
+      return;
+    }
+    const downloadUrl = doc.downloadUrl.includes("?")
+      ? `${doc.downloadUrl}&download=1`
+      : `${doc.downloadUrl}?download=1`;
+
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = doc.title.endsWith(".pdf") ? doc.title : `${doc.title}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  // Handler: Master e Escrivão anexam ou substituem arquivo de documento existente
   const handleAttachFileToDoc = async (docId: string, file: File) => {
+    if (!canManageDocs) {
+      alert("Apenas o Mestre Conselheiro ou o Escrivão possuem permissão para anexar ou substituir documentos.");
+      return;
+    }
+
     if (file.size > 20 * 1024 * 1024) {
       alert("O arquivo excede o limite de 20MB. Por favor, envie um documento menor.");
       return;
@@ -458,50 +492,47 @@ export default function DashboardDocumentosPage() {
     }
   };
 
-  // Handler: Master exclui documento existente do acervo
-  const handleDeleteDoc = async (doc: DocumentRecord) => {
-    if (userRole !== "master") {
-      alert("Apenas o Mestre Conselheiro pode excluir documentos do acervo.");
-      return;
-    }
+  // Handler: Execução da exclusão com design temático
+  const confirmDeleteDoc = async () => {
+    if (!docToDelete || !canManageDocs) return;
 
-    const confirmed = window.confirm(
-      `Deseja realmente excluir o documento "${doc.title}" do acervo capitular?\nEsta ação removerá o registro para todos os membros.`
-    );
-    if (!confirmed) return;
-
+    setIsDeleting(true);
     try {
       const supabase = createClient();
-      await supabase.from("documents").delete().eq("title", doc.title);
-    } catch (err) {
-      console.warn("Aviso ao remover documento do banco:", err);
-    }
+      await supabase.from("documents").delete().eq("title", docToDelete.title);
 
-    const newDeleted = [...deletedIds, doc.id];
-    setDeletedIds(newDeleted);
-    try {
-      localStorage.setItem("cn_deleted_doc_ids", JSON.stringify(newDeleted));
-    } catch {
-      // quota
-    }
-
-    // Se estiver em uploadedDocs, remove do estado e storage
-    setUploadedDocs((prev) => {
-      const filtered = prev.filter((d) => d.id !== doc.id);
+      const newDeleted = [...deletedIds, docToDelete.id];
+      setDeletedIds(newDeleted);
       try {
-        localStorage.setItem("cn_custom_uploaded_docs", JSON.stringify(filtered));
+        localStorage.setItem("cn_deleted_doc_ids", JSON.stringify(newDeleted));
       } catch {
         // quota
       }
-      return filtered;
-    });
 
-    if (viewingDoc?.id === doc.id) {
-      setViewingDoc(null);
+      // Se estiver em uploadedDocs, remove do estado e storage
+      setUploadedDocs((prev) => {
+        const filtered = prev.filter((d) => d.id !== docToDelete.id);
+        try {
+          localStorage.setItem("cn_custom_uploaded_docs", JSON.stringify(filtered));
+        } catch {
+          // quota
+        }
+        return filtered;
+      });
+
+      if (viewingDoc?.id === docToDelete.id) {
+        setViewingDoc(null);
+      }
+
+      setSaveSuccessMsg(`O documento "${docToDelete.title}" foi excluído com sucesso do acervo capitular.`);
+      setTimeout(() => setSaveSuccessMsg(""), 6000);
+      setDocToDelete(null);
+    } catch (err) {
+      console.error("Erro ao excluir documento:", err);
+      alert("Erro ao excluir documento.");
+    } finally {
+      setIsDeleting(false);
     }
-
-    setSaveSuccessMsg(`Documento "${doc.title}" excluído com sucesso do acervo.`);
-    setTimeout(() => setSaveSuccessMsg(""), 5000);
   };
 
   const handleCreateDocument = async (e: React.FormEvent) => {
@@ -864,16 +895,7 @@ export default function DashboardDocumentosPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-center">
-                  {/* Botão Visualizar Documento */}
-                  <button
-                    onClick={() => setViewingDoc(doc)}
-                    className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer backdrop-blur-sm"
-                  >
-                    <BookOpen className="w-3.5 h-3.5 text-[#D9AA45]" />
-                    <span>Visualizar</span>
-                  </button>
-
-                  {/* Botão Abrir ou Emitir PDF */}
+                  {/* Botão Visualizar Documento (Abre em Nova Guia) */}
                   <button
                     onClick={() => {
                       if (doc.downloadUrl) {
@@ -882,15 +904,25 @@ export default function DashboardDocumentosPage() {
                         setViewingDoc(doc);
                       }
                     }}
-                    className="px-3 py-2 rounded-xl bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 border border-[#D9AA45]/40 text-[#D9AA45] text-xs font-bold transition-all flex items-center gap-1 cursor-pointer backdrop-blur-sm"
-                    title={doc.downloadUrl ? "Abrir PDF anexado" : "Emitir e Imprimir Documento Oficial em PDF"}
+                    className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer backdrop-blur-sm"
+                    title="Visualizar documento em nova guia do navegador"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>PDF</span>
+                    <BookOpen className="w-3.5 h-3.5 text-[#D9AA45]" />
+                    <span>Visualizar</span>
                   </button>
 
-                  {/* Funções do Master: Anexar Documento Existente e Excluir */}
-                  {userRole === "master" && (
+                  {/* Botão Baixar (Download Direto) */}
+                  <button
+                    onClick={() => handleDownloadDoc(doc)}
+                    className="px-3 py-2 rounded-xl bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 border border-[#D9AA45]/40 text-[#D9AA45] text-xs font-bold transition-all flex items-center gap-1 cursor-pointer backdrop-blur-sm"
+                    title="Baixar arquivo PDF diretamente para o seu computador"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Baixar</span>
+                  </button>
+
+                  {/* Funções Administrativas: Anexar/Substituir e Excluir (Apenas Master e Escrivão) */}
+                  {canManageDocs && (
                     <>
                       <label
                         htmlFor={`attach-input-${doc.id}`}
@@ -914,7 +946,7 @@ export default function DashboardDocumentosPage() {
                       </label>
 
                       <button
-                        onClick={() => handleDeleteDoc(doc)}
+                        onClick={() => setDocToDelete(doc)}
                         className="px-2.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
                         title="Excluir documento do acervo"
                       >
@@ -1016,7 +1048,7 @@ export default function DashboardDocumentosPage() {
               </button>
 
               <div className="flex items-center gap-2">
-                {userRole === "master" && (
+                {canManageDocs && (
                   <label
                     htmlFor="modal-attach-file"
                     className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold cursor-pointer transition-colors flex items-center gap-1.5"
@@ -1046,6 +1078,73 @@ export default function DashboardDocumentosPage() {
                   <span>Imprimir / Salvar em PDF</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO (DESIGN CAPITULAR EM GLASSMORPHISM) */}
+      {docToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-gradient-to-b from-[#064D32] to-[#04281A] border border-[#D9AA45]/50 shadow-2xl p-6 text-white space-y-5 animate-in zoom-in-95">
+            {/* Cabeçalho */}
+            <div className="flex items-center gap-3.5 pb-4 border-b border-white/10">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0 shadow-lg">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white tracking-tight">
+                  Excluir Documento do Acervo
+                </h3>
+                <p className="text-[11px] text-emerald-200/70 mt-0.5">
+                  Permissão restrita: Mestre Conselheiro & Escrivão
+                </p>
+              </div>
+            </div>
+
+            {/* Cartão Informativo com Glassmorphism */}
+            <div className="p-4 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/10 space-y-2">
+              <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/30">
+                {docToDelete.type}
+              </span>
+              <p className="text-sm font-semibold text-white leading-snug">
+                {docToDelete.title}
+              </p>
+              {docToDelete.management && (
+                <p className="text-[11px] text-emerald-200/75">
+                  {docToDelete.management}
+                </p>
+              )}
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/30 text-xs text-rose-200/90 leading-relaxed space-y-1">
+              <p className="font-bold text-rose-300 flex items-center gap-1.5">
+                <span>⚠️ Confirmação Definitiva</span>
+              </p>
+              <p className="text-[11px] text-rose-200/80">
+                Ao confirmar, este documento será removido do catálogo e não poderá mais ser visualizado pelos membros.
+              </p>
+            </div>
+
+            {/* Ações */}
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setDocToDelete(null)}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteDoc}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white text-xs font-bold transition-all shadow-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isDeleting ? "Excluindo..." : "Confirmar Exclusão"}</span>
+              </button>
             </div>
           </div>
         </div>
