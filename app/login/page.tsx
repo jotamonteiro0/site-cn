@@ -34,12 +34,12 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Estado do Primeiro Acesso (Ativação por ID)
+  // Estado do Primeiro Acesso (Ativação e Criação de Senha)
   const [isFirstAccessOpen, setIsFirstAccessOpen] = useState(false);
   const [firstAccessCid, setFirstAccessCid] = useState("");
-  const [firstAccessInitialPassword, setFirstAccessInitialPassword] = useState("");
   const [firstAccessEmail, setFirstAccessEmail] = useState("");
-  const [firstAccessNewPassword, setFirstAccessNewPassword] = useState("");
+  const [firstAccessPassword, setFirstAccessPassword] = useState("");
+  const [firstAccessConfirmPassword, setFirstAccessConfirmPassword] = useState("");
   const [isSubmittingFirstAccess, setIsSubmittingFirstAccess] = useState(false);
   const [firstAccessError, setFirstAccessError] = useState("");
   const [firstAccessSuccess, setFirstAccessSuccess] = useState("");
@@ -160,11 +160,10 @@ export default function LoginPage() {
         return;
       }
 
-      // 3. Detecção de Primeiro Acesso (Senha inicial é a própria ID)
+      // 3. Detecção de Primeiro Acesso
       if (!email.trim().includes("@") && email.trim() === password.trim()) {
         setIsFirstAccessOpen(true);
         setFirstAccessCid(email.trim());
-        setFirstAccessInitialPassword(password.trim());
         setFirstAccessError("");
         setFirstAccessSuccess("");
         setIsLoading(false);
@@ -223,15 +222,26 @@ export default function LoginPage() {
     setFirstAccessError("");
     setFirstAccessSuccess("");
 
+    if (firstAccessPassword.length < 6) {
+      setFirstAccessError("A senha criada deve possuir no mínimo 6 caracteres.");
+      setIsSubmittingFirstAccess(false);
+      return;
+    }
+
+    if (firstAccessPassword !== firstAccessConfirmPassword) {
+      setFirstAccessError("A confirmação da senha não coincide com a senha criada.");
+      setIsSubmittingFirstAccess(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/auth/first-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           cid: firstAccessCid.trim(),
-          initialPassword: firstAccessInitialPassword.trim(),
           email: firstAccessEmail.trim(),
-          newPassword: firstAccessNewPassword.trim() || undefined,
+          password: firstAccessPassword.trim(),
         }),
       });
 
@@ -243,12 +253,10 @@ export default function LoginPage() {
 
       setFirstAccessSuccess(
         data.message ||
-          "Conta ativada com sucesso! Você já pode entrar com seu e-mail e nova senha."
+          "Conta ativada com sucesso! Sua senha definitiva foi criada e você já pode entrar."
       );
       setEmail(firstAccessEmail.trim());
-      if (firstAccessNewPassword.trim()) {
-        setPassword(firstAccessNewPassword.trim());
-      }
+      setPassword(firstAccessPassword.trim());
     } catch (err: any) {
       console.error("Erro no primeiro acesso:", err);
       setFirstAccessError("Falha de conexão com o servidor capitular.");
@@ -398,7 +406,8 @@ export default function LoginPage() {
               onClick={() => {
                 setIsFirstAccessOpen(true);
                 setFirstAccessCid(!email.includes("@") ? email.trim() : "");
-                setFirstAccessInitialPassword(password || (!email.includes("@") ? email.trim() : ""));
+                setFirstAccessPassword("");
+                setFirstAccessConfirmPassword("");
                 setFirstAccessError("");
                 setFirstAccessSuccess("");
               }}
@@ -408,13 +417,13 @@ export default function LoginPage() {
               <span>Primeiro acesso? Ative sua conta capitular</span>
             </button>
             <p className="text-[11px] text-emerald-200/70">
-              Sua primeira senha é sua própria ID. Cadastre seu e-mail para ativar seus acessos e receber a redefinição de senha.
+              Informe sua ID oficial e crie sua senha pessoal de acesso ao sistema.
             </p>
           </div>
         </form>
       </div>
 
-      {/* MODAL DE PRIMEIRO ACESSO / ATIVAÇÃO COM A PRÓPRIA ID */}
+      {/* MODAL DE PRIMEIRO ACESSO / CRIAÇÃO DE SENHA PESSOAL */}
       {isFirstAccessOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
           <div className="bg-[#04281A] border border-[#D9AA45] rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-white space-y-4">
@@ -431,7 +440,7 @@ export default function LoginPage() {
               </div>
               <h3 className="text-lg font-bold text-white">Primeiro Acesso Capitular</h3>
               <p className="text-xs text-emerald-200/80">
-                Sua senha inicial é sua própria ID. Cadastre seu e-mail para vincular seu perfil e alterar sua senha.
+                Ative seu perfil no Capítulo 500 e crie sua própria senha de acesso.
               </p>
             </div>
 
@@ -444,7 +453,7 @@ export default function LoginPage() {
                   onClick={() => setIsFirstAccessOpen(false)}
                   className="w-full py-2.5 rounded-lg bg-[#D9AA45] text-[#04281A] font-bold text-xs hover:bg-amber-400 transition-all cursor-pointer"
                 >
-                  Ir para a tela de Login
+                  Entrar no Sistema
                 </button>
               </div>
             ) : (
@@ -457,31 +466,12 @@ export default function LoginPage() {
                     type="text"
                     required
                     value={firstAccessCid}
-                    onChange={(e) => {
-                      setFirstAccessCid(e.target.value);
-                      if (!firstAccessInitialPassword) {
-                        setFirstAccessInitialPassword(e.target.value);
-                      }
-                    }}
-                    placeholder="Ex: 148194 ou 127738"
-                    className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-emerald-200 font-semibold mb-1">
-                    Senha Inicial (Sua Própria ID) *
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={firstAccessInitialPassword}
-                    onChange={(e) => setFirstAccessInitialPassword(e.target.value)}
-                    placeholder="Digite sua própria ID"
-                    className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                    onChange={(e) => setFirstAccessCid(e.target.value)}
+                    placeholder="Ex: 127738 ou 148194"
+                    className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-white/20 text-white font-mono focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
                   />
                   <span className="text-[10px] text-gray-400 block mt-0.5">
-                    A primeira senha provisória padrão é o mesmo número da sua ID.
+                    Número do seu registro oficial no SISDM / DeMolay Brasil.
                   </span>
                 </div>
 
@@ -498,24 +488,38 @@ export default function LoginPage() {
                     className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
                   />
                   <span className="text-[10px] text-gray-400 block mt-0.5">
-                    Você receberá o link para alterar sua senha neste e-mail.
+                    Este e-mail será vinculado ao seu perfil para notificações e acesso.
                   </span>
                 </div>
 
                 <div>
                   <label className="block text-emerald-200 font-semibold mb-1">
-                    Nova Senha Definitiva (Opcional)
+                    Crie Sua Senha de Acesso *
                   </label>
                   <input
                     type="password"
-                    value={firstAccessNewPassword}
-                    onChange={(e) => setFirstAccessNewPassword(e.target.value)}
-                    placeholder="Crie sua nova senha pessoal"
+                    required
+                    minLength={6}
+                    value={firstAccessPassword}
+                    onChange={(e) => setFirstAccessPassword(e.target.value)}
+                    placeholder="Crie sua senha (mínimo 6 dígitos)"
                     className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
                   />
-                  <span className="text-[10px] text-gray-400 block mt-0.5">
-                    Se deixar em branco, o link de alteração de senha será enviado ao seu e-mail.
-                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-emerald-200 font-semibold mb-1">
+                    Confirme Sua Senha *
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={firstAccessConfirmPassword}
+                    onChange={(e) => setFirstAccessConfirmPassword(e.target.value)}
+                    placeholder="Repita a mesma senha criada acima"
+                    className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  />
                 </div>
 
                 {firstAccessError && (
@@ -537,7 +541,7 @@ export default function LoginPage() {
                     disabled={isSubmittingFirstAccess}
                     className="px-5 py-2.5 rounded-lg bg-[#D9AA45] hover:bg-amber-400 text-black font-bold cursor-pointer disabled:opacity-50 transition-all shadow"
                   >
-                    {isSubmittingFirstAccess ? "Ativando..." : "Cadastrar E-mail e Ativar"}
+                    {isSubmittingFirstAccess ? "Ativando..." : "Ativar Conta e Criar Senha"}
                   </button>
                 </div>
               </form>

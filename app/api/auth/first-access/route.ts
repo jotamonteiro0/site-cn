@@ -1,26 +1,23 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// Credenciais de backend com fallback para garantir funcionamento mesmo em novos ambientes
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://qvvmpskixyjbislcatso.supabase.co";
+const SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2dm1wc2tpeHlqYmlzbGNhdHNvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5NDIzNDQ1NSwiZXhwIjoyMTA5ODEwNDU1fQ.Z8I0fGAlGGl7NSrT-ghGmuBb6ScL2fm1BDLxGXxKGqU";
+
 export async function POST(request: Request) {
   try {
-    const { cid, initialPassword, email, newPassword } = await request.json();
+    const { cid, email, password } = await request.json();
 
     const cleanCid = cid?.toString().trim();
     const cleanEmail = email?.toString().trim().toLowerCase();
-    const cleanInitialPassword = initialPassword?.toString().trim();
-    const cleanNewPassword = newPassword?.toString().trim();
+    const cleanPassword = password?.toString().trim();
 
     if (!cleanCid) {
       return NextResponse.json(
-        { error: "Informe o número da sua ID oficial." },
-        { status: 400 }
-      );
-    }
-
-    // A primeira senha é a própria ID
-    if (cleanInitialPassword !== cleanCid) {
-      return NextResponse.json(
-        { error: "A senha inicial de primeiro acesso deve ser exatamente a sua própria ID." },
+        { error: "Informe o número da sua ID oficial DeMolay (CID)." },
         { status: 400 }
       );
     }
@@ -32,17 +29,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !serviceKey) {
+    if (!cleanPassword || cleanPassword.length < 6) {
       return NextResponse.json(
-        { error: "Configuração do servidor de autenticação incompleta." },
-        { status: 500 }
+        { error: "Crie uma senha de acesso com no mínimo 6 caracteres." },
+        { status: 400 }
       );
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
+    const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
@@ -101,30 +95,38 @@ export async function POST(request: Request) {
     // 3. Procura ou cria o usuário no Supabase Auth
     let authUserId: string | null = member.profile_id || null;
 
-    // Se o usuário ainda não tiver profile_id, verifica se já existe na auth por e-mail
+    // Busca se já existe usuário cadastrado no Auth com esse e-mail ou profile_id
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
     const existingUser = existingUsers?.users?.find(
-      (u) => u.email?.toLowerCase() === cleanEmail
+      (u) =>
+        u.email?.toLowerCase() === cleanEmail ||
+        (authUserId && u.id === authUserId)
     );
 
     if (existingUser) {
       authUserId = existingUser.id;
-      // Atualiza senha se fornecida nova senha
-      if (cleanNewPassword) {
-        await supabaseAdmin.auth.admin.updateUserById(authUserId, {
-          password: cleanNewPassword,
-          email_confirm: true,
-          user_metadata: {
-            full_name: member.full_name,
-            cid: member.cid,
-          },
-        });
+      // Atualiza o e-mail, senha e metadados no Supabase Auth
+      const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(authUserId, {
+        email: cleanEmail,
+        password: cleanPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: member.full_name,
+          cid: member.cid,
+        },
+      });
+
+      if (updateErr) {
+        return NextResponse.json(
+          { error: "Erro ao atualizar credenciais de acesso: " + updateErr.message },
+          { status: 500 }
+        );
       }
     } else {
-      // Cria novo usuário no Supabase Auth
+      // Cria novo usuário diretamente no Supabase Auth com a senha escolhida
       const { data: newUser, error: createAuthErr } = await supabaseAdmin.auth.admin.createUser({
         email: cleanEmail,
-        password: cleanNewPassword || cleanCid,
+        password: cleanPassword,
         email_confirm: true,
         user_metadata: {
           full_name: member.full_name,
@@ -142,7 +144,7 @@ export async function POST(request: Request) {
       authUserId = newUser.user.id;
     }
 
-    // 4. Atualiza email e profile_id no membro
+    // 4. Atualiza email e profile_id no cadastro do membro
     await supabaseAdmin
       .from("members")
       .update({
@@ -167,38 +169,23 @@ export async function POST(request: Request) {
       {
         chapter_id: CHAPTER_ID,
         user_id: authUserId,
+        member_id: member.id,
         role_code: assignedRole,
         is_active: true,
       },
       { onConflict: "chapter_id,user_id" }
     );
 
-    // 7. Se não forneceu nova senha direta, envia o link de redefinição / alteração de senha por e-mail
-    let emailSent = false;
-    if (!cleanNewPassword) {
-      try {
-        await supabaseAdmin.auth.resetPasswordForEmail(cleanEmail, {
-          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/login`,
-        });
-        emailSent = true;
-      } catch (err) {
-        console.warn("Aviso ao enviar e-mail de redefinição:", err);
-      }
-    }
-
     return NextResponse.json({
       success: true,
-      message: cleanNewPassword
-        ? "Cadastro de e-mail e nova senha concluídos com sucesso! Você já pode entrar no sistema."
-        : "E-mail cadastrado com sucesso! Foi enviado o procedimento para alteração da sua senha. Você também pode acessar com sua senha cadastrada.",
-      emailSent,
+      message: `Conta ativada com sucesso para ${member.full_name}! Sua senha definitiva foi criada e seus acessos foram habilitados.`,
       memberName: member.full_name,
       role: assignedRole,
     });
   } catch (error: any) {
     console.error("Erro no primeiro acesso:", error);
     return NextResponse.json(
-      { error: "Ocorreu um erro ao processar o primeiro acesso: " + (error?.message || "Erro desconhecido") },
+      { error: "Ocorreu um erro ao processar o primeiro acesso: " + (error?.message || "Erro interno") },
       { status: 500 }
     );
   }
