@@ -258,6 +258,7 @@ const gestaoDocuments: DocumentRecord[] = [
 
 export default function DashboardDocumentosPage() {
   const [userRole, setUserRole] = useState<string>("membro");
+  const [viewAsMember, setViewAsMember] = useState(false);
   const [activeTab, setActiveTab] = useState<"todos" | "cerimonias" | "manuais" | "gestoes">("todos");
   const [selectedManagement, setSelectedManagement] = useState<string>("todas");
   const [searchTerm, setSearchTerm] = useState("");
@@ -333,9 +334,31 @@ export default function DashboardDocumentosPage() {
     loadRole();
   }, []);
 
-  // Membro não publica, não substitui e não apaga documento; somente Master e Escrivão
-  const canPublish = userRole === "master" || userRole === "escrivao";
-  const canManageDocs = userRole === "master" || userRole === "escrivao";
+  // Sincroniza o modo "Ver como Membro" com a Sidebar e localStorage
+  useEffect(() => {
+    const checkViewAsMember = () => {
+      try {
+        const stored = localStorage.getItem("cn_view_as_member");
+        setViewAsMember(stored === "true");
+      } catch {
+        // storage quota fallback
+      }
+    };
+    const frameId = requestAnimationFrame(checkViewAsMember);
+    window.addEventListener("cn_view_as_member_change", checkViewAsMember);
+    window.addEventListener("storage", checkViewAsMember);
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("cn_view_as_member_change", checkViewAsMember);
+      window.removeEventListener("storage", checkViewAsMember);
+    };
+  }, []);
+
+  // Papel efetivo considerando o alternador de visualização "Ver como Membro"
+  const effectiveRole = viewAsMember ? "membro" : userRole;
+  // Membro comum não publica, não substitui e não apaga documento; somente Master e Escrivão
+  const canPublish = effectiveRole === "master" || effectiveRole === "escrivao";
+  const canManageDocs = effectiveRole === "master" || effectiveRole === "escrivao";
 
   // Monta catálogo consolidado
   const allCatalog = useMemo(() => {

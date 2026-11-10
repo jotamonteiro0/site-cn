@@ -36,6 +36,7 @@ export default function MembrosPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<string>("membro");
+  const [viewAsMember, setViewAsMember] = useState(false);
 
   // Modal para habilitar novo membro
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -77,8 +78,29 @@ export default function MembrosPage() {
     loadRole();
   }, []);
 
-  const canManageMembers = userRole === "master" || userRole === "escrivao";
-  const canViewMaioridade = userRole === "master"; // somente mestre conselheiro / PCC
+  // Sincroniza o modo "Ver como Membro" com a Sidebar e localStorage
+  useEffect(() => {
+    const checkViewAsMember = () => {
+      try {
+        const stored = localStorage.getItem("cn_view_as_member");
+        setViewAsMember(stored === "true");
+      } catch {
+        // ignore
+      }
+    };
+    const frameId = requestAnimationFrame(checkViewAsMember);
+    window.addEventListener("cn_view_as_member_change", checkViewAsMember);
+    window.addEventListener("storage", checkViewAsMember);
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("cn_view_as_member_change", checkViewAsMember);
+      window.removeEventListener("storage", checkViewAsMember);
+    };
+  }, []);
+
+  const effectiveRole = viewAsMember ? "membro" : userRole;
+  const canManageMembers = effectiveRole === "master" || effectiveRole === "escrivao";
+  const canViewMaioridade = effectiveRole === "master"; // somente mestre conselheiro / PCC
 
   // Helper para cálculo de idade e maioridade (aos 21 anos)
   const calculateAgeInfo = (birthDateStr?: string) => {

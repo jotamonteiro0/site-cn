@@ -62,8 +62,31 @@ export default function TesourariaPage() {
   const [feedbackMsg, setFeedbackMsg] = useState("");
 
   // Permissões de Acesso (RBAC Guard)
-  const [userRole, setUserRole] = useState<string>("master");
+  const [userRole, setUserRole] = useState<string>("membro");
+  const [viewAsMember, setViewAsMember] = useState(false);
   const [isRoleChecked, setIsRoleChecked] = useState(false);
+
+  // Sincroniza o modo "Ver como Membro" com a Sidebar e localStorage
+  useEffect(() => {
+    const checkViewAsMember = () => {
+      try {
+        const stored = localStorage.getItem("cn_view_as_member");
+        setViewAsMember(stored === "true");
+      } catch {
+        // ignore
+      }
+    };
+    const frameId = requestAnimationFrame(checkViewAsMember);
+    window.addEventListener("cn_view_as_member_change", checkViewAsMember);
+    window.addEventListener("storage", checkViewAsMember);
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("cn_view_as_member_change", checkViewAsMember);
+      window.removeEventListener("storage", checkViewAsMember);
+    };
+  }, []);
+
+  const effectiveRole = viewAsMember ? "membro" : userRole;
 
   // Modais
   const [isPixModalOpen, setIsPixModalOpen] = useState(false);
@@ -471,7 +494,7 @@ export default function TesourariaPage() {
   }, [charges, activeSheet, statusFilter, searchTerm]);
 
   // Se o usuário não for Tesoureiro nem Master, bloqueia visualização de dados financeiros
-  if (isRoleChecked && userRole !== "master" && userRole !== "tesoureiro") {
+  if (isRoleChecked && effectiveRole !== "master" && effectiveRole !== "tesoureiro") {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
         <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 shadow-xl">

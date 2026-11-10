@@ -80,7 +80,8 @@ export default function NominataPage() {
   const [selectedManagementId, setSelectedManagementId] = useState<string>("");
   const [positions, setPositions] = useState<Position[]>([]);
   const [members, setMembers] = useState<MemberOption[]>([]);
-  const [userRole, setUserRole] = useState<string>("master");
+  const [userRole, setUserRole] = useState<string>("membro");
+  const [viewAsMember, setViewAsMember] = useState(false);
   const [isRoleChecked, setIsRoleChecked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -277,8 +278,29 @@ export default function NominataPage() {
     return managements.find((m) => m.id === selectedManagementId);
   }, [managements, selectedManagementId]);
 
-  const canEdit = userRole === "master" || userRole === "escrivao";
-  const canCreateMgmt = userRole === "master";
+  // Sincroniza o modo "Ver como Membro" com a Sidebar e localStorage
+  useEffect(() => {
+    const checkViewAsMember = () => {
+      try {
+        const stored = localStorage.getItem("cn_view_as_member");
+        setViewAsMember(stored === "true");
+      } catch {
+        // ignore
+      }
+    };
+    const frameId = requestAnimationFrame(checkViewAsMember);
+    window.addEventListener("cn_view_as_member_change", checkViewAsMember);
+    window.addEventListener("storage", checkViewAsMember);
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("cn_view_as_member_change", checkViewAsMember);
+      window.removeEventListener("storage", checkViewAsMember);
+    };
+  }, []);
+
+  const effectiveRole = viewAsMember ? "membro" : userRole;
+  const canEdit = effectiveRole === "master" || effectiveRole === "escrivao";
+  const canCreateMgmt = effectiveRole === "master";
 
   // 4. Salvar / Atribuir Oficial à Posição (Dispara Transferência Automática de Acesso)
   const handleAssignMember = async (positionName: string, memberId: string) => {

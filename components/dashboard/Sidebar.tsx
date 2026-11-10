@@ -69,6 +69,20 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      try {
+        const stored = localStorage.getItem("cn_view_as_member");
+        if (stored === "true") {
+          setViewAsMember(true);
+        }
+      } catch {
+        // storage quota fallback
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
     async function loadUser() {
       try {
         const supabase = createClient();
@@ -243,7 +257,16 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
               <span className="text-xs text-emerald-200">Ver como Membro</span>
             </div>
             <button
-              onClick={() => setViewAsMember(!viewAsMember)}
+              onClick={() => {
+                const nextState = !viewAsMember;
+                setViewAsMember(nextState);
+                try {
+                  localStorage.setItem("cn_view_as_member", String(nextState));
+                  window.dispatchEvent(new Event("cn_view_as_member_change"));
+                } catch {
+                  // ignore
+                }
+              }}
               className={`w-9 h-5 rounded-full transition-colors relative p-0.5 ${
                 viewAsMember ? "bg-[#D9AA45]" : "bg-white/20"
               }`}
