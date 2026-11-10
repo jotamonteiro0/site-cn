@@ -6,12 +6,14 @@ export async function POST(req: NextRequest) {
   try {
     const payload = await req.json();
 
-    // Verificação de segurança (Webhook Secret ou Token se configurado)
+    // Verificação estrita de segurança (Webhook Secret ou Token)
     const secret = req.headers.get("x-infinitepay-signature") || req.headers.get("authorization");
     const configuredSecret = process.env.INFINITEPAY_WEBHOOK_SECRET;
 
-    if (configuredSecret && secret && !secret.includes(configuredSecret)) {
-      return NextResponse.json({ error: "Assinatura do webhook inválida" }, { status: 401 });
+    if (configuredSecret) {
+      if (!secret || !secret.includes(configuredSecret)) {
+        return NextResponse.json({ error: "Assinatura ou token do webhook inválido" }, { status: 401 });
+      }
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
