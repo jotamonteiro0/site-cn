@@ -108,12 +108,12 @@ export default function DashboardOverviewPage() {
       {/* HEADER EXECUTIVO */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/40">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="selo-vidro-cn px-3 py-1 rounded-full text-[11px] font-bold text-[#D9AA45] tracking-wider uppercase">
               Gestão XXIII • 2025.2 / 2026
             </span>
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-emerald-300">Conexão Oficial Ativa</span>
+            <span className="text-xs text-emerald-300 font-medium">Conexão Oficial Ativa</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             Visão Geral do Capítulo
@@ -127,14 +127,14 @@ export default function DashboardOverviewPage() {
         <div className="flex items-center gap-2.5">
           <Link
             href="/dashboard/chamada"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#087443] hover:bg-[#087443]/80 border border-[#D9AA45]/50 text-white font-semibold text-xs transition-all shadow-md cursor-pointer"
+            className="btn-heraldico-esmeralda px-4 py-2.5 rounded-xl text-xs"
           >
             <ClipboardCheck className="w-4 h-4 text-[#D9AA45]" />
             <span>Frequência & Chamada</span>
           </Link>
           <Link
             href="/dashboard/membros"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-xs transition-all cursor-pointer"
+            className="btn-heraldico-vidro px-4 py-2.5 rounded-xl text-xs"
           >
             <UserPlus className="w-4 h-4 text-emerald-300" />
             <span>Novo Membro</span>
@@ -142,23 +142,23 @@ export default function DashboardOverviewPage() {
         </div>
       </div>
 
-      {/* MÉTRICAS PRINCIPAIS (4 CARDS) */}
+      {/* MÉTRICAS PRINCIPAIS (4 CARDS HERÁLDICOS) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: DeMolays Ativos */}
         <Link
           href="/dashboard/membros"
-          className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:border-emerald-500/50 transition-all group"
+          className="card-heraldico-dark p-5 rounded-2xl group cursor-pointer"
         >
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-200/80">
               DeMolays Ativos
             </span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <p className="text-3xl font-extrabold text-white">{demolaysAtivos.length}</p>
-          <p className="text-[11px] text-emerald-300 mt-1 flex items-center gap-1">
+          <p className="text-[11px] text-emerald-300 mt-1 flex items-center gap-1 font-medium">
             <span>Ver quadro completo</span>
             <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
           </p>
@@ -167,18 +167,18 @@ export default function DashboardOverviewPage() {
         {/* Card 2: Conselho Consultivo */}
         <Link
           href="/dashboard/conselho"
-          className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:border-amber-500/50 transition-all group"
+          className="card-heraldico-dark p-5 rounded-2xl group cursor-pointer"
         >
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-amber-200/80">
               Conselho Consultivo
             </span>
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-[#D9AA45] flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[#D9AA45] flex items-center justify-center group-hover:scale-110 transition-transform">
               <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
           <p className="text-3xl font-extrabold text-white">{macons.length}</p>
-          <p className="text-[11px] text-[#D9AA45] mt-1 flex items-center gap-1">
+          <p className="text-[11px] text-[#D9AA45] mt-1 flex items-center gap-1 font-medium">
             <span>4 Lojas patrocinadoras</span>
             <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
           </p>
@@ -187,18 +187,18 @@ export default function DashboardOverviewPage() {
         {/* Card 3: Sêniores DeMolay */}
         <Link
           href="/dashboard/membros"
-          className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:border-blue-500/50 transition-all group"
+          className="card-heraldico-dark p-5 rounded-2xl group cursor-pointer"
         >
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-200/80">
               Sêniores DeMolay
             </span>
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <p className="text-3xl font-extrabold text-white">{seniores.length}</p>
-          <p className="text-[11px] text-blue-300 mt-1 flex items-center gap-1">
+          <p className="text-[11px] text-blue-300 mt-1 flex items-center gap-1 font-medium">
             <span>Alumni capitular</span>
             <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
           </p>
@@ -207,18 +207,18 @@ export default function DashboardOverviewPage() {
         {/* Card 4: Mensalidade Capitular */}
         <Link
           href="/dashboard/tesouraria"
-          className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:border-emerald-500/50 transition-all group"
+          className="card-heraldico-dark p-5 rounded-2xl group cursor-pointer"
         >
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-200/80">
               Mensalidade
             </span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
           <p className="text-2xl font-extrabold text-white">R$ 22 / R$ 25</p>
-          <p className="text-[11px] text-emerald-300 mt-1 flex items-center justify-between">
+          <p className="text-[11px] text-emerald-300 mt-1 flex items-center justify-between font-medium">
             <span>DM R$ 22 • Maçom R$ 25 (Dia 28)</span>
             <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform shrink-0" />
           </p>
@@ -227,24 +227,24 @@ export default function DashboardOverviewPage() {
 
       {/* CARD DE DESTAQUE: PRÓXIMA SESSÃO OFICIAL */}
       {nextMeeting && (
-        <div className="p-6 rounded-3xl bg-gradient-to-r from-[#064D32] to-[#04281A] border border-[#D9AA45]/40 shadow-xl space-y-4">
+        <div className="card-heraldico-dark p-6 sm:p-7 rounded-3xl border border-[#D9AA45]/50 shadow-2xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#D9AA45] text-[#04281A] uppercase tracking-wider">
+              <span className="px-3 py-1 rounded-full text-[11px] font-black bg-[#D9AA45] text-[#04281A] uppercase tracking-wider shadow-sm">
                 Próxima Sessão do Capítulo
               </span>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-white mt-2">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-white mt-2.5">
                 {nextMeeting.title}
               </h2>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2.5">
               {/* Botão Google Agenda */}
               <a
                 href={getGoogleCalendarUrl(nextMeeting)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold transition-all cursor-pointer"
+                className="btn-heraldico-vidro px-3.5 py-2.5 rounded-xl text-xs"
               >
                 <CalendarCheck className="w-4 h-4 text-[#D9AA45]" />
                 <span>Google Agenda</span>
@@ -254,7 +254,7 @@ export default function DashboardOverviewPage() {
               {/* Botão Chamada */}
               <Link
                 href="/dashboard/chamada"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs transition-all shadow-md cursor-pointer"
+                className="btn-heraldico-ouro px-4 py-2.5 rounded-xl text-xs"
               >
                 <ClipboardCheck className="w-4 h-4" />
                 <span>Fazer Chamada</span>
@@ -297,10 +297,10 @@ export default function DashboardOverviewPage() {
           {/* Módulo 1: Reuniões, Atas & Chamada */}
           <Link
             href="/dashboard/chamada"
-            className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:border-emerald-500/40 hover:bg-white/[0.07] transition-all flex flex-col justify-between group"
+            className="card-heraldico-dark p-6 rounded-2xl flex flex-col justify-between group cursor-pointer"
           >
             <div>
-              <div className="w-10 h-10 rounded-xl bg-[#087443]/20 border border-[#087443]/40 text-emerald-300 flex items-center justify-center mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#087443]/20 border border-[#087443]/40 text-emerald-300 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                 <ClipboardCheck className="w-5 h-5 text-[#D9AA45]" />
               </div>
               <h4 className="text-base font-bold text-white group-hover:text-emerald-300 transition-colors">
@@ -319,10 +319,10 @@ export default function DashboardOverviewPage() {
           {/* Módulo 2: Quadro de Membros */}
           <Link
             href="/dashboard/membros"
-            className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:border-emerald-500/40 hover:bg-white/[0.07] transition-all flex flex-col justify-between group"
+            className="card-heraldico-dark p-6 rounded-2xl flex flex-col justify-between group cursor-pointer"
           >
             <div>
-              <div className="w-10 h-10 rounded-xl bg-[#087443]/20 border border-[#087443]/40 text-emerald-300 flex items-center justify-center mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#087443]/20 border border-[#087443]/40 text-emerald-300 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                 <Users className="w-5 h-5 text-[#D9AA45]" />
               </div>
               <h4 className="text-base font-bold text-white group-hover:text-emerald-300 transition-colors">
@@ -341,10 +341,10 @@ export default function DashboardOverviewPage() {
           {/* Módulo 3: Conselho Consultivo */}
           <Link
             href="/dashboard/conselho"
-            className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:border-amber-500/40 hover:bg-white/[0.07] transition-all flex flex-col justify-between group"
+            className="card-heraldico-dark p-6 rounded-2xl flex flex-col justify-between group cursor-pointer"
           >
             <div>
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 text-[#D9AA45] flex items-center justify-center mb-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 text-[#D9AA45] flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                 <Building2 className="w-5 h-5 text-[#D9AA45]" />
               </div>
               <h4 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors">

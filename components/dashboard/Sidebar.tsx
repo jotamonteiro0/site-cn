@@ -277,11 +277,11 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
         {/* Topo: Identificação do Capítulo */}
         <div className="p-6 border-b border-white/10">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-[#087443] border border-[#D9AA45]/60 flex items-center justify-center text-[#D9AA45] shadow-md group-hover:scale-105 transition-transform">
-              <Shield className="w-6 h-6" />
+            <div className="brasao-shimmer-container w-10 h-10 rounded-xl bg-[#087443] border border-[#D9AA45] flex items-center justify-center text-[#D9AA45] shadow-[0_0_15px_rgba(217,170,69,0.35)] group-hover:scale-105 transition-transform">
+              <Shield className="w-6 h-6 drop-shadow-[0_0_6px_rgba(217,170,69,0.6)]" />
             </div>
             <div>
-              <span className="block text-[10px] uppercase tracking-widest text-[#D9AA45] font-bold">
+              <span className="block text-[10px] uppercase tracking-widest text-[#D9AA45] font-black font-mono">
                 Capítulo Nº 500
               </span>
               <span className="block text-sm font-bold text-white tracking-tight leading-tight">
@@ -291,7 +291,7 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
           </Link>
 
           {/* Alternador Master "Ver como Membro" */}
-          <div className="mt-5 p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+          <div className="mt-5 p-2.5 rounded-xl bg-white/[0.04] backdrop-blur-sm border border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Eye className="w-3.5 h-3.5 text-[#D9AA45]" />
               <span className="text-xs text-emerald-200">Ver como Membro</span>
@@ -332,8 +332,8 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
                 onClick={() => setIsOpen(false)}
                 className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-all ${
                   isActive
-                    ? "bg-[#087443] text-white shadow-md border border-[#D9AA45]/40"
-                    : "text-emerald-100/80 hover:bg-white/5 hover:text-white"
+                    ? "bg-gradient-to-r from-[#087443] to-[#064D32] text-white shadow-lg border border-[#D9AA45]/60"
+                    : "text-emerald-100/80 hover:bg-white/[0.06] hover:text-white hover:translate-x-1"
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -353,8 +353,8 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
 
         {/* Rodapé: Perfil Logado & Ações */}
         <div className="p-4 border-t border-white/10 space-y-3">
-          {/* Cartão de Identificação do Membro com Glassmorphism e Foto */}
-          <div className="p-3 rounded-xl bg-white/[0.06] backdrop-blur-md border border-white/10 hover:border-[#D9AA45]/40 transition-colors flex items-center gap-3 shadow-inner group">
+          {/* Cartão de Identificação do Membro com Glassmorphism Heráldico e Foto */}
+          <div className="p-3 rounded-xl selo-vidro-cn hover:border-[#D9AA45]/60 transition-colors flex items-center gap-3 shadow-lg group">
             {/* Avatar com Botão de Upload de Foto Instantâneo */}
             <div className="relative shrink-0">
               <div className="w-10 h-10 rounded-full bg-[#087443] border border-[#D9AA45] flex items-center justify-center font-bold text-white text-xs overflow-hidden shadow-md">
@@ -394,7 +394,7 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
               <p className="text-xs font-bold text-white truncate flex items-center gap-1">
                 <span>{displayName}</span>
               </p>
-              <p className="text-[10px] text-[#D9AA45] font-medium truncate">
+              <p className="text-[10px] text-[#D9AA45] font-semibold truncate font-mono">
                 {viewAsMember ? "Visualizando como Membro" : `Perfil: ${roleLabels[currentRole] || currentRole}`}
               </p>
             </Link>
@@ -404,9 +404,9 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
           <div className="grid grid-cols-2 gap-2 text-xs">
             <Link
               href="/"
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-emerald-200 transition-colors"
+              className="btn-heraldico-vidro py-2 px-3 rounded-lg text-emerald-200"
             >
-              <ExternalLink className="w-3.5 h-3.5" />
+              <ExternalLink className="w-3.5 h-3.5 text-[#D9AA45]" />
               <span>Ver Site</span>
             </Link>
             <button

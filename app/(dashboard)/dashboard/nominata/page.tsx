@@ -491,7 +491,7 @@ export default function NominataPage() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setIsNewManagementModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-xs transition-all cursor-pointer shadow-md"
+              className="btn-heraldico-esmeralda px-4 py-2.5 rounded-xl text-xs"
             >
               <PlusCircle className="w-4 h-4 text-[#D9AA45]" />
               <span>Cadastrar Nova Gestão</span>
@@ -509,7 +509,7 @@ export default function NominataPage() {
       )}
 
       {/* SELETOR DE GESTÃO (ATUAL E GESTÕES ANTERIORES) */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+      <div className="card-heraldico-dark p-5 sm:p-6 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#D9AA45]">
@@ -536,7 +536,7 @@ export default function NominataPage() {
               <span
                 className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
                   selectedManagement.status === "ativa"
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                    ? "selo-vidro-cn text-emerald-300 border-emerald-500/40"
                     : selectedManagement.status === "planejada"
                     ? "bg-blue-500/20 text-blue-300 border border-blue-500/40"
                     : "bg-gray-500/20 text-gray-300 border border-gray-500/40"
@@ -565,9 +565,9 @@ export default function NominataPage() {
           <button
             onClick={handleActivateManagement}
             disabled={isSaving}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            className="btn-heraldico-ouro px-4 py-2.5 rounded-xl text-xs disabled:opacity-50"
           >
-            <KeyRound className="w-4 h-4 text-[#D9AA45]" />
+            <KeyRound className="w-4 h-4" />
             <span>Ativar Esta Gestão Oficialmente</span>
           </button>
         )}

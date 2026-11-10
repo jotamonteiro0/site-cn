@@ -737,7 +737,7 @@ export default function ChamadaPage() {
               });
               setIsMeetingModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-xs transition-all cursor-pointer"
+            className="btn-heraldico-vidro px-3.5 py-2 rounded-xl text-xs"
           >
             <PlusCircle className="w-4 h-4 text-[#D9AA45]" />
             <span>Nova Reunião</span>
@@ -747,7 +747,7 @@ export default function ChamadaPage() {
             <button
               onClick={handleSaveAttendance}
               disabled={isSaving}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs transition-all shadow-md disabled:opacity-50 cursor-pointer"
+              className="btn-heraldico-ouro px-4 py-2 rounded-xl text-xs disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
               <span>{isSaving ? "Salvando..." : "Salvar Chamada"}</span>
@@ -756,7 +756,7 @@ export default function ChamadaPage() {
             <button
               onClick={handleSaveMinute}
               disabled={isSavingMinute}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs transition-all shadow-md disabled:opacity-50 cursor-pointer"
+              className="btn-heraldico-ouro px-4 py-2 rounded-xl text-xs disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
               <span>{isSavingMinute ? "Salvando..." : "Salvar Ata Oficial"}</span>
@@ -773,8 +773,8 @@ export default function ChamadaPage() {
         </div>
       )}
 
-      {/* SELETOR DE REUNIÃO / CALENDÁRIO */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-4">
+      {/* SELETOR DE REUNIÃO / CALENDÁRIO (ESTILO HERÁLDICO DARK) */}
+      <div className="card-heraldico-dark p-5 sm:p-6 rounded-2xl space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#D9AA45]">
@@ -811,7 +811,7 @@ export default function ChamadaPage() {
                 href={getGoogleCalendarUrl(selectedMeeting)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-800/40 hover:bg-emerald-800/60 border border-emerald-500/30 text-white text-xs font-semibold transition-all cursor-pointer"
+                className="btn-heraldico-vidro px-3.5 py-2 rounded-xl text-xs"
                 title="Adicionar ao Google Agenda"
               >
                 <CalendarCheck className="w-4 h-4 text-[#D9AA45]" />
@@ -822,7 +822,7 @@ export default function ChamadaPage() {
               {/* Botão Convocação */}
               <button
                 onClick={() => setIsConvocationModalOpen(true)}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold transition-all cursor-pointer"
+                className="btn-heraldico-vidro px-3.5 py-2 rounded-xl text-xs"
               >
                 <Mail className="w-4 h-4 text-emerald-300" />
                 <span>Convocação Oficial</span>
@@ -834,7 +834,7 @@ export default function ChamadaPage() {
                   href={minuteData.storage_path || selectedMeeting.ata_pdf_url || "#"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 border border-[#D9AA45]/50 text-[#D9AA45] text-xs font-bold transition-all cursor-pointer"
+                  className="selo-vidro-cn px-3.5 py-2 rounded-xl text-[#D9AA45] text-xs font-bold transition-all flex items-center gap-2"
                   title="Abrir Ata Oficial assinada em PDF"
                 >
                   <FileText className="w-4 h-4" />
@@ -856,7 +856,7 @@ export default function ChamadaPage() {
                   });
                   setIsMeetingModalOpen(true);
                 }}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-semibold transition-all cursor-pointer"
+                className="btn-heraldico-vidro px-3 py-2 rounded-xl text-xs"
               >
                 <Edit2 className="w-3.5 h-3.5 text-[#D9AA45]" />
                 <span>Editar Reunião</span>

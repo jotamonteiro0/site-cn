@@ -278,6 +278,135 @@ body {
   backdrop-filter: blur(8px);
 }
 
+/* 7. Cards Heráldicos Dark (Ambiente Dashboard) */
+.card-heraldico-dark {
+  position: relative;
+  overflow: hidden;
+  background: rgba(4, 40, 26, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(217, 170, 69, 0.22);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-heraldico-dark::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #087443 0%, #D9AA45 50%, #087443 100%);
+  opacity: 0.8;
+  transition: height 0.25s ease, opacity 0.25s ease;
+}
+
+.card-heraldico-dark:hover {
+  transform: translateY(-2px);
+  border-color: rgba(217, 170, 69, 0.5);
+  background: rgba(4, 40, 26, 0.65);
+  box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.5), 0 0 20px -6px rgba(217, 170, 69, 0.2);
+}
+
+.card-heraldico-dark:hover::before {
+  height: 4px;
+  opacity: 1;
+}
+
+/* 8. Botões Heráldicos Dourados, Esmeralda e Vidro */
+.btn-heraldico-ouro {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #E5BA55 0%, #D9AA45 50%, #B8860B 100%);
+  color: #04281A;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 14px -2px rgba(217, 170, 69, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.5);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-heraldico-ouro:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px -2px rgba(217, 170, 69, 0.6), inset 0 1px 2px 0 rgba(255, 255, 255, 0.7);
+  filter: brightness(1.05);
+}
+
+.btn-heraldico-ouro:active {
+  transform: translateY(0);
+}
+
+.btn-heraldico-ouro::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  transition: 0.5s ease;
+}
+
+.btn-heraldico-ouro:hover::after {
+  left: 140%;
+}
+
+.btn-heraldico-esmeralda {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #087443 0%, #064D32 100%);
+  color: #ffffff;
+  font-weight: 600;
+  border: 1px solid rgba(217, 170, 69, 0.45);
+  box-shadow: 0 4px 14px -2px rgba(6, 77, 50, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-heraldico-esmeralda:hover {
+  transform: translateY(-1px);
+  border-color: rgba(217, 170, 69, 0.75);
+  box-shadow: 0 6px 20px -2px rgba(6, 77, 50, 0.6), 0 0 14px -2px rgba(217, 170, 69, 0.3);
+  filter: brightness(1.08);
+}
+
+.btn-heraldico-esmeralda:active {
+  transform: translateY(0);
+}
+
+.btn-heraldico-vidro {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #ffffff;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.25);
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.btn-heraldico-vidro:hover {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(217, 170, 69, 0.45);
+  transform: translateY(-1px);
+}
+
 /* Regras de Impressão Oficial de Documentos & Declarações (A4) */
 @media print {
   body {

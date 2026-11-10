@@ -540,7 +540,7 @@ export default function TesourariaPage() {
           {/* Botão Principal: Gerar Relatório Mensal */}
           <button
             onClick={() => setIsReportModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-extrabold text-xs transition-all shadow-md cursor-pointer"
+            className="btn-heraldico-ouro px-4 py-2.5 rounded-xl text-xs"
           >
             <Printer className="w-4 h-4" />
             <span>Gerar Relatório Mensal</span>
@@ -549,7 +549,7 @@ export default function TesourariaPage() {
           {/* Botão Alterar Valor da Mensalidade */}
           <button
             onClick={() => setIsPriceModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-xs transition-all cursor-pointer"
+            className="btn-heraldico-vidro px-3.5 py-2.5 rounded-xl text-xs"
           >
             <DollarSign className="w-4 h-4 text-[#D9AA45]" />
             <span>Alterar Valor da Mensalidade</span>
@@ -558,7 +558,7 @@ export default function TesourariaPage() {
           {/* Botão PIX & InfinitePay */}
           <button
             onClick={() => setIsPixModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-xs transition-all cursor-pointer"
+            className="btn-heraldico-vidro px-3.5 py-2.5 rounded-xl text-xs"
           >
             <QrCode className="w-4 h-4 text-emerald-300" />
             <span>PIX & InfinitePay</span>
@@ -567,7 +567,7 @@ export default function TesourariaPage() {
           {/* Botão Lançar Mensalidades em Lote */}
           <button
             onClick={() => setIsGenerateModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-emerald-200/80 font-medium text-xs transition-all cursor-pointer"
+            className="btn-heraldico-vidro px-3 py-2.5 rounded-xl text-xs"
             title="Lançar mensalidades em lote para um novo mês"
           >
             <PlusCircle className="w-3.5 h-3.5" />
@@ -625,9 +625,9 @@ export default function TesourariaPage() {
         </div>
       </div>
 
-      {/* 4 CARDS RESUMO DO MÊS SELECIONADO */}
+      {/* 4 CARDS RESUMO DO MÊS SELECIONADO (ESTILO HERÁLDICO) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-1">
+        <div className="card-heraldico-dark p-5 rounded-2xl space-y-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200/80">
             Previsão do Mês
           </span>
@@ -639,7 +639,7 @@ export default function TesourariaPage() {
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white/5 border border-emerald-500/30 backdrop-blur-md space-y-1">
+        <div className="card-heraldico-dark p-5 rounded-2xl space-y-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">
             Total Arrecadado
           </span>
@@ -651,7 +651,7 @@ export default function TesourariaPage() {
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white/5 border border-amber-500/30 backdrop-blur-md space-y-1">
+        <div className="card-heraldico-dark p-5 rounded-2xl space-y-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#D9AA45]">
             Saldo a Receber
           </span>
@@ -663,14 +663,14 @@ export default function TesourariaPage() {
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-1">
+        <div className="card-heraldico-dark p-5 rounded-2xl space-y-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200/80">
             Taxa de Adimplência
           </span>
           <p className="text-2xl font-extrabold text-white">{stats.percent}%</p>
-          <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden mt-2">
+          <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden mt-2 border border-white/10">
             <div
-              className="bg-emerald-400 h-full rounded-full transition-all"
+              className="bg-gradient-to-r from-[#087443] to-[#D9AA45] h-full rounded-full transition-all"
               style={{ width: `${stats.percent}%` }}
             />
           </div>

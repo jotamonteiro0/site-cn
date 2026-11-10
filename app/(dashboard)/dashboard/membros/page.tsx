@@ -260,7 +260,7 @@ export default function MembrosPage() {
         {canManageMembers && (
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs transition-all shadow-md cursor-pointer"
+            className="btn-heraldico-ouro px-4 py-2.5 rounded-xl text-xs"
           >
             <UserPlus className="w-4 h-4" />
             <span>Habilitar Novo Membro</span>
@@ -292,8 +292,8 @@ export default function MembrosPage() {
               onClick={() => setActiveFilter(cat.id)}
               className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeFilter === cat.id
-                  ? "bg-[#087443] text-white border border-[#D9AA45]/50 shadow-md"
-                  : "bg-white/5 text-emerald-200/70 hover:bg-white/10 hover:text-white"
+                  ? "bg-gradient-to-r from-[#087443] to-[#064D32] text-white border border-[#D9AA45]/60 shadow-md"
+                  : "btn-heraldico-vidro text-emerald-200/80"
               }`}
             >
               <span>{cat.label}</span>

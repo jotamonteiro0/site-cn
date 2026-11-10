@@ -586,7 +586,7 @@ export default function DashboardDocumentosPage() {
         {canPublish && (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#D9AA45] via-[#E5BC5C] to-[#D9AA45] hover:brightness-110 text-[#04281A] font-extrabold text-xs transition-all duration-200 shadow-[0_4px_16px_rgba(217,170,69,0.3)] hover:shadow-[0_6px_22px_rgba(217,170,69,0.45)] hover:-translate-y-0.5 cursor-pointer shrink-0"
+            className="btn-heraldico-ouro px-4 py-2.5 rounded-xl text-xs shrink-0"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Cadastrar Documento</span>
@@ -602,9 +602,9 @@ export default function DashboardDocumentosPage() {
         </div>
       )}
 
-      {/* RESUMO DOS ACERVOS DISPONÍVEIS COM GLASSMORPHISM */}
+      {/* RESUMO DOS ACERVOS DISPONÍVEIS COM GLASSMORPHISM HERÁLDICO */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-        <div className="p-4 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/10 hover:border-[#D9AA45]/40 hover:bg-[#064D32]/25 transition-all duration-300 shadow-sm space-y-1.5 group">
+        <div className="card-heraldico-dark p-4 rounded-2xl shadow-sm space-y-1.5 group">
           <div className="flex items-center justify-between">
             <span className="font-bold text-[#D9AA45] flex items-center gap-1.5">
               <Award className="w-4 h-4 text-[#D9AA45] group-hover:scale-110 transition-transform" />
@@ -619,7 +619,7 @@ export default function DashboardDocumentosPage() {
           </p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/10 hover:border-emerald-400/40 hover:bg-[#064D32]/25 transition-all duration-300 shadow-sm space-y-1.5 group">
+        <div className="card-heraldico-dark p-4 rounded-2xl shadow-sm space-y-1.5 group">
           <div className="flex items-center justify-between">
             <span className="font-bold text-emerald-300 flex items-center gap-1.5">
               <Building className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
@@ -634,7 +634,7 @@ export default function DashboardDocumentosPage() {
           </p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/10 hover:border-blue-400/40 hover:bg-[#064D32]/25 transition-all duration-300 shadow-sm space-y-1.5 group">
+        <div className="card-heraldico-dark p-4 rounded-2xl shadow-sm space-y-1.5 group">
           <div className="flex items-center justify-between">
             <span className="font-bold text-blue-300 flex items-center gap-1.5">
               <Shield className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
@@ -649,7 +649,7 @@ export default function DashboardDocumentosPage() {
           </p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/10 hover:border-amber-400/40 hover:bg-[#064D32]/25 transition-all duration-300 shadow-sm space-y-1.5 group">
+        <div className="card-heraldico-dark p-4 rounded-2xl shadow-sm space-y-1.5 group">
           <div className="flex items-center justify-between">
             <span className="font-bold text-amber-300 flex items-center gap-1.5">
               <FileText className="w-4 h-4 text-[#D9AA45] group-hover:scale-110 transition-transform" />

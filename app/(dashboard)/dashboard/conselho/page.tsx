@@ -110,14 +110,14 @@ export default function ConselhoPage() {
           </p>
         </div>
 
-        <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[#D9AA45] text-xs font-bold">
+        <div className="selo-vidro-cn px-3.5 py-2 rounded-xl text-[#D9AA45] text-xs font-bold flex items-center gap-2">
           <ShieldCheck className="w-4 h-4" />
           <span>{totalAllocated} Tios Consultores Vinculados</span>
         </div>
       </div>
 
       {/* BANNER INFORMATIVO COM GLASSMORPHISM */}
-      <div className="p-5 rounded-2xl bg-[#064D32]/80 backdrop-blur-xl border border-emerald-500/30 text-xs text-emerald-100 flex items-start gap-4 shadow-xl">
+      <div className="card-heraldico-dark p-5 rounded-2xl text-xs text-emerald-100 flex items-start gap-4 shadow-xl">
         <Building2 className="w-6 h-6 text-[#D9AA45] shrink-0 mt-0.5" />
         <div className="space-y-1">
           <h3 className="font-bold text-white text-sm">Estrutura de Apoio Maçônico</h3>
@@ -139,7 +139,7 @@ export default function ConselhoPage() {
           return (
             <div
               key={lodge.name}
-              className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-4 hover:border-amber-500/40 transition-all flex flex-col justify-between shadow-lg"
+              className="card-heraldico-dark p-6 rounded-2xl space-y-4 hover:border-amber-500/40 transition-all flex flex-col justify-between shadow-lg"
             >
               <div>
                 {/* Topo do Card */}
