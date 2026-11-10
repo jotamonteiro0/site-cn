@@ -660,7 +660,7 @@ export default function DashboardDocumentosPage() {
         {canPublish && (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs transition-all shadow-md cursor-pointer shrink-0"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#D9AA45] via-[#E5BC5C] to-[#D9AA45] hover:brightness-110 text-[#04281A] font-extrabold text-xs transition-all duration-200 shadow-[0_4px_16px_rgba(217,170,69,0.3)] hover:shadow-[0_6px_22px_rgba(217,170,69,0.45)] hover:-translate-y-0.5 cursor-pointer shrink-0"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Cadastrar Documento</span>
@@ -716,15 +716,15 @@ export default function DashboardDocumentosPage() {
         </div>
       )}
 
-      {/* RESUMO DOS ACERVOS DISPONÍVEIS */}
+      {/* RESUMO DOS ACERVOS DISPONÍVEIS COM GLASSMORPHISM */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-        <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
+        <div className="p-4 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/10 hover:border-[#D9AA45]/40 hover:bg-[#064D32]/25 transition-all duration-300 shadow-sm space-y-1.5 group">
           <div className="flex items-center justify-between">
             <span className="font-bold text-[#D9AA45] flex items-center gap-1.5">
-              <Award className="w-4 h-4" />
+              <Award className="w-4 h-4 text-[#D9AA45] group-hover:scale-110 transition-transform" />
               Cerimônias Públicas SCDB
             </span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D9AA45]/20 text-[#D9AA45]">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/30">
               {scdbPublicCeremonies.length} cerimônias
             </span>
           </div>
@@ -733,13 +733,13 @@ export default function DashboardDocumentosPage() {
           </p>
         </div>
 
-        <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
+        <div className="p-4 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/10 hover:border-emerald-400/40 hover:bg-[#064D32]/25 transition-all duration-300 shadow-sm space-y-1.5 group">
           <div className="flex items-center justify-between">
             <span className="font-bold text-emerald-300 flex items-center gap-1.5">
-              <Building className="w-4 h-4" />
+              <Building className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
               Manuais & Normas SCDB
             </span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
               {scdbGeneralManuals.length} manuais
             </span>
           </div>
@@ -748,13 +748,13 @@ export default function DashboardDocumentosPage() {
           </p>
         </div>
 
-        <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
+        <div className="p-4 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/10 hover:border-blue-400/40 hover:bg-[#064D32]/25 transition-all duration-300 shadow-sm space-y-1.5 group">
           <div className="flex items-center justify-between">
             <span className="font-bold text-blue-300 flex items-center gap-1.5">
-              <Shield className="w-4 h-4" />
+              <Shield className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
               Documentos por Gestão
             </span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
               {gestaoDocuments.length} atos e editais
             </span>
           </div>
@@ -771,40 +771,40 @@ export default function DashboardDocumentosPage() {
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
             <button
               onClick={() => setActiveTab("todos")}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
                 activeTab === "todos"
-                  ? "bg-[#D9AA45] text-black shadow"
-                  : "bg-white/5 text-gray-300 hover:bg-white/10"
+                  ? "bg-gradient-to-r from-[#D9AA45] to-[#E5BC5C] text-[#04281A] shadow-[0_4px_14px_rgba(217,170,69,0.3)]"
+                  : "bg-white/[0.05] text-gray-300 hover:bg-white/[0.09] border border-white/10 hover:border-white/20 backdrop-blur-sm"
               }`}
             >
               Todos ({allCatalog.length})
             </button>
             <button
               onClick={() => setActiveTab("cerimonias")}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
                 activeTab === "cerimonias"
-                  ? "bg-[#D9AA45] text-black shadow"
-                  : "bg-white/5 text-gray-300 hover:bg-white/10"
+                  ? "bg-gradient-to-r from-[#D9AA45] to-[#E5BC5C] text-[#04281A] shadow-[0_4px_14px_rgba(217,170,69,0.3)]"
+                  : "bg-white/[0.05] text-gray-300 hover:bg-white/[0.09] border border-white/10 hover:border-white/20 backdrop-blur-sm"
               }`}
             >
               Cerimônias Públicas ({scdbPublicCeremonies.length})
             </button>
             <button
               onClick={() => setActiveTab("manuais")}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
                 activeTab === "manuais"
-                  ? "bg-[#D9AA45] text-black shadow"
-                  : "bg-white/5 text-gray-300 hover:bg-white/10"
+                  ? "bg-gradient-to-r from-[#D9AA45] to-[#E5BC5C] text-[#04281A] shadow-[0_4px_14px_rgba(217,170,69,0.3)]"
+                  : "bg-white/[0.05] text-gray-300 hover:bg-white/[0.09] border border-white/10 hover:border-white/20 backdrop-blur-sm"
               }`}
             >
               Manuais & Normas ({scdbGeneralManuals.length})
             </button>
             <button
               onClick={() => setActiveTab("gestoes")}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
                 activeTab === "gestoes"
-                  ? "bg-[#D9AA45] text-black shadow"
-                  : "bg-white/5 text-gray-300 hover:bg-white/10"
+                  ? "bg-gradient-to-r from-[#D9AA45] to-[#E5BC5C] text-[#04281A] shadow-[0_4px_14px_rgba(217,170,69,0.3)]"
+                  : "bg-white/[0.05] text-gray-300 hover:bg-white/[0.09] border border-white/10 hover:border-white/20 backdrop-blur-sm"
               }`}
             >
               Documentos por Gestão & MC ({gestaoDocuments.length})
@@ -845,7 +845,7 @@ export default function DashboardDocumentosPage() {
       </div>
 
       {/* LISTAGEM DE DOCUMENTOS */}
-      <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md overflow-hidden">
+      <div className="rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md overflow-hidden shadow-xl">
         {filteredDocs.length === 0 ? (
           <div className="py-12 text-center text-xs text-emerald-200/60">
             Nenhum documento encontrado para o critério selecionado.
@@ -855,7 +855,7 @@ export default function DashboardDocumentosPage() {
             {filteredDocs.map((doc) => (
               <div
                 key={doc.id}
-                className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors"
+                className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#064D32]/25 transition-all duration-200 group"
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
@@ -927,7 +927,7 @@ export default function DashboardDocumentosPage() {
                         setViewingDoc(doc);
                       }
                     }}
-                    className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer backdrop-blur-sm"
+                    className="px-3.5 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-[#D9AA45]/50 text-white text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 cursor-pointer backdrop-blur-md shadow-sm hover:shadow-[0_0_15px_rgba(217,170,69,0.25)] hover:-translate-y-0.5 active:translate-y-0"
                     title="Visualizar documento em nova guia do navegador"
                   >
                     <BookOpen className="w-3.5 h-3.5 text-[#D9AA45]" />
@@ -937,7 +937,7 @@ export default function DashboardDocumentosPage() {
                   {/* Botão Baixar (Download Direto) */}
                   <button
                     onClick={() => handleDownloadDoc(doc)}
-                    className="px-3 py-2 rounded-xl bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 border border-[#D9AA45]/40 text-[#D9AA45] text-xs font-bold transition-all flex items-center gap-1 cursor-pointer backdrop-blur-sm"
+                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#D9AA45]/20 to-[#D9AA45]/10 hover:from-[#D9AA45]/30 hover:to-[#D9AA45]/20 border border-[#D9AA45]/40 hover:border-[#D9AA45]/70 text-[#D9AA45] text-xs font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer backdrop-blur-md shadow-sm hover:shadow-[0_0_15px_rgba(217,170,69,0.3)] hover:-translate-y-0.5 active:translate-y-0"
                     title="Baixar arquivo PDF diretamente para o seu computador"
                   >
                     <Download className="w-3.5 h-3.5" />
@@ -949,7 +949,7 @@ export default function DashboardDocumentosPage() {
                     <>
                       <label
                         htmlFor={`attach-input-${doc.id}`}
-                        className="px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 hover:border-emerald-400 text-emerald-300 text-xs font-semibold transition-all duration-200 flex items-center gap-1 cursor-pointer backdrop-blur-sm hover:shadow-[0_0_15px_rgba(16,185,129,0.25)] hover:-translate-y-0.5 active:translate-y-0"
                         title="Anexar ou substituir arquivo PDF deste documento"
                       >
                         <Paperclip className="w-3.5 h-3.5 text-emerald-400" />
@@ -970,7 +970,7 @@ export default function DashboardDocumentosPage() {
 
                       <button
                         onClick={() => setDocToDelete(doc)}
-                        className="px-2.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
+                        className="px-2.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-400 text-red-300 text-xs font-semibold transition-all duration-200 flex items-center gap-1 cursor-pointer backdrop-blur-sm hover:shadow-[0_0_15px_rgba(239,68,68,0.25)] hover:-translate-y-0.5 active:translate-y-0"
                         title="Excluir documento do acervo"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -987,17 +987,17 @@ export default function DashboardDocumentosPage() {
 
       {/* MODAL DE VISUALIZAÇÃO E EMISSÃO DE PDF OFICIAL (CLIENT-SIDE PRINT / PDF) */}
       {viewingDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in overflow-y-auto">
-          <div className="w-full max-w-2xl bg-[#04281A] border border-[#D9AA45]/40 rounded-2xl shadow-2xl p-6 md:p-8 space-y-6 text-white my-8 print-area">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-2xl bg-gradient-to-b from-[#064D32]/95 via-[#04281A]/95 to-[#021810]/95 backdrop-blur-2xl border border-[#D9AA45]/40 rounded-2xl shadow-[0_20px_60px_-15px_rgba(4,40,26,0.8),0_0_40px_rgba(217,170,69,0.15)] p-6 md:p-8 space-y-6 text-white my-8 print-area animate-in zoom-in-95">
             {/* Header Timbre Oficial Capitular */}
             <div className="text-center pb-4 border-b border-white/10 space-y-2">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#087443] border border-[#D9AA45] text-[#D9AA45] mb-1 shadow-lg">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-[#087443] to-[#04281A] border border-[#D9AA45] text-[#D9AA45] mb-1 shadow-lg shadow-[#087443]/30">
                 <Shield className="w-7 h-7" />
               </div>
               <h2 className="text-lg font-black tracking-wide uppercase text-white">
                 Capítulo Professor Carvalho Neves Nº 500
               </h2>
-              <p className="text-xs text-[#D9AA45] font-semibold">
+              <p className="text-xs text-[#D9AA45] font-semibold tracking-wide">
                 Ordem DeMolay • Supremo Conselho DeMolay Brasil (SCDB)
               </p>
               <p className="text-[11px] text-emerald-200/70">
@@ -1006,7 +1006,7 @@ export default function DashboardDocumentosPage() {
             </div>
 
             {/* Identificação do Documento */}
-            <div className="space-y-2 bg-white/5 p-4 rounded-xl border border-white/10">
+            <div className="space-y-2 bg-white/[0.04] backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-inner">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/40">
                   {viewingDoc.type}
@@ -1026,7 +1026,7 @@ export default function DashboardDocumentosPage() {
             </div>
 
             {/* Conteúdo / Descrição */}
-            <div className="p-4 rounded-xl bg-black/30 border border-white/10 text-xs text-emerald-100/90 leading-relaxed space-y-3">
+            <div className="p-4 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10 text-xs text-emerald-100/90 leading-relaxed space-y-3">
               <p className="font-semibold text-white">Resumo e Diretrizes Oficiais:</p>
               <p>{viewingDoc.description}</p>
               {viewingDoc.category === "scdb_cerimonias" && (
@@ -1038,7 +1038,7 @@ export default function DashboardDocumentosPage() {
 
             {/* Arquivo PDF Anexo */}
             {viewingDoc.downloadUrl ? (
-              <div className="p-3.5 rounded-xl bg-emerald-900/30 border border-emerald-500/40 flex items-center justify-between gap-3 text-xs">
+              <div className="p-3.5 rounded-xl bg-emerald-950/40 backdrop-blur-sm border border-emerald-500/40 flex items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2 text-emerald-300">
                   <Paperclip className="w-4 h-4 text-[#D9AA45]" />
                   <span>Arquivo PDF oficial vinculado a este documento.</span>
@@ -1047,14 +1047,14 @@ export default function DashboardDocumentosPage() {
                   href={viewingDoc.downloadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold flex items-center gap-1.5 transition-colors"
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#D9AA45] to-[#E5BC5C] hover:brightness-110 text-[#04281A] font-bold flex items-center gap-1.5 transition-all shadow-md hover:shadow-[0_0_15px_rgba(217,170,69,0.35)]"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Abrir Arquivo PDF</span>
                 </a>
               </div>
             ) : (
-              <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs text-emerald-200/70">
+              <div className="p-3.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs text-emerald-200/70">
                 <p>
                   Documento oficial registrado no acervo capitular. Utilize a opção abaixo para emitir e imprimir diretamente em folha A4 com o timbre capitular.
                 </p>
@@ -1065,7 +1065,7 @@ export default function DashboardDocumentosPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/10 no-print">
               <button
                 onClick={() => setViewingDoc(null)}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold cursor-pointer transition-colors"
+                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold cursor-pointer transition-all border border-white/10"
               >
                 Fechar
               </button>
@@ -1074,7 +1074,7 @@ export default function DashboardDocumentosPage() {
                 {canManageDocs && (
                   <label
                     htmlFor="modal-attach-file"
-                    className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold cursor-pointer transition-colors flex items-center gap-1.5"
+                    className="px-3.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm hover:shadow-[0_0_12px_rgba(16,185,129,0.2)]"
                   >
                     <Upload className="w-3.5 h-3.5 text-[#D9AA45]" />
                     <span>{viewingDoc.downloadUrl ? "Substituir PDF" : "Anexar PDF"}</span>
@@ -1095,7 +1095,7 @@ export default function DashboardDocumentosPage() {
 
                 <button
                   onClick={() => window.print()}
-                  className="px-4 py-2 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs cursor-pointer transition-all shadow-md flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#D9AA45] via-[#E5BC5C] to-[#D9AA45] hover:brightness-110 text-[#04281A] font-extrabold text-xs cursor-pointer transition-all shadow-md hover:shadow-[0_0_18px_rgba(217,170,69,0.4)] flex items-center gap-1.5"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Imprimir / Salvar em PDF</span>
@@ -1108,11 +1108,11 @@ export default function DashboardDocumentosPage() {
 
       {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO (DESIGN CAPITULAR EM GLASSMORPHISM) */}
       {docToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-gradient-to-b from-[#064D32] to-[#04281A] border border-[#D9AA45]/50 shadow-2xl p-6 text-white space-y-5 animate-in zoom-in-95">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-gradient-to-b from-[#064D32]/95 via-[#04281A]/95 to-[#021810]/95 backdrop-blur-2xl border border-[#D9AA45]/50 shadow-[0_20px_60px_-15px_rgba(4,40,26,0.8),0_0_40px_rgba(217,170,69,0.15)] p-6 text-white space-y-5 animate-in zoom-in-95">
             {/* Cabeçalho */}
             <div className="flex items-center gap-3.5 pb-4 border-b border-white/10">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0 shadow-lg">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0 shadow-lg shadow-rose-500/20">
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div>
@@ -1126,7 +1126,7 @@ export default function DashboardDocumentosPage() {
             </div>
 
             {/* Cartão Informativo com Glassmorphism */}
-            <div className="p-4 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/10 space-y-2">
+            <div className="p-4 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/10 space-y-2 shadow-inner">
               <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/30">
                 {docToDelete.type}
               </span>
@@ -1155,7 +1155,7 @@ export default function DashboardDocumentosPage() {
                 type="button"
                 onClick={() => setDocToDelete(null)}
                 disabled={isDeleting}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 border border-white/10"
               >
                 Cancelar
               </button>
@@ -1163,7 +1163,7 @@ export default function DashboardDocumentosPage() {
                 type="button"
                 onClick={confirmDeleteDoc}
                 disabled={isDeleting}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white text-xs font-bold transition-all shadow-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white text-xs font-bold transition-all shadow-lg hover:shadow-rose-600/30 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>{isDeleting ? "Excluindo..." : "Confirmar Exclusão"}</span>
@@ -1175,8 +1175,8 @@ export default function DashboardDocumentosPage() {
 
       {/* MODAL DE CADASTRO COM GLASSMORPHISM E UPLOAD DE PDF (APENAS MASTER E ESCRIVÃO) */}
       {isModalOpen && canPublish && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="w-full max-w-lg p-6 rounded-2xl bg-[#04281A]/95 backdrop-blur-2xl border border-[#D9AA45]/40 shadow-2xl space-y-4 text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-lg p-6 rounded-2xl bg-gradient-to-b from-[#064D32]/95 via-[#04281A]/95 to-[#021810]/95 backdrop-blur-2xl border border-[#D9AA45]/40 shadow-[0_20px_60px_-15px_rgba(4,40,26,0.8),0_0_40px_rgba(217,170,69,0.15)] space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-[#D9AA45]" />
               <h3 className="text-lg font-bold">Cadastrar Documento Capitular</h3>

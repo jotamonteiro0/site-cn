@@ -55,6 +55,43 @@ body {
   box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
 }
 
+/* Modais e Overlays com Glassmorphism Temático */
+.glass-overlay {
+  background: radial-gradient(circle at center, rgba(6, 77, 50, 0.55) 0%, rgba(2, 24, 16, 0.78) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.glass-button-gold {
+  background: linear-gradient(135deg, rgba(217, 170, 69, 0.95), rgba(235, 195, 95, 0.9));
+  color: #04281a;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 14px rgba(217, 170, 69, 0.25);
+  transition: all 0.2s ease-in-out;
+}
+
+.glass-button-gold:hover {
+  background: linear-gradient(135deg, rgba(235, 195, 95, 1), rgba(217, 170, 69, 1));
+  box-shadow: 0 6px 20px rgba(217, 170, 69, 0.4);
+  transform: translateY(-1px);
+}
+
+.glass-button-emerald {
+  background: rgba(8, 116, 67, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #6ee7b7;
+  border: 1px solid rgba(110, 231, 183, 0.35);
+  transition: all 0.2s ease-in-out;
+}
+
+.glass-button-emerald:hover {
+  background: rgba(8, 116, 67, 0.45);
+  border-color: rgba(110, 231, 183, 0.6);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
 /* Regras de Impressão Oficial de Documentos & Declarações (A4) */
 @media print {
   body {
