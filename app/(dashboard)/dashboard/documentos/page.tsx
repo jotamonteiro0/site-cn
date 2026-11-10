@@ -10,14 +10,16 @@ import {
   Shield,
   Search,
   ArrowLeft,
-  Calendar,
   Lock,
-  Globe,
   BookOpen,
   Award,
   Sparkles,
   Download,
-  ExternalLink
+  Upload,
+  Info,
+  Paperclip,
+  Trash2,
+  Printer
 } from "lucide-react";
 
 interface DocumentRecord {
@@ -30,6 +32,7 @@ interface DocumentRecord {
   description: string;
   visibility: "public" | "members" | "staff";
   date: string;
+  downloadUrl?: string;
 }
 
 // 1. Acervo Completo do SCDB (Cerimônias Públicas e Manuais Oficiais)
@@ -211,6 +214,16 @@ export default function DashboardDocumentosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState("");
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const [uploadedDocs, setUploadedDocs] = useState<DocumentRecord[]>([]);
+  const [showGuide, setShowGuide] = useState(true);
+
+  // Anexos customizados por ID de documento (armazenados em localStorage e Supabase)
+  const [attachments, setAttachments] = useState<Record<string, string>>({});
+  // IDs de documentos excluídos pelo Master
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  // Documento selecionado para visualização/impressão oficial
+  const [viewingDoc, setViewingDoc] = useState<DocumentRecord | null>(null);
 
   const [newDoc, setNewDoc] = useState({
     title: "",
@@ -218,6 +231,29 @@ export default function DashboardDocumentosPage() {
     management: "Gestão XXV (2026.2) — MC Rafael Inácio",
     docType: "Ato Administrativo",
   });
+
+  // Carrega preferências e dados locais persistidos
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      try {
+        const savedAttachments = localStorage.getItem("cn_doc_attachments");
+        if (savedAttachments) {
+          setAttachments(JSON.parse(savedAttachments));
+        }
+        const savedDeleted = localStorage.getItem("cn_deleted_doc_ids");
+        if (savedDeleted) {
+          setDeletedIds(JSON.parse(savedDeleted));
+        }
+        const savedUploaded = localStorage.getItem("cn_custom_uploaded_docs");
+        if (savedUploaded) {
+          setUploadedDocs(JSON.parse(savedUploaded));
+        }
+      } catch {
+        // localStorage indisponível ou quota excedida
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   // 1. Identifica permissão do usuário
   useEffect(() => {
@@ -253,37 +289,53 @@ export default function DashboardDocumentosPage() {
 
     // Cerimônias Públicas SCDB
     scdbPublicCeremonies.forEach((title, idx) => {
+      const id = `scdb-cer-${idx + 1}`;
       list.push({
-        id: `scdb-cer-${idx + 1}`,
+        id,
         title,
         category: "scdb_cerimonias",
         type: "Cerimônia Pública SCDB",
         description: `Cerimonial público oficial padronizado pelo Supremo Conselho DeMolay Brasil.`,
         visibility: "members",
         date: "SCDB Oficial",
+        downloadUrl: attachments[id],
       });
     });
 
     // Manuais Gerais SCDB
     scdbGeneralManuals.forEach((m, idx) => {
+      const id = `scdb-man-${idx + 1}`;
       list.push({
-        id: `scdb-man-${idx + 1}`,
+        id,
         title: m.title,
         category: "scdb_gerais",
         type: m.type,
         description: m.description,
         visibility: "members",
         date: "Norma SCDB",
+        downloadUrl: attachments[id],
       });
     });
 
     // Documentos Capitulares de Gestões
     gestaoDocuments.forEach((doc) => {
-      list.push(doc);
+      list.push({
+        ...doc,
+        downloadUrl: attachments[doc.id] || doc.downloadUrl,
+      });
     });
 
-    return list;
-  }, []);
+    // Documentos recém-enviados
+    uploadedDocs.forEach((doc) => {
+      list.unshift({
+        ...doc,
+        downloadUrl: attachments[doc.id] || doc.downloadUrl,
+      });
+    });
+
+    // Filtra documentos excluídos pelo Master
+    return list.filter((doc) => !deletedIds.includes(doc.id));
+  }, [uploadedDocs, attachments, deletedIds]);
 
   const filteredDocs = useMemo(() => {
     const term = searchTerm.toLowerCase();
@@ -316,6 +368,99 @@ export default function DashboardDocumentosPage() {
     });
   }, [allCatalog, activeTab, selectedManagement, searchTerm]);
 
+  // Handler: Master anexa ou substitui arquivo de documento existente
+  const handleAttachFileToDoc = async (docId: string, file: File) => {
+    if (file.size > 20 * 1024 * 1024) {
+      alert("O arquivo excede o limite de 20MB. Por favor, envie um documento menor.");
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+      const storagePath = `anexos/${docId}_${Date.now()}_${sanitizedName}`;
+
+      let publicUrl = "";
+      const { error: upErr } = await supabase.storage
+        .from("documentos")
+        .upload(storagePath, file, { upsert: true });
+
+      if (!upErr) {
+        const { data: pUrl } = supabase.storage
+          .from("documentos")
+          .getPublicUrl(storagePath);
+        publicUrl = pUrl?.publicUrl || "";
+      } else {
+        console.warn("Storage fallback na vinculação de anexo:", upErr);
+        publicUrl = URL.createObjectURL(file);
+      }
+
+      const updated = { ...attachments, [docId]: publicUrl };
+      setAttachments(updated);
+      try {
+        localStorage.setItem("cn_doc_attachments", JSON.stringify(updated));
+      } catch {
+        // quota
+      }
+
+      if (viewingDoc && viewingDoc.id === docId) {
+        setViewingDoc({ ...viewingDoc, downloadUrl: publicUrl });
+      }
+
+      setSaveSuccessMsg(`Arquivo oficial PDF anexado ao documento com sucesso!`);
+      setTimeout(() => setSaveSuccessMsg(""), 5000);
+    } catch (err) {
+      console.error("Erro ao anexar arquivo ao documento:", err);
+      alert("Falha ao anexar arquivo ao documento.");
+    }
+  };
+
+  // Handler: Master exclui documento existente do acervo
+  const handleDeleteDoc = async (doc: DocumentRecord) => {
+    if (userRole !== "master") {
+      alert("Apenas o Mestre Conselheiro pode excluir documentos do acervo.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Deseja realmente excluir o documento "${doc.title}" do acervo capitular?\nEsta ação removerá o registro para todos os membros.`
+    );
+    if (!confirmed) return;
+
+    try {
+      const supabase = createClient();
+      await supabase.from("documents").delete().eq("title", doc.title);
+    } catch (err) {
+      console.warn("Aviso ao remover documento do banco:", err);
+    }
+
+    const newDeleted = [...deletedIds, doc.id];
+    setDeletedIds(newDeleted);
+    try {
+      localStorage.setItem("cn_deleted_doc_ids", JSON.stringify(newDeleted));
+    } catch {
+      // quota
+    }
+
+    // Se estiver em uploadedDocs, remove do estado e storage
+    setUploadedDocs((prev) => {
+      const filtered = prev.filter((d) => d.id !== doc.id);
+      try {
+        localStorage.setItem("cn_custom_uploaded_docs", JSON.stringify(filtered));
+      } catch {
+        // quota
+      }
+      return filtered;
+    });
+
+    if (viewingDoc?.id === doc.id) {
+      setViewingDoc(null);
+    }
+
+    setSaveSuccessMsg(`Documento "${doc.title}" excluído com sucesso do acervo.`);
+    setTimeout(() => setSaveSuccessMsg(""), 5000);
+  };
+
   const handleCreateDocument = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canPublish || !newDoc.title.trim()) return;
@@ -323,6 +468,27 @@ export default function DashboardDocumentosPage() {
     setIsSaving(true);
     try {
       const supabase = createClient();
+      let fileUrl = "";
+
+      if (docFile) {
+        const sanitizedName = docFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+        const storagePath = `gestoes/${Date.now()}_${sanitizedName}`;
+        try {
+          const { error: upErr } = await supabase.storage
+            .from("documentos")
+            .upload(storagePath, docFile, { upsert: true });
+
+          if (!upErr) {
+            const { data: pUrl } = supabase.storage
+              .from("documentos")
+              .getPublicUrl(storagePath);
+            fileUrl = pUrl?.publicUrl || "";
+          }
+        } catch (stErr) {
+          console.warn("Upload de storage fallback:", stErr);
+        }
+      }
+
       await supabase.from("documents").insert({
         chapter_id: "00000000-0000-0000-0000-000000000500",
         title: newDoc.title.trim(),
@@ -332,8 +498,31 @@ export default function DashboardDocumentosPage() {
         published_at: new Date().toISOString(),
       });
 
-      setSaveSuccessMsg(`Documento cadastrado com sucesso!`);
+      const newRecord: DocumentRecord = {
+        id: `custom-doc-${Date.now()}`,
+        title: newDoc.title.trim(),
+        category: "gestao",
+        management: newDoc.management,
+        type: newDoc.docType,
+        description: newDoc.description.trim() || "Documento oficial submetido ao acervo capitular.",
+        visibility: "members",
+        date: new Date().toLocaleDateString("pt-BR", { month: "short", year: "numeric" }),
+        downloadUrl: fileUrl,
+      };
+
+      setUploadedDocs((prev) => {
+        const updated = [newRecord, ...prev];
+        try {
+          localStorage.setItem("cn_custom_uploaded_docs", JSON.stringify(updated));
+        } catch {
+          // quota
+        }
+        return updated;
+      });
+
+      setSaveSuccessMsg(`Documento cadastrado com sucesso! Disponível no acervo para todos os membros.`);
       setIsModalOpen(false);
+      setDocFile(null);
       setNewDoc({
         title: "",
         description: "",
@@ -341,7 +530,7 @@ export default function DashboardDocumentosPage() {
         docType: "Ato Administrativo",
       });
       setTimeout(() => setSaveSuccessMsg(""), 5000);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Erro ao cadastrar documento:", err);
       alert("Erro ao cadastrar documento.");
     } finally {
@@ -387,6 +576,46 @@ export default function DashboardDocumentosPage() {
         <div className="p-3.5 rounded-xl bg-emerald-900/40 border border-emerald-500/50 text-emerald-200 text-xs flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-emerald-400" />
           <span>{saveSuccessMsg}</span>
+        </div>
+      )}
+
+      {/* BANNER GUIA COM GLASSMORPHISM: ONDE SUBIR DOCUMENTOS */}
+      {showGuide && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-[#064D32]/70 backdrop-blur-xl border border-[#D9AA45]/30 shadow-xl space-y-3 relative overflow-hidden animate-in fade-in">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-2.5 text-[#D9AA45]">
+              <Info className="w-5 h-5 shrink-0" />
+              <h2 className="text-sm font-bold text-white">
+                Onde e Como Subir Documentos para Serem Visualizados?
+              </h2>
+            </div>
+            <button
+              onClick={() => setShowGuide(false)}
+              className="text-xs text-white/50 hover:text-white transition-colors cursor-pointer"
+            >
+              Fechar aviso
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-emerald-100/90 leading-relaxed">
+            <div className="p-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 space-y-1">
+              <span className="font-bold text-[#D9AA45] block">1. Pelo Próprio Painel</span>
+              <p>
+                Use o botão <strong>&ldquo;Cadastrar Documento&rdquo;</strong> acima. Você pode anexar qualquer arquivo PDF oficial. O documento fica disponível instantaneamente no acervo de todos os membros.
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 space-y-1">
+              <span className="font-bold text-[#D9AA45] block">2. No Supabase Storage</span>
+              <p>
+                No painel Supabase, acesse <strong>Storage &gt; bucket &ldquo;documentos&rdquo;</strong> (para atas, editais e resoluções) ou <strong>&ldquo;declaracoes&rdquo;</strong>.
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 space-y-1">
+              <span className="font-bold text-[#D9AA45] block">3. Arquivos Estáticos no Código</span>
+              <p>
+                Documentos fixos ou manuais do SCDB podem ser salvos na pasta <strong>public/documentos/</strong> do projeto para acesso direto sem autenticação.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -591,27 +820,66 @@ export default function DashboardDocumentosPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                <div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-center">
+                  {/* Botão Visualizar Documento */}
                   <button
-                    onClick={() => {
-                      alert(`Visualizando: ${doc.title}\n\nDocumento oficial disponibilizado pelo Capítulo Professor Carvalho Neves Nº 500.`);
-                    }}
-                    className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                    onClick={() => setViewingDoc(doc)}
+                    className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer backdrop-blur-sm"
                   >
                     <BookOpen className="w-3.5 h-3.5 text-[#D9AA45]" />
                     <span>Visualizar</span>
                   </button>
 
+                  {/* Botão Abrir ou Emitir PDF */}
                   <button
                     onClick={() => {
-                      alert(`Download do arquivo oficial iniciado: ${doc.title}.pdf`);
+                      if (doc.downloadUrl) {
+                        window.open(doc.downloadUrl, "_blank");
+                      } else {
+                        setViewingDoc(doc);
+                      }
                     }}
-                    className="px-3 py-2 rounded-xl bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 border border-[#D9AA45]/40 text-[#D9AA45] text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                    title="Baixar Arquivo PDF"
+                    className="px-3 py-2 rounded-xl bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 border border-[#D9AA45]/40 text-[#D9AA45] text-xs font-bold transition-all flex items-center gap-1 cursor-pointer backdrop-blur-sm"
+                    title={doc.downloadUrl ? "Abrir PDF anexado" : "Emitir e Imprimir Documento Oficial em PDF"}
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>PDF</span>
                   </button>
+
+                  {/* Funções do Master: Anexar Documento Existente e Excluir */}
+                  {userRole === "master" && (
+                    <>
+                      <label
+                        htmlFor={`attach-input-${doc.id}`}
+                        className="px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
+                        title="Anexar ou substituir arquivo PDF deste documento"
+                      >
+                        <Paperclip className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="hidden md:inline">
+                          {doc.downloadUrl ? "Substituir PDF" : "Anexar PDF"}
+                        </span>
+                        <input
+                          id={`attach-input-${doc.id}`}
+                          type="file"
+                          accept="application/pdf"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleAttachFileToDoc(doc.id, file);
+                          }}
+                        />
+                      </label>
+
+                      <button
+                        onClick={() => handleDeleteDoc(doc)}
+                        className="px-2.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
+                        title="Excluir documento do acervo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span className="hidden lg:inline">Excluir</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
@@ -619,16 +887,137 @@ export default function DashboardDocumentosPage() {
         )}
       </div>
 
-      {/* MODAL DE CADASTRO (APENAS MASTER E ESCRIVÃO) */}
+      {/* MODAL DE VISUALIZAÇÃO E EMISSÃO DE PDF OFICIAL (CLIENT-SIDE PRINT / PDF) */}
+      {viewingDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-2xl bg-[#04281A] border border-[#D9AA45]/40 rounded-2xl shadow-2xl p-6 md:p-8 space-y-6 text-white my-8 print-area">
+            {/* Header Timbre Oficial Capitular */}
+            <div className="text-center pb-4 border-b border-white/10 space-y-2">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#087443] border border-[#D9AA45] text-[#D9AA45] mb-1 shadow-lg">
+                <Shield className="w-7 h-7" />
+              </div>
+              <h2 className="text-lg font-black tracking-wide uppercase text-white">
+                Capítulo Professor Carvalho Neves Nº 500
+              </h2>
+              <p className="text-xs text-[#D9AA45] font-semibold">
+                Ordem DeMolay • Supremo Conselho DeMolay Brasil (SCDB)
+              </p>
+              <p className="text-[11px] text-emerald-200/70">
+                Patrocinado pela A∴R∴L∴S∴ Caridade II nº 135 • Oriente de Floriano - PI
+              </p>
+            </div>
+
+            {/* Identificação do Documento */}
+            <div className="space-y-2 bg-white/5 p-4 rounded-xl border border-white/10">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/40">
+                  {viewingDoc.type}
+                </span>
+                <span className="text-xs text-emerald-200/70 font-mono">
+                  {viewingDoc.date}
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-white">
+                {viewingDoc.title}
+              </h3>
+              {viewingDoc.management && (
+                <p className="text-xs text-[#D9AA45] font-semibold">
+                  {viewingDoc.management} {viewingDoc.mcName ? `— ${viewingDoc.mcName}` : ""}
+                </p>
+              )}
+            </div>
+
+            {/* Conteúdo / Descrição */}
+            <div className="p-4 rounded-xl bg-black/30 border border-white/10 text-xs text-emerald-100/90 leading-relaxed space-y-3">
+              <p className="font-semibold text-white">Resumo e Diretrizes Oficiais:</p>
+              <p>{viewingDoc.description}</p>
+              {viewingDoc.category === "scdb_cerimonias" && (
+                <p className="text-[11px] text-emerald-200/70 italic">
+                  Cerimônia pública oficial aprovada pelo SCDB. O texto ritualístico completo é protegido pelas normas da Ordem DeMolay e ministrado conforme os padrões litúrgicos capitulares.
+                </p>
+              )}
+            </div>
+
+            {/* Arquivo PDF Anexo */}
+            {viewingDoc.downloadUrl ? (
+              <div className="p-3.5 rounded-xl bg-emerald-900/30 border border-emerald-500/40 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 text-emerald-300">
+                  <Paperclip className="w-4 h-4 text-[#D9AA45]" />
+                  <span>Arquivo PDF oficial vinculado a este documento.</span>
+                </div>
+                <a
+                  href={viewingDoc.downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold flex items-center gap-1.5 transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Abrir Arquivo PDF</span>
+                </a>
+              </div>
+            ) : (
+              <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs text-emerald-200/70">
+                <p>
+                  Documento oficial registrado no acervo capitular. Utilize a opção abaixo para emitir e imprimir diretamente em folha A4 com o timbre capitular.
+                </p>
+              </div>
+            )}
+
+            {/* Rodapé e Ações do Modal */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/10 no-print">
+              <button
+                onClick={() => setViewingDoc(null)}
+                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold cursor-pointer transition-colors"
+              >
+                Fechar
+              </button>
+
+              <div className="flex items-center gap-2">
+                {userRole === "master" && (
+                  <label
+                    htmlFor="modal-attach-file"
+                    className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold cursor-pointer transition-colors flex items-center gap-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#D9AA45]" />
+                    <span>{viewingDoc.downloadUrl ? "Substituir PDF" : "Anexar PDF"}</span>
+                    <input
+                      id="modal-attach-file"
+                      type="file"
+                      accept="application/pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file && viewingDoc) {
+                          handleAttachFileToDoc(viewingDoc.id, file);
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+
+                <button
+                  onClick={() => window.print()}
+                  className="px-4 py-2 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs cursor-pointer transition-all shadow-md flex items-center gap-1.5"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Imprimir / Salvar em PDF</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CADASTRO COM GLASSMORPHISM E UPLOAD DE PDF (APENAS MASTER E ESCRIVÃO) */}
       {isModalOpen && canPublish && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg p-6 rounded-2xl bg-[#064D32] border border-white/20 shadow-2xl space-y-4 text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="w-full max-w-lg p-6 rounded-2xl bg-[#04281A]/95 backdrop-blur-2xl border border-[#D9AA45]/40 shadow-2xl space-y-4 text-white">
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-[#D9AA45]" />
               <h3 className="text-lg font-bold">Cadastrar Documento Capitular</h3>
             </div>
             <p className="text-xs text-emerald-200/70">
-              Cadastre atos administrativos, editais e resoluções para o acervo oficial da gestão.
+              Cadastre e anexe atas administrativas, editais, resoluções e regulamentos para o acervo oficial.
             </p>
 
             <form onSubmit={handleCreateDocument} className="space-y-3.5 text-xs">
@@ -639,7 +1028,7 @@ export default function DashboardDocumentosPage() {
                 <select
                   value={newDoc.management}
                   onChange={(e) => setNewDoc({ ...newDoc, management: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
+                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
                 >
                   <option value="Gestão XXV (2026.2) — MC Rafael Inácio">Gestão XXV (2026.2) — MC Rafael Inácio</option>
                   <option value="Gestão XXIV (2026.1) — MC José Keltton">Gestão XXIV (2026.1) — MC José Keltton</option>
@@ -659,8 +1048,41 @@ export default function DashboardDocumentosPage() {
                   value={newDoc.title}
                   onChange={(e) => setNewDoc({ ...newDoc, title: e.target.value })}
                   placeholder="Ex: Ato Capitular nº 02/2026 — Comissão Eleitoral"
-                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
                 />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1 text-emerald-200">
+                  Anexar Arquivo Oficial (PDF)
+                </label>
+                <label className="flex items-center justify-center gap-2 px-3 py-3 rounded-lg bg-black/40 border border-dashed border-[#D9AA45]/40 hover:border-[#D9AA45] text-white cursor-pointer transition-colors text-xs">
+                  <Upload className="w-4 h-4 text-[#D9AA45]" />
+                  <span className="truncate">
+                    {docFile ? docFile.name : "Clique para selecionar o PDF do seu computador..."}
+                  </span>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(e) => setDocFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                </label>
+                {docFile && (
+                  <div className="flex items-center justify-between text-[11px] text-emerald-300 mt-1">
+                    <span className="truncate">PDF selecionado: {docFile.name} ({(docFile.size / 1024).toFixed(0)} KB)</span>
+                    <button
+                      type="button"
+                      onClick={() => setDocFile(null)}
+                      className="text-rose-400 hover:text-rose-200 cursor-pointer ml-2"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                )}
+                <p className="text-[10px] text-emerald-200/60 mt-1">
+                  O arquivo será armazenado com segurança no bucket <strong>documentos</strong> do sistema.
+                </p>
               </div>
 
               <div>
@@ -668,11 +1090,11 @@ export default function DashboardDocumentosPage() {
                   Descrição Resumida
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={newDoc.description}
                   onChange={(e) => setNewDoc({ ...newDoc, description: e.target.value })}
                   placeholder="Explique o teor ou assunto do documento..."
-                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
                 />
               </div>
 

@@ -82,9 +82,9 @@ export async function POST(request: Request) {
           .eq("management_positions.management_id", activeMgmt.id);
 
         if (officerPos && officerPos.length > 0) {
-          for (const op of officerPos as any[]) {
+          for (const op of officerPos as unknown as Array<{ management_positions?: { name?: string } | null }>) {
             const posName = op.management_positions?.name;
-            if (["Mestre Conselheiro", "Presidente do Conselho Consultivo", "PCC"].includes(posName)) {
+            if (posName && ["Mestre Conselheiro", "Presidente do Conselho Consultivo", "PCC"].includes(posName)) {
               assignedRole = "master";
               break;
             } else if (posName === "Escrivão") {
@@ -187,10 +187,11 @@ export async function POST(request: Request) {
       memberName: member.full_name,
       role: assignedRole,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Erro interno";
     console.error("Erro no primeiro acesso:", error);
     return NextResponse.json(
-      { error: "Ocorreu um erro ao processar o primeiro acesso: " + (error?.message || "Erro interno") },
+      { error: "Ocorreu um erro ao processar o primeiro acesso: " + message },
       { status: 500 }
     );
   }

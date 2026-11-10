@@ -4,30 +4,23 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
-  Wallet,
   ArrowLeft,
   Calendar,
   DollarSign,
   CheckCircle2,
   Clock,
-  AlertCircle,
   Search,
-  Filter,
   PlusCircle,
   FileCheck,
   Printer,
   Copy,
-  ExternalLink,
   Shield,
-  CreditCard,
   QrCode,
-  Undo2,
   UserCheck,
   Building,
   Users,
   Check,
-  Sparkles,
-  Link2
+  Sparkles
 } from "lucide-react";
 
 interface FinancialPeriod {
@@ -156,7 +149,7 @@ export default function TesourariaPage() {
     setIsLoading(true);
     try {
       const supabase = createClient();
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("member_charges")
         .select(`
           id,
@@ -179,7 +172,7 @@ export default function TesourariaPage() {
         .order("payer_name", { ascending: true });
 
       if (data) {
-        setCharges(data as any[]);
+        setCharges(data as unknown as MemberCharge[]);
       }
     } catch (err) {
       console.error("Erro ao carregar mensalidades do mês:", err);
@@ -189,7 +182,47 @@ export default function TesourariaPage() {
   };
 
   useEffect(() => {
-    loadCharges();
+    let ignore = false;
+    async function fetchCharges() {
+      if (!selectedPeriodId) return;
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("member_charges")
+          .select(`
+            id,
+            financial_period_id,
+            payer_name,
+            payer_type,
+            description,
+            amount,
+            due_date,
+            status,
+            paid_at,
+            payment_method,
+            infinitepay_checkout_url,
+            member:members (
+              cid,
+              category,
+              masonic_lodge
+            )
+          `)
+          .eq("financial_period_id", selectedPeriodId)
+          .order("payer_name", { ascending: true });
+
+        if (!ignore && data) {
+          setCharges(data as unknown as MemberCharge[]);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar mensalidades do mês:", err);
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    }
+    fetchCharges();
+    return () => {
+      ignore = true;
+    };
   }, [selectedPeriodId]);
 
   // Período Selecionado Atual
@@ -203,7 +236,7 @@ export default function TesourariaPage() {
     let totalPago = 0;
     let totalPendente = 0;
     let qtdPago = 0;
-    let qtdTotal = charges.length;
+    const qtdTotal = charges.length;
     let qtdDemolay = 0;
     let qtdMacom = 0;
     let pagoDemolay = 0;
@@ -265,7 +298,7 @@ export default function TesourariaPage() {
 
       setCharges((prev) =>
         prev.map((c) =>
-          c.id === chargeId ? { ...c, status: newStatus as any, paid_at: paidAt || undefined } : c
+          c.id === chargeId ? { ...c, status: newStatus as MemberCharge["status"], paid_at: paidAt || undefined } : c
         )
       );
 
@@ -275,7 +308,7 @@ export default function TesourariaPage() {
           : "Lançamento estornado para pendente."
       );
       setTimeout(() => setFeedbackMsg(""), 4000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erro ao alterar status da mensalidade:", err);
       alert("Não foi possível atualizar o pagamento. Verifique suas permissões.");
     } finally {
@@ -289,7 +322,7 @@ export default function TesourariaPage() {
     setIsUpdating(true);
     try {
       const supabase = createClient();
-      const { data, error } = await supabase.rpc("generate_monthly_charges", {
+      const { error } = await supabase.rpc("generate_monthly_charges", {
         p_chapter_id: "00000000-0000-0000-0000-000000000500",
         p_year: generateYear,
         p_month: generateMonth,
@@ -317,9 +350,10 @@ export default function TesourariaPage() {
       }
 
       await loadCharges();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Tente novamente";
       console.error("Erro ao gerar mensalidades:", err);
-      alert("Erro ao gerar mensalidades: " + (err.message || "Tente novamente"));
+      alert("Erro ao gerar mensalidades: " + msg);
     } finally {
       setIsUpdating(false);
     }
@@ -402,9 +436,10 @@ export default function TesourariaPage() {
         `Valores atualizados para o período: DeMolay R$ ${priceDemolay.toFixed(2)} | Maçom R$ ${priceMacom.toFixed(2)}`
       );
       setTimeout(() => setFeedbackMsg(""), 5000);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erro desconhecido";
       console.error("Erro ao atualizar valores:", err);
-      alert("Erro ao atualizar valores de mensalidade: " + err.message);
+      alert("Erro ao atualizar valores de mensalidade: " + msg);
     } finally {
       setIsUpdating(false);
     }
@@ -678,7 +713,7 @@ export default function TesourariaPage() {
           ].map((f) => (
             <button
               key={f.id}
-              onClick={() => setStatusFilter(f.id as any)}
+              onClick={() => setStatusFilter(f.id as "todos" | "confirmado" | "pendente")}
               className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                 statusFilter === f.id
                   ? "bg-[#087443] text-white border border-[#D9AA45]/50 shadow-sm"

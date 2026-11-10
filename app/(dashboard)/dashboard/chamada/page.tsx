@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/client";
 import {
   Calendar as CalendarIcon,
   Users,
-  ShieldCheck,
   CheckCircle2,
   XCircle,
   AlertCircle,
@@ -23,9 +22,7 @@ import {
   CalendarCheck,
   Compass,
   FileText,
-  Printer,
-  Sparkles,
-  Award
+  Printer
 } from "lucide-react";
 
 interface MemberRecord {

@@ -8,21 +8,11 @@ import {
   Shield,
   ArrowLeft,
   Calendar,
-  UserCheck,
   CheckCircle2,
-  AlertCircle,
   PlusCircle,
-  Save,
   Users,
-  Award,
-  Lock,
-  Unlock,
-  KeyRound,
-  FileCheck,
-  Building,
-  RefreshCw,
   Sparkles,
-  Info
+  KeyRound
 } from "lucide-react";
 
 interface Management {
@@ -134,7 +124,6 @@ export default function NominataPage() {
   // 2. Carrega Gestões e Membros
   useEffect(() => {
     async function loadInitialData() {
-      setIsLoading(true);
       try {
         const supabase = createClient();
 
@@ -169,13 +158,27 @@ export default function NominataPage() {
     loadInitialData();
   }, []);
 
+  interface RawPositionItem {
+    id: string;
+    name: string;
+    sort_order: number;
+    member_management_positions?: Array<{
+      member_id?: string;
+      member?: {
+        id?: string;
+        full_name?: string;
+        cid?: string;
+        category?: string;
+      } | null;
+    }>;
+  }
+
   // 3. Carrega Cargos e Ocupantes da Gestão Selecionada
   const loadPositions = async () => {
     if (!selectedManagementId) return;
     try {
       const supabase = createClient();
 
-      // Busca posições cadastradas
       const { data: pData } = await supabase
         .from("management_positions")
         .select(`
@@ -197,7 +200,8 @@ export default function NominataPage() {
         .order("sort_order", { ascending: true });
 
       if (pData) {
-        const formatted: Position[] = pData.map((p: any) => {
+        const typed = pData as unknown as RawPositionItem[];
+        const formatted: Position[] = typed.map((p) => {
           const assignment = p.member_management_positions?.[0];
           return {
             id: p.id,
@@ -217,7 +221,55 @@ export default function NominataPage() {
   };
 
   useEffect(() => {
-    loadPositions();
+    let ignore = false;
+    async function fetchPos() {
+      if (!selectedManagementId) return;
+      try {
+        const supabase = createClient();
+        const { data: pData } = await supabase
+          .from("management_positions")
+          .select(`
+            id,
+            name,
+            sort_order,
+            member_management_positions (
+              member_id,
+              starts_on,
+              member:members (
+                id,
+                full_name,
+                cid,
+                category
+              )
+            )
+          `)
+          .eq("management_id", selectedManagementId)
+          .order("sort_order", { ascending: true });
+
+        if (!ignore && pData) {
+          const typed = pData as unknown as RawPositionItem[];
+          const formatted: Position[] = typed.map((p) => {
+            const assignment = p.member_management_positions?.[0];
+            return {
+              id: p.id,
+              name: p.name,
+              sort_order: p.sort_order,
+              assigned_member_id: assignment?.member_id || "",
+              assigned_member_name: assignment?.member?.full_name || "",
+              assigned_member_cid: assignment?.member?.cid || "",
+              assigned_member_category: assignment?.member?.category || "",
+            };
+          });
+          setPositions(formatted);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar cargos:", err);
+      }
+    }
+    fetchPos();
+    return () => {
+      ignore = true;
+    };
   }, [selectedManagementId]);
 
   // Gestão Atual Selecionada
@@ -234,7 +286,7 @@ export default function NominataPage() {
     setIsSaving(true);
     try {
       const supabase = createClient();
-      const { data, error } = await supabase.rpc("set_nominata_officer", {
+      const { error } = await supabase.rpc("set_nominata_officer", {
         p_management_id: selectedManagementId,
         p_position_name: positionName,
         p_member_id: memberId || null,
@@ -256,9 +308,10 @@ export default function NominataPage() {
         setFeedbackMsg(`Nomeação de '${positionName}' atualizada com sucesso!`);
       }
       setTimeout(() => setFeedbackMsg(""), 6000);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Tente novamente";
       console.error("Erro ao atribuir oficial:", err);
-      alert("Não foi possível salvar a nomeação: " + (err.message || "Tente novamente"));
+      alert("Não foi possível salvar a nomeação: " + msg);
     } finally {
       setIsSaving(false);
     }
@@ -275,7 +328,7 @@ export default function NominataPage() {
     setIsSaving(true);
     try {
       const supabase = createClient();
-      const { data, error } = await supabase.rpc("activate_management", {
+      const { error } = await supabase.rpc("activate_management", {
         p_management_id: selectedManagementId,
       });
 
@@ -293,9 +346,10 @@ export default function NominataPage() {
         `Gestão ativada com sucesso! Todos os acessos administrativos (Master, Escrivão e Tesoureiro) foram sincronizados com os novos oficiais empossados.`
       );
       setTimeout(() => setFeedbackMsg(""), 7000);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Tente novamente";
       console.error("Erro ao ativar gestão:", err);
-      alert("Erro ao ativar gestão: " + (err.message || "Tente novamente"));
+      alert("Erro ao ativar gestão: " + msg);
     } finally {
       setIsSaving(false);
     }
@@ -358,9 +412,10 @@ export default function NominataPage() {
 
       setFeedbackMsg(`Nova ${newMgmt.title} cadastrada com sucesso! Você já pode definir a nominata.`);
       setTimeout(() => setFeedbackMsg(""), 5000);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Verifique se o código já existe";
       console.error("Erro ao criar gestão:", err);
-      alert("Não foi possível criar a gestão: " + (err.message || "Verifique se o código já existe"));
+      alert("Não foi possível criar a gestão: " + msg);
     } finally {
       setIsCreatingMgmt(false);
     }
@@ -378,6 +433,14 @@ export default function NominataPage() {
       (p) => !["Mestre Conselheiro", "Presidente do Conselho Consultivo", "PCC", "Primeiro Conselheiro", "Segundo Conselheiro", "Escrivão", "Tesoureiro"].includes(p.name)
     );
   }, [positions]);
+
+  if (isLoading || !isRoleChecked) {
+    return (
+      <div className="py-24 text-center text-xs text-emerald-200/60 animate-pulse">
+        Carregando nominata capitular e permissões...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in">

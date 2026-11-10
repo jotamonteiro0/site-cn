@@ -10,7 +10,7 @@ export function PrivacyNotice() {
   useEffect(() => {
     const accepted = localStorage.getItem("cn_privacy_acknowledged");
     if (!accepted) {
-      setIsVisible(true);
+      requestAnimationFrame(() => setIsVisible(true));
     }
   }, []);
 

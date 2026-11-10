@@ -10,12 +10,7 @@ import {
   Building,
   Shield,
   Search,
-  ExternalLink,
-  BookOpen,
-  Calendar,
-  Sparkles,
-  ArrowLeft,
-  Lock
+  ArrowLeft
 } from "lucide-react";
 
 interface DocumentItem {

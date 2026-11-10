@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
-  UserCircle,
   Calendar,
   CheckCircle2,
   XCircle,
@@ -17,18 +15,16 @@ import {
   ExternalLink,
   Shield,
   Award,
-  ChevronRight,
   Send,
-  Download,
   Printer,
   Copy,
   Check,
   CalendarCheck,
   Heart,
   Share2,
-  Upload,
   UserCheck,
-  Info
+  Info,
+  Camera
 } from "lucide-react";
 
 interface MemberData {
@@ -83,6 +79,20 @@ interface RequestItem {
   created_at: string;
 }
 
+interface DeclarationContentData {
+  solicitante_nome?: string;
+  solicitante_cid?: string;
+  periodo_inicio?: string;
+  periodo_fim?: string;
+  data_emissao?: string;
+  frequencia_porcentagem?: number | string;
+  oficial_responsavel?: {
+    nome?: string;
+    cid?: string;
+    cargo?: string;
+  };
+}
+
 interface IssuedDeclarationItem {
   id: string;
   declaration_type: string;
@@ -91,7 +101,7 @@ interface IssuedDeclarationItem {
   created_at: string;
   period_start?: string;
   period_end?: string;
-  content_data?: any;
+  content_data?: DeclarationContentData;
 }
 
 interface BirthdayItem {
@@ -121,6 +131,7 @@ export default function MemberSelfServicePage() {
   // Estado da UI
   const [activeTab, setActiveTab] = useState<"frequencia" | "reunioes" | "mensalidades" | "solicitacoes" | "aniversarios">("frequencia");
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState("");
   const [duesFilter, setDuesFilter] = useState<"todas" | "pagas" | "pendentes">("todas");
   const [isEmittingDecl, setIsEmittingDecl] = useState(false);
@@ -147,7 +158,9 @@ export default function MemberSelfServicePage() {
 
   // 1. Carrega Dados
   useEffect(() => {
-    setCurrentDate(new Date());
+    requestAnimationFrame(() => {
+      setCurrentDate(new Date());
+    });
     async function loadData() {
       setIsLoading(true);
       try {
@@ -161,15 +174,36 @@ export default function MemberSelfServicePage() {
           .order("full_name", { ascending: true });
 
         if (memData && memData.length > 0) {
-          setAllMembers(memData as MemberData[]);
+          const typedMembers = memData as MemberData[];
+          setAllMembers(typedMembers);
 
           // Tenta encontrar o membro vinculado ao usuário logado
-          let userMember = memData.find((m) => m.email && user?.email && m.email.toLowerCase() === user.email.toLowerCase());
+          let userMember = typedMembers.find((m) => m.email && user?.email && m.email.toLowerCase() === user.email.toLowerCase());
           if (!userMember) {
             // Se não encontrou por email direto, usa o primeiro DeMolay Ativo como padrão
-            userMember = memData.find((m) => m.category === "demolay_ativo") || memData[0];
+            userMember = typedMembers.find((m) => m.category === "demolay_ativo") || typedMembers[0];
           }
-          setCurrentMember(userMember as MemberData);
+
+          // Busca foto de perfil salva no Supabase profiles ou no cache local
+          let profilePhoto: string | undefined = undefined;
+          if (user) {
+            const { data: prof } = await supabase
+              .from("profiles")
+              .select("avatar_path")
+              .eq("id", user.id)
+              .maybeSingle();
+            if (prof?.avatar_path) profilePhoto = prof.avatar_path;
+          }
+          if (!profilePhoto && typeof window !== "undefined") {
+            const cached = localStorage.getItem(`cn_member_avatar_${userMember.id}`);
+            if (cached) profilePhoto = cached;
+          }
+
+          if (profilePhoto) {
+            userMember.photo_url = profilePhoto;
+          }
+
+          setCurrentMember(userMember);
         }
 
         // 2. Carrega Reuniões
@@ -502,11 +536,85 @@ export default function MemberSelfServicePage() {
         );
         setTimeout(() => setFeedbackMsg(""), 6000);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erro ao gerar declaração:", err);
       alert("Falha de conexão ao emitir declaração.");
     } finally {
       setIsEmittingDecl(false);
+    }
+  };
+
+  // Handler: Upload de Foto de Perfil do Usuário
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !currentMember) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("A imagem selecionada excede o limite de 5MB. Por favor, selecione uma foto menor.");
+      return;
+    }
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      alert("Formato inválido. Aceitamos imagens JPG, PNG ou WEBP.");
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Data = reader.result as string;
+
+        try {
+          localStorage.setItem(`cn_member_avatar_${currentMember.id}`, base64Data);
+        } catch {
+          // ignore localStorage quota limit
+        }
+
+        setCurrentMember((prev) => (prev ? { ...prev, photo_url: base64Data } : null));
+
+        const fileExt = file.name.split(".").pop();
+        const filePath = `${currentMember.id}/avatar-${Date.now()}.${fileExt}`;
+
+        try {
+          const { error: uploadError } = await supabase.storage
+            .from("membros")
+            .upload(filePath, file, { upsert: true });
+
+          if (!uploadError) {
+            const { data: publicUrlData } = supabase.storage
+              .from("membros")
+              .getPublicUrl(filePath);
+
+            const finalUrl = publicUrlData?.publicUrl || base64Data;
+            if (user) {
+              await supabase
+                .from("profiles")
+                .update({ avatar_path: finalUrl })
+                .eq("id", user.id);
+            }
+          } else if (user) {
+            await supabase
+              .from("profiles")
+              .update({ avatar_path: base64Data })
+              .eq("id", user.id);
+          }
+        } catch (storageErr) {
+          console.warn("Storage upload fallback para perfil:", storageErr);
+        }
+
+        setFeedbackMsg("Foto de perfil atualizada com sucesso!");
+        setTimeout(() => setFeedbackMsg(""), 5000);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: unknown) {
+      console.error("Erro ao enviar foto:", err);
+      alert("Ocorreu um erro ao carregar a foto de perfil.");
+    } finally {
+      setIsUploadingPhoto(false);
     }
   };
 
@@ -546,6 +654,14 @@ export default function MemberSelfServicePage() {
     setTimeout(() => setPixCopied(false), 3000);
   };
 
+  if (isLoading) {
+    return (
+      <div className="py-24 text-center text-xs text-emerald-200/60 animate-pulse">
+        Carregando dados capitulares do membro...
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Feedback Toast */}
@@ -566,23 +682,59 @@ export default function MemberSelfServicePage() {
         <div className="absolute top-0 right-0 w-80 h-80 bg-[#D9AA45]/5 rounded-full blur-3xl pointer-events-none" />
         
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-5">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-[#D9AA45] to-amber-200 p-0.5 shadow-xl flex-shrink-0">
-              <div className="w-full h-full rounded-2xl bg-[#04281A] flex items-center justify-center text-2xl font-bold text-[#D9AA45]">
-                {currentMember?.full_name ? currentMember.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("") : "CN"}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            {/* Foto de Perfil com Suporte a Upload e Efeito Glassmorphism */}
+            <div className="relative group shrink-0">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-tr from-[#D9AA45] via-amber-200 to-[#087443] p-0.5 shadow-2xl overflow-hidden">
+                <div className="w-full h-full rounded-2xl bg-[#04281A] flex items-center justify-center text-2xl font-bold text-[#D9AA45] overflow-hidden relative">
+                  {currentMember?.photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={currentMember.photo_url}
+                      alt={currentMember.full_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span>
+                      {currentMember?.full_name ? currentMember.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("") : "CN"}
+                    </span>
+                  )}
+                  {isUploadingPhoto && (
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center text-xs text-white font-semibold">
+                      Enviando...
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Botão de Câmera Sobreposto */}
+              <label
+                htmlFor="profile-photo-input"
+                className="absolute -bottom-1 -right-1 p-2 rounded-xl bg-[#087443] hover:bg-[#D9AA45] text-white hover:text-[#04281A] border border-[#D9AA45]/50 shadow-lg cursor-pointer transition-all transform hover:scale-110 flex items-center justify-center backdrop-blur-md"
+                title="Alterar Foto de Perfil"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <input
+                  id="profile-photo-input"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handlePhotoUpload}
+                  disabled={isUploadingPhoto}
+                  className="hidden"
+                />
+              </label>
             </div>
 
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/40">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/40 backdrop-blur-sm">
                   ID {currentMember?.cid || "000000"}
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 backdrop-blur-sm">
                   {currentMember?.category === "demolay_ativo" ? "DeMolay Ativo" : currentMember?.category === "macom" ? "Tio Maçom" : "Sênior DeMolay"}
                 </span>
                 {currentMember?.demolay_degree_date && (
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 backdrop-blur-sm">
                     Grau DeMolay
                   </span>
                 )}
@@ -591,9 +743,17 @@ export default function MemberSelfServicePage() {
               <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
                 {currentMember?.full_name || "Carregando perfil..."}
               </h1>
-              <p className="text-sm text-gray-300 flex items-center gap-2 mt-1">
+              <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-gray-300">
                 <span>Capítulo Professor Carvalho Neves Nº 500</span>
-              </p>
+                <span className="text-white/30">•</span>
+                <label
+                  htmlFor="profile-photo-input"
+                  className="inline-flex items-center gap-1.5 text-[#D9AA45] hover:text-amber-200 cursor-pointer font-medium hover:underline transition-colors"
+                >
+                  <Camera className="w-3 h-3" />
+                  <span>{currentMember?.photo_url ? "Trocar foto de perfil" : "Adicionar foto de perfil"}</span>
+                </label>
+              </div>
             </div>
           </div>
 
@@ -962,7 +1122,7 @@ export default function MemberSelfServicePage() {
                         Ausência Justificada
                       </span>
                       <p className="text-xs text-gray-400 italic max-w-xs mt-1">
-                        "{nextMeetingAttendance.rsvp_notes}"
+                        &ldquo;{nextMeetingAttendance.rsvp_notes}&rdquo;
                       </p>
                     </div>
                   ) : (

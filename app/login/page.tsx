@@ -257,8 +257,8 @@ export default function LoginPage() {
       );
       setEmail(firstAccessEmail.trim());
       setPassword(firstAccessPassword.trim());
-    } catch (err: any) {
-      console.error("Erro no primeiro acesso:", err);
+    } catch (_err: unknown) {
+      console.error("Erro no primeiro acesso:", _err);
       setFirstAccessError("Falha de conexão com o servidor capitular.");
     } finally {
       setIsSubmittingFirstAccess(false);

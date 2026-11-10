@@ -6,12 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   ShieldCheck,
   Building2,
-  Users,
-  ArrowLeft,
-  CheckCircle2,
-  Compass,
-  MapPin,
-  ExternalLink
+  ArrowLeft
 } from "lucide-react";
 
 interface MemberRecord {
@@ -121,8 +116,8 @@ export default function ConselhoPage() {
         </div>
       </div>
 
-      {/* BANNER INFORMATIVO */}
-      <div className="p-5 rounded-2xl bg-[#064D32]/80 border border-emerald-500/30 text-xs text-emerald-100 flex items-start gap-4">
+      {/* BANNER INFORMATIVO COM GLASSMORPHISM */}
+      <div className="p-5 rounded-2xl bg-[#064D32]/80 backdrop-blur-xl border border-emerald-500/30 text-xs text-emerald-100 flex items-start gap-4 shadow-xl">
         <Building2 className="w-6 h-6 text-[#D9AA45] shrink-0 mt-0.5" />
         <div className="space-y-1">
           <h3 className="font-bold text-white text-sm">Estrutura de Apoio Maçônico</h3>
@@ -133,13 +128,18 @@ export default function ConselhoPage() {
       </div>
 
       {/* GRID DAS 4 LOJAS PATROCINADORAS */}
+      {isLoading ? (
+        <div className="py-12 text-center text-xs text-emerald-200/60 animate-pulse">
+          Carregando dados das Lojas Patrocinadoras e do Conselho Consultivo...
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {OFFICIAL_LODGES.map((lodge) => {
           const brothers = lodgeMap[lodge.name] || [];
           return (
             <div
               key={lodge.name}
-              className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-4 hover:border-amber-500/40 transition-all flex flex-col justify-between"
+              className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-4 hover:border-amber-500/40 transition-all flex flex-col justify-between shadow-lg"
             >
               <div>
                 {/* Topo do Card */}
@@ -193,6 +193,7 @@ export default function ConselhoPage() {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

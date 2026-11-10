@@ -62,15 +62,19 @@ export async function POST(request: Request) {
         .eq("management_positions.management_id", activeMgmt.id);
 
       if (officers) {
-        for (const o of officers as any[]) {
+        interface OfficerRecord {
+          management_positions?: { name?: string } | null;
+          members?: { full_name?: string; cid?: string } | null;
+        }
+        for (const o of officers as unknown as OfficerRecord[]) {
           const pos = o.management_positions?.name;
           if (pos === "Tesoureiro" && o.members) {
-            tesoureiroName = o.members.full_name;
-            tesoureiroCid = o.members.cid;
+            tesoureiroName = o.members.full_name || tesoureiroName;
+            tesoureiroCid = o.members.cid || tesoureiroCid;
           }
           if (pos === "Escrivão" && o.members) {
-            escrivaoName = o.members.full_name;
-            escrivaoCid = o.members.cid;
+            escrivaoName = o.members.full_name || escrivaoName;
+            escrivaoCid = o.members.cid || escrivaoCid;
           }
         }
       }
@@ -93,12 +97,17 @@ export async function POST(request: Request) {
         .eq("member_id", member.id);
 
       if (attList && attList.length > 0) {
-        const inPeriod = attList.filter((a: any) => {
+        interface AttendanceRecord {
+          status: string;
+          meetings?: { starts_at?: string } | null;
+        }
+        const typedAttList = attList as unknown as AttendanceRecord[];
+        const inPeriod = typedAttList.filter((a) => {
           const d = a.meetings?.starts_at?.substring(0, 10);
           return d && d >= pStart && d <= pEnd;
         });
         if (inPeriod.length > 0) {
-          const presentCount = inPeriod.filter((a: any) =>
+          const presentCount = inPeriod.filter((a) =>
             ["presente", "justificado"].includes(a.status)
           ).length;
           attendanceRate = Math.round((presentCount / inPeriod.length) * 100);
@@ -174,10 +183,11 @@ export async function POST(request: Request) {
       success: true,
       declaration: newDecl,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("Erro na rota de declaração:", error);
     return NextResponse.json(
-      { error: "Falha ao emitir declaração: " + (error?.message || "Erro desconhecido") },
+      { error: "Falha ao emitir declaração: " + message },
       { status: 500 }
     );
   }

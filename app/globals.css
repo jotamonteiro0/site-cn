@@ -19,3 +19,57 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Glassmorphism Styles (Área Restrita & Destaques) */
+.glass-panel {
+  background: rgba(4, 40, 26, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+}
+
+.glass-panel-gold {
+  background: rgba(6, 77, 50, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(217, 170, 69, 0.28);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-hover:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(217, 170, 69, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Regras de Impressão Oficial de Documentos & Declarações (A4) */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+  aside, nav, .no-print {
+    display: none !important;
+  }
+  .print-area {
+    position: fixed !important;
+    inset: 0 !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    padding: 32px !important;
+    z-index: 99999 !important;
+  }
+}

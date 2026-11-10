@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/client";
 import {
   Users,
   ShieldCheck,
-  Calendar,
   Wallet,
   Clock,
   MapPin,
@@ -14,11 +13,9 @@ import {
   CalendarCheck,
   ExternalLink,
   ChevronRight,
-  Sparkles,
   ClipboardCheck,
   UserPlus,
-  Building2,
-  CheckCircle2
+  Building2
 } from "lucide-react";
 
 interface MemberRecord {
@@ -98,6 +95,14 @@ export default function DashboardOverviewPage() {
 
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${datesStr}&details=${details}&location=${location}`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="py-24 text-center text-xs text-emerald-200/60 animate-pulse">
+        Carregando visão geral e indicadores do Capítulo...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in">

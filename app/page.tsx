@@ -14,13 +14,9 @@ import {
   ArrowRight,
   BookOpen,
   Lock,
-  Crown,
   Mail,
   MapPin,
-  Send,
-  Calendar,
-  Compass,
-  CheckCircle2
+  Send
 } from "lucide-react";
 import Link from "next/link";
 

@@ -10,7 +10,6 @@ import {
   Wallet, 
   ClipboardCheck, 
   Users, 
-  UserCircle, 
   ExternalLink, 
   LogOut, 
   Eye, 
@@ -19,7 +18,9 @@ import {
   ChevronRight,
   FileText,
   UserCheck,
-  Crown
+  Crown,
+  Camera,
+  type LucideIcon
 } from "lucide-react";
 
 export interface DashboardUser {
@@ -40,6 +41,24 @@ const roleLabels: Record<string, string> = {
   tesoureiro: "Tesoureiro",
   membro: "Membro",
 };
+
+interface NavItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  badge?: string;
+}
+
+const navigation: readonly NavItem[] = [
+  { name: "Visão Geral", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Meu Autoatendimento", href: "/dashboard/membro", icon: UserCheck },
+  { name: "Gestões & Nominata", href: "/dashboard/nominata", icon: Crown },
+  { name: "Atas & Chamada da Reunião", href: "/dashboard/chamada", icon: ClipboardCheck },
+  { name: "Quadro de Membros", href: "/dashboard/membros", icon: Users },
+  { name: "Conselho Consultivo", href: "/dashboard/conselho", icon: Shield },
+  { name: "Documentos", href: "/dashboard/documentos", icon: FileText },
+  { name: "Tesouraria", href: "/dashboard/tesouraria", icon: Wallet },
+] as const;
 
 export function Sidebar({ user: initialUser }: SidebarProps) {
   const pathname = usePathname();
@@ -68,12 +87,14 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
             .eq("is_active", true)
             .maybeSingle();
 
+          const cachedAvatar = typeof window !== "undefined" ? localStorage.getItem(`cn_member_avatar_${user.id}`) : null;
+
           setCurrentUser({
             id: user.id,
             email: user.email,
             fullName: profile?.full_name || (user.user_metadata?.full_name as string) || user.email?.split("@")[0] || "Membro",
             roleCode: membership?.role_code || "membro",
-            avatarPath: profile?.avatar_path,
+            avatarPath: profile?.avatar_path || cachedAvatar,
           });
         }
       } catch (err) {
@@ -85,24 +106,6 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
       loadUser();
     }
   }, [initialUser]);
-
-  interface NavItem {
-    name: string;
-    href: string;
-    icon: any;
-    badge?: string;
-  }
-
-  const navigation: NavItem[] = [
-    { name: "Visão Geral", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Meu Autoatendimento", href: "/dashboard/membro", icon: UserCheck },
-    { name: "Gestões & Nominata", href: "/dashboard/nominata", icon: Crown },
-    { name: "Atas & Chamada da Reunião", href: "/dashboard/chamada", icon: ClipboardCheck },
-    { name: "Quadro de Membros", href: "/dashboard/membros", icon: Users },
-    { name: "Conselho Consultivo", href: "/dashboard/conselho", icon: Shield },
-    { name: "Documentos", href: "/dashboard/documentos", icon: FileText },
-    { name: "Tesouraria", href: "/dashboard/tesouraria", icon: Wallet },
-  ];
 
   const handleSignOut = async () => {
     setIsLoggingOut(true);
@@ -117,6 +120,46 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
     }
   };
 
+  const handleSidebarAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert("A imagem selecionada excede 5MB. Por favor, escolha uma foto menor.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      try {
+        localStorage.setItem(`cn_member_avatar_${currentUser.id}`, base64);
+      } catch {
+        // storage quota fallback
+      }
+      setCurrentUser((prev) => (prev ? { ...prev, avatarPath: base64 } : null));
+
+      try {
+        const supabase = createClient();
+        const fileExt = file.name.split(".").pop();
+        const filePath = `${currentUser.id}/avatar-${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("membros")
+          .upload(filePath, file, { upsert: true });
+
+        const finalUrl = !uploadError
+          ? supabase.storage.from("membros").getPublicUrl(filePath).data.publicUrl
+          : base64;
+
+        await supabase
+          .from("profiles")
+          .update({ avatar_path: finalUrl })
+          .eq("id", currentUser.id);
+      } catch (uploadErr) {
+        console.warn("Storage fallback na Sidebar:", uploadErr);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const getInitials = (name?: string) => {
     if (!name) return "CN";
     const parts = name.trim().split(/\s+/);
@@ -128,7 +171,6 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
   const effectiveRole = viewAsMember ? "membro" : currentRole;
   const displayName = currentUser?.fullName || "Carregando...";
 
-  // Filtro estrito de permissões RBAC para navegação
   const allowedNavigation = useMemo(() => {
     return navigation.filter((item) => {
       if (
@@ -150,7 +192,7 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
       }
       return false;
     });
-  }, [effectiveRole, navigation]);
+  }, [effectiveRole]);
 
   return (
     <>
@@ -248,19 +290,51 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
 
         {/* Rodapé: Perfil Logado & Ações */}
         <div className="p-4 border-t border-white/10 space-y-3">
-          {/* Cartão de Identificação do Membro */}
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#087443] border border-[#D9AA45] flex items-center justify-center font-bold text-white text-xs">
-              {getInitials(displayName)}
+          {/* Cartão de Identificação do Membro com Glassmorphism e Foto */}
+          <div className="p-3 rounded-xl bg-white/[0.06] backdrop-blur-md border border-white/10 hover:border-[#D9AA45]/40 transition-colors flex items-center gap-3 shadow-inner group">
+            {/* Avatar com Botão de Upload de Foto Instantâneo */}
+            <div className="relative shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#087443] border border-[#D9AA45] flex items-center justify-center font-bold text-white text-xs overflow-hidden shadow-md">
+                {currentUser?.avatarPath ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={currentUser.avatarPath}
+                    alt={displayName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  getInitials(displayName)
+                )}
+              </div>
+              <label
+                htmlFor="sidebar-photo-input"
+                className="absolute -bottom-1 -right-1 p-1 rounded-full bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] shadow-md cursor-pointer transition-transform hover:scale-110 flex items-center justify-center"
+                title="Adicionar ou alterar foto de perfil"
+              >
+                <Camera className="w-2.5 h-2.5" />
+                <input
+                  id="sidebar-photo-input"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleSidebarAvatarUpload}
+                  className="hidden"
+                />
+              </label>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">
-                {displayName}
+
+            <Link
+              href="/dashboard/membro"
+              onClick={() => setIsOpen(false)}
+              className="flex-1 min-w-0 group-hover:opacity-90 transition-opacity"
+              title="Acessar Meu Perfil e Autoatendimento"
+            >
+              <p className="text-xs font-bold text-white truncate flex items-center gap-1">
+                <span>{displayName}</span>
               </p>
               <p className="text-[10px] text-[#D9AA45] font-medium truncate">
                 {viewAsMember ? "Visualizando como Membro" : `Perfil: ${roleLabels[currentRole] || currentRole}`}
               </p>
-            </div>
+            </Link>
           </div>
 
           {/* Links de Ação: Ver Site e Sair */}
