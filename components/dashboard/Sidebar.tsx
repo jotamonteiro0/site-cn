@@ -17,7 +17,8 @@ import {
   Menu, 
   X,
   ChevronRight,
-  FileText
+  FileText,
+  UserCheck
 } from "lucide-react";
 
 export interface DashboardUser {
@@ -84,13 +85,21 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
     }
   }, [initialUser]);
 
-  const navigation = [
+  interface NavItem {
+    name: string;
+    href: string;
+    icon: any;
+    badge?: string;
+  }
+
+  const navigation: NavItem[] = [
     { name: "Visão Geral", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Meu Autoatendimento", href: "/dashboard/membro", icon: UserCheck },
     { name: "Calendário & Chamada", href: "/dashboard/chamada", icon: ClipboardCheck },
     { name: "Quadro de Membros", href: "/dashboard/membros", icon: Users },
     { name: "Conselho Consultivo", href: "/dashboard/conselho", icon: Shield },
     { name: "Documentos & Atas", href: "/dashboard/documentos", icon: FileText },
-    { name: "Tesouraria", href: "/dashboard/tesouraria", icon: Wallet, badge: "Em breve" },
+    { name: "Tesouraria", href: "/dashboard/tesouraria", icon: Wallet },
   ];
 
   const handleSignOut = async () => {
