@@ -22,7 +22,8 @@ import {
   CalendarCheck,
   Compass,
   FileText,
-  Printer
+  Printer,
+  Sparkles
 } from "lucide-react";
 
 interface MemberRecord {
@@ -63,6 +64,90 @@ interface VisitingDemolayRecord {
 }
 
 type AttendanceStatus = "presente" | "ausente" | "justificado";
+
+// Helpers Normativos DeMolay (Vade Mecum Art. 216 & Dias Obrigatórios)
+const isSunday = (dateStr: string) => {
+  if (!dateStr) return true;
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.getDay() === 0;
+};
+
+const getDayOfWeekName = (dateStr: string) => {
+  if (!dateStr) return "";
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  const days = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
+  return days[date.getDay()];
+};
+
+const getMandatoryDaysForDate = (dateStr: string) => {
+  if (!dateStr) return [];
+  const [, m] = dateStr.split("-").map(Number);
+  switch (m) {
+    case 3:
+      return [
+        { name: "Dia Devocional (SCDB)", desc: "Reverência pelas Coisas Sagradas (próximo a 18/03)" },
+        { name: "Dia em Memória a Jacques DeMolay", desc: "Homenagem solene ao mártir histórico (18/03)" },
+      ];
+    case 5:
+      return [
+        { name: "Dia das Mães (SCDB)", desc: "Cerimônia das Mães (2º domingo de maio)" },
+      ];
+    case 8:
+      return [
+        { name: "Dia dos Pais (SCDB)", desc: "Cerimônia dos Pais (2º domingo de agosto)" },
+      ];
+    case 9:
+      return [
+        { name: "Dia do Patriota (SCDB)", desc: "Virtude do Patriotismo / Semana da Pátria" },
+      ];
+    case 10:
+      return [
+        { name: "Dia Educacional (SCDB)", desc: "Defesa da Educação e Escola Pública" },
+      ];
+    case 11:
+      return [
+        { name: "Dia em Memória a Frank S. Land", desc: "Homenagem ao Fundador / Ação Beneficente (08/11)" },
+        { name: "Dia do Meu Governo (SCDB)", desc: "Consciência Cidadã e Democracia" },
+      ];
+    case 12:
+      return [
+        { name: "Dia DeMolay de Conforto (SCDB)", desc: "Ação de solidariedade social de Natal" },
+      ];
+    default:
+      return [];
+  }
+};
+
+const getMandatoryDayWarning = (title: string, dateStr: string) => {
+  if (!title || !dateStr) return null;
+  const lower = title.toLowerCase();
+  const [, m] = dateStr.split("-").map(Number);
+
+  if ((lower.includes("mãe") || lower.includes("maes")) && m !== 5) {
+    return "💡 Atenção MC: Pelo Vade Mecum (Art. 216), o Dia das Mães é comemorado obrigatoriamente no mês de Maio.";
+  }
+  if ((lower.includes("pai") || lower.includes("pais")) && m !== 8) {
+    return "💡 Atenção MC: Pelo Vade Mecum (Art. 216), o Dia dos Pais é comemorado obrigatoriamente no mês de Agosto.";
+  }
+  if (lower.includes("patriota") && m !== 9) {
+    return "💡 Atenção MC: Pelo Vade Mecum (Art. 216), o Dia do Patriota é comemorado obrigatoriamente no mês de Setembro.";
+  }
+  if (lower.includes("educacional") && m !== 10) {
+    return "💡 Atenção MC: Pelo Vade Mecum (Art. 216), o Dia Educacional é comemorado obrigatoriamente no mês de Outubro.";
+  }
+  if ((lower.includes("frank") || lower.includes("meu governo")) && m !== 11) {
+    return "💡 Atenção MC: Pelo Vade Mecum (Art. 216), o Dia em Memória a Frank S. Land e o Dia do Meu Governo são comemorados em Novembro.";
+  }
+  if (lower.includes("conforto") && m !== 12) {
+    return "💡 Atenção MC: Pelo Vade Mecum (Art. 216), o Dia DeMolay de Conforto é comemorado em Dezembro (próximo ao Natal).";
+  }
+  if ((lower.includes("devocional") || lower.includes("jacques demolay")) && m !== 3) {
+    return "💡 Atenção MC: Pelo Vade Mecum (Art. 216), o Dia Devocional e o Dia em Memória a Jacques DeMolay são comemorados em Março.";
+  }
+  return null;
+};
 
 export default function ChamadaPage() {
   const [meetings, setMeetings] = useState<MeetingRecord[]>([]);
@@ -1312,6 +1397,14 @@ export default function ChamadaPage() {
                   className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
                   placeholder="Ex: Sessão Ordinária do Grau Iniciático"
                 />
+
+                {/* Validação de Dia Obrigatório fora do mês correto */}
+                {getMandatoryDayWarning(editingMeeting.title, editingMeeting.date) && (
+                  <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-[11px] flex items-start gap-1.5 mt-1.5 animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+                    <span>{getMandatoryDayWarning(editingMeeting.title, editingMeeting.date)}</span>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -1340,6 +1433,39 @@ export default function ChamadaPage() {
                   />
                 </div>
               </div>
+
+              {/* Lembrete Litúrgico: Reuniões aos Domingos */}
+              {editingMeeting.date && !isSunday(editingMeeting.date) && (
+                <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-[11px] flex items-start gap-1.5 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+                  <span>
+                    <strong>Aviso Litúrgico:</strong> A data selecionada cai em uma <strong>{getDayOfWeekName(editingMeeting.date)}</strong>. Lembre-se que as reuniões do Capítulo habitualmente acontecem aos <strong>domingos</strong>.
+                  </span>
+                </div>
+              )}
+
+              {/* Sugestões de Dias Obrigatórios para o mês selecionado */}
+              {editingMeeting.date && getMandatoryDaysForDate(editingMeeting.date).length > 0 && (
+                <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-200 text-[11px] space-y-1.5 animate-in fade-in">
+                  <span className="font-bold text-[#D9AA45] flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-[#D9AA45]" />
+                    Dias Obrigatórios previstos para este mês (Vade Mecum):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {getMandatoryDaysForDate(editingMeeting.date).map((day) => (
+                      <button
+                        key={day.name}
+                        type="button"
+                        onClick={() => setEditingMeeting({ ...editingMeeting, title: day.name })}
+                        className="px-2.5 py-1 rounded-lg bg-[#D9AA45]/20 hover:bg-[#D9AA45]/35 border border-[#D9AA45]/40 text-[#D9AA45] text-[10px] font-bold cursor-pointer transition-colors"
+                        title={day.desc}
+                      >
+                        + Usar &ldquo;{day.name}&rdquo;
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block font-semibold mb-1 text-emerald-200">Local da Sessão</label>
