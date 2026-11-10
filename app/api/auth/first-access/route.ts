@@ -60,33 +60,38 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Determina a permissão (RBAC) do membro com base na nominata da Gestão Ativa
+    // 2. Determina a permissão (RBAC) do membro
     let assignedRole = "membro";
 
-    const { data: activeMgmt } = await supabaseAdmin
-      .from("managements")
-      .select("id")
-      .eq("chapter_id", CHAPTER_ID)
-      .eq("status", "ativa")
-      .maybeSingle();
+    // João Guilherme Martins Lopes Monteiro (CID 127738) é o Administrador e Mantenedor do Sistema (Master permanente)
+    if (cleanCid === "127738" || cleanEmail === "joaomonteiro0@icloud.com") {
+      assignedRole = "master";
+    } else {
+      const { data: activeMgmt } = await supabaseAdmin
+        .from("managements")
+        .select("id")
+        .eq("chapter_id", CHAPTER_ID)
+        .eq("status", "ativa")
+        .maybeSingle();
 
-    if (activeMgmt) {
-      const { data: officerPos } = await supabaseAdmin
-        .from("member_management_positions")
-        .select("management_positions(name)")
-        .eq("member_id", member.id)
-        .eq("management_positions.management_id", activeMgmt.id);
+      if (activeMgmt) {
+        const { data: officerPos } = await supabaseAdmin
+          .from("member_management_positions")
+          .select("management_positions(name)")
+          .eq("member_id", member.id)
+          .eq("management_positions.management_id", activeMgmt.id);
 
-      if (officerPos && officerPos.length > 0) {
-        for (const op of officerPos as any[]) {
-          const posName = op.management_positions?.name;
-          if (["Mestre Conselheiro", "Presidente do Conselho Consultivo", "PCC"].includes(posName)) {
-            assignedRole = "master";
-            break;
-          } else if (posName === "Escrivão") {
-            assignedRole = "escrivao";
-          } else if (posName === "Tesoureiro") {
-            assignedRole = "tesoureiro";
+        if (officerPos && officerPos.length > 0) {
+          for (const op of officerPos as any[]) {
+            const posName = op.management_positions?.name;
+            if (["Mestre Conselheiro", "Presidente do Conselho Consultivo", "PCC"].includes(posName)) {
+              assignedRole = "master";
+              break;
+            } else if (posName === "Escrivão") {
+              assignedRole = "escrivao";
+            } else if (posName === "Tesoureiro") {
+              assignedRole = "tesoureiro";
+            }
           }
         }
       }

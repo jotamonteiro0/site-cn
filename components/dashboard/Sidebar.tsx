@@ -35,7 +35,7 @@ interface SidebarProps {
 }
 
 const roleLabels: Record<string, string> = {
-  master: "Master (MC / PCC)",
+  master: "Master (Administrador)",
   escrivao: "Escrivão",
   tesoureiro: "Tesoureiro",
   membro: "Membro",
