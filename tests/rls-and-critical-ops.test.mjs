@@ -10,7 +10,7 @@ const ANON_KEY =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_nlGgEKNZC0_fNuoYM9Og2A_HUyoJ-4G";
 
 const CHAPTER_ID = "00000000-0000-0000-0000-000000000500";
-const FAKE_CHAPTER_ID = "00000000-0000-0000-0000-000000000999";
+const FAKE_CHAPTER_ID = "00000000-0000-0000-0000-000000000888";
 
 describe("Auditoria Independente de Segurança RLS, Isolamento e Operações Críticas", () => {
   let adminClient;
