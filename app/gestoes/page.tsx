@@ -31,21 +31,21 @@ interface Gestao {
 // Ex: joao-guilherme.2027.1.jpg, rafael-inacio.2026.2.jpg
 const gestaoData: Gestao[] = [
   {
-    numero: "XXVI",
-    romano: "Gestão XXVI",
-    mc: "João Guilherme Martins Lopes Monteiro",
-    periodo: "2027.1",
-    status: "Atual",
-    foto: "/gestoes/joao-guilherme.2027.1.jpg",
-    destaque: true,
-  },
-  {
     numero: "XXV",
     romano: "Gestão XXV",
     mc: "Rafael Inácio do Nascimento de Morais",
     periodo: "2026.2",
-    status: "Past MC",
+    status: "Atual",
     foto: "/gestoes/rafael-inacio.2026.2.jpg",
+    destaque: true,
+  },
+  {
+    numero: "XXVI",
+    romano: "Gestão XXVI",
+    mc: "João Guilherme Martins Lopes Monteiro",
+    periodo: "2027.1",
+    status: "Past MC",
+    foto: "/gestoes/joao-guilherme.2027.1.jpg",
     destaque: true,
   },
   {
