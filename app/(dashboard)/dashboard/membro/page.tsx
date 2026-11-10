@@ -1016,10 +1016,13 @@ export default function MemberSelfServicePage() {
                 </span>
               </div>
               <h2 className="text-2xl font-extrabold text-white">
-                R$ 50,00 <span className="text-sm font-normal text-gray-300">/ mês</span>
+                {currentMember?.category === "macom" ? "R$ 25,00" : "R$ 22,00"}{" "}
+                <span className="text-sm font-normal text-gray-300">
+                  / mês ({currentMember?.category === "macom" ? "Tio Maçom" : "DeMolay Ativo"})
+                </span>
               </h2>
               <p className="text-xs text-gray-400 mt-1">
-                Vencimento padrão todo dia 10 de cada mês corrente.
+                Vencimento padrão todo dia 28 de cada mês (final de mês).
               </p>
             </div>
 
@@ -1077,7 +1080,7 @@ export default function MemberSelfServicePage() {
                             {c.description}
                           </td>
                           <td className="py-3.5 px-4 font-mono text-xs text-gray-300">
-                            {c.due_date ? new Date(c.due_date).toLocaleDateString("pt-BR") : "Dia 10"}
+                            {c.due_date ? new Date(c.due_date).toLocaleDateString("pt-BR") : "Dia 28"}
                           </td>
                           <td className="py-3.5 px-4 font-mono text-sm font-bold text-white">
                             R$ {Number(c.amount).toFixed(2).replace(".", ",")}

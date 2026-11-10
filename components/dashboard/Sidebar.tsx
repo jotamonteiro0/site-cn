@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -34,7 +34,7 @@ interface SidebarProps {
 }
 
 const roleLabels: Record<string, string> = {
-  master: "Master / Admin",
+  master: "Master (MC / PCC)",
   escrivao: "Escrivão",
   tesoureiro: "Tesoureiro",
   membro: "Membro",
@@ -122,8 +122,28 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
-  const currentRole = currentUser?.roleCode || "master";
+  const currentRole = currentUser?.roleCode || "membro";
+  const effectiveRole = viewAsMember ? "membro" : currentRole;
   const displayName = currentUser?.fullName || "Carregando...";
+
+  // Filtro estrito de permissões RBAC para navegação
+  const allowedNavigation = useMemo(() => {
+    return navigation.filter((item) => {
+      if (item.href === "/dashboard" || item.href === "/dashboard/membro") {
+        return true;
+      }
+      if (effectiveRole === "master") {
+        return true;
+      }
+      if (effectiveRole === "escrivao") {
+        return ["/dashboard/chamada", "/dashboard/membros", "/dashboard/documentos"].includes(item.href);
+      }
+      if (effectiveRole === "tesoureiro") {
+        return ["/dashboard/tesouraria", "/dashboard/membros"].includes(item.href);
+      }
+      return false;
+    });
+  }, [effectiveRole, navigation]);
 
   return (
     <>
@@ -188,9 +208,9 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
           </div>
         </div>
 
-        {/* Links de Navegação */}
+        {/* Links de Navegação Filtrados por Permissão */}
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-          {navigation.map((item) => {
+          {allowedNavigation.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
             return (
