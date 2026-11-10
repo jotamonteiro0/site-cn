@@ -25,14 +25,16 @@ import {
 interface DocumentRecord {
   id: string;
   title: string;
-  category: "scdb_cerimonias" | "scdb_gerais" | "gestao";
+  category: "scdb_cerimonias" | "scdb_gerais" | "gestao" | "atas";
   management?: string;
   mcName?: string;
   type: string;
   description: string;
-  visibility: "public" | "members" | "staff";
+  visibility: "public" | "members" | "staff" | "all";
   date: string;
   downloadUrl?: string;
+  fileName?: string;
+  fileUrl?: string;
 }
 
 // 1. Acervo Completo do SCDB (Cerimônias Públicas e Manuais Oficiais)
@@ -255,10 +257,276 @@ const gestaoDocuments: DocumentRecord[] = [
   },
 ];
 
+// 3. Atas Oficiais e Balaústres das Gestões (Documentos Digitalizados e Assinados)
+const atasDocuments: DocumentRecord[] = [
+  // Gestão XXIV (MC José Keltton - 2026.1)
+  {
+    id: "ata-24-01",
+    title: "Ata Magna nº 001/2026 — Cerimônia de Instalação e Posse dos Oficiais",
+    category: "atas",
+    management: "Gestão XXIV (2026.1)",
+    mcName: "MC José Keltton",
+    type: "Ata de Instalação",
+    description: "Balaústre solene de instalação e posse dos oficiais capitulares da Gestão XXIV.",
+    visibility: "all",
+    date: "25/01/2026",
+    fileName: "Ata_001_2026_01_25_Instalacao_Oficiais.pdf",
+    fileUrl: "/documentos/atas/Ata_001_2026_01_25_Instalacao_Oficiais.pdf",
+  },
+  {
+    id: "ata-24-02",
+    title: "Ata nº 002/2026 — Assembleia Ordinária de Apresentação do Plano de Gestão",
+    category: "atas",
+    management: "Gestão XXIV (2026.1)",
+    mcName: "MC José Keltton",
+    type: "Ata Ordinária",
+    description: "Apresentação e deliberação das diretrizes e calendário administrativo de 2026.1.",
+    visibility: "all",
+    date: "08/02/2026",
+    fileName: "Ata_002_2026_02_08_Plano_Gestao.pdf",
+    fileUrl: "/documentos/atas/Ata_002_2026_02_08_Plano_Gestao.pdf",
+  },
+  {
+    id: "ata-24-03",
+    title: "Ata nº 003/2026 — Reunião Ordinária, Dia Devocional e Escrutínio Secreto",
+    category: "atas",
+    management: "Gestão XXIV (2026.1)",
+    mcName: "MC José Keltton",
+    type: "Ata Ordinária",
+    description: "Comemoração devocional e deliberação em escrutínio secreto de sindicâncias.",
+    visibility: "all",
+    date: "22/02/2026",
+    fileName: "Ata_003_2026_02_22_Devocional.pdf",
+    fileUrl: "/documentos/atas/Ata_003_2026_02_22_Devocional.pdf",
+  },
+  {
+    id: "ata-24-04",
+    title: "Ata nº 004/2026 — Reunião Ordinária, Dia do DeMolay e Jacques DeMolay",
+    category: "atas",
+    management: "Gestão XXIV (2026.1)",
+    mcName: "MC José Keltton",
+    type: "Ata Ordinária",
+    description: "Sessão solene alusiva ao Dia Nacional do DeMolay e ao martírio de Jacques DeMolay.",
+    visibility: "all",
+    date: "15/03/2026",
+    fileName: "Ata_004_2026_03_15_Jacques_DeMolay.pdf",
+    fileUrl: "/documentos/atas/Ata_004_2026_03_15_Jacques_DeMolay.pdf",
+  },
+  {
+    id: "ata-24-05",
+    title: "Ata Magna nº 005/2026 — Cerimônia de Iniciação à Ordem DeMolay",
+    category: "atas",
+    management: "Gestão XXIV (2026.1)",
+    mcName: "MC José Keltton",
+    type: "Ata de Iniciação",
+    description: "Balaústre ritualístico da Iniciação solene de novos irmãos no Capítulo 500.",
+    visibility: "all",
+    date: "29/03/2026",
+    fileName: "Ata_005_2026_03_29_Iniciacao.pdf",
+    fileUrl: "/documentos/atas/Ata_005_2026_03_29_Iniciacao.pdf",
+  },
+  {
+    id: "ata-24-06",
+    title: "Ata nº 006/2026 — Reunião Ordinária e Instrução Ritualística e Histórica",
+    category: "atas",
+    management: "Gestão XXIV (2026.1)",
+    mcName: "MC José Keltton",
+    type: "Ata Ordinária",
+    description: "Instrução litúrgica aprofundada dos graus e histórico da Ordem DeMolay.",
+    visibility: "all",
+    date: "12/04/2026",
+    fileName: "Ata_006_2026_04_12_Instrucao.pdf",
+    fileUrl: "/documentos/atas/Ata_006_2026_04_12_Instrucao.pdf",
+  },
+  {
+    id: "ata-24-07",
+    title: "Ata nº 007/2026 — Reunião Ordinária e Conscientização ao TEA (Autismo)",
+    category: "atas",
+    management: "Gestão XXIV (2026.1)",
+    mcName: "MC José Keltton",
+    type: "Ata Ordinária",
+    description: "Palestra e deliberação especial em apoio e conscientização sobre o autismo.",
+    visibility: "all",
+    date: "26/04/2026",
+    fileName: "Ata_007_2026_04_26_TEA_Autismo.pdf",
+    fileUrl: "/documentos/atas/Ata_007_2026_04_26_TEA_Autismo.pdf",
+  },
+  {
+    id: "ata-24-08",
+    title: "Ata nº 008/2026 — Reunião Ordinária e História Capitular Prof. Carvalho Neves",
+    category: "atas",
+    management: "Gestão XXIV (2026.1)",
+    mcName: "MC José Keltton",
+    type: "Ata Ordinária",
+    description: "Resgate histórico da fundação e do patrono Professor Carvalho Neves.",
+    visibility: "all",
+    date: "17/05/2026",
+    fileName: "Ata_008_2026_05_17_Historia_Capitular.pdf",
+    fileUrl: "/documentos/atas/Ata_008_2026_05_17_Historia_Capitular.pdf",
+  },
+  {
+    id: "ata-24-09",
+    title: "Ata nº 009/2026 — Instrução Administrativa e Exame de Proficiência",
+    category: "atas",
+    management: "Gestão XXIV (2026.1)",
+    mcName: "MC José Keltton",
+    type: "Ata Ordinária",
+    description: "Instrução administrativa do SCDB e avaliação de proficiência dos iniciáticos.",
+    visibility: "all",
+    date: "31/05/2026",
+    fileName: "Ata_009_2026_05_31_Instrucao_Administrativa.pdf",
+    fileUrl: "/documentos/atas/Ata_009_2026_05_31_Instrucao_Administrativa.pdf",
+  },
+  // Gestão XXIII (MC João Guilherme - 2025.2)
+  {
+    id: "ata-23-01",
+    title: "Ata Magna nº 001/2025 — Instalação e Posse dos Oficiais da Gestão XXIII",
+    category: "atas",
+    management: "Gestão XXIII (2025.2)",
+    mcName: "MC João Guilherme",
+    type: "Ata de Instalação",
+    description: "Cerimônia solene de posse da tríplice liderada pelo MC João Guilherme.",
+    visibility: "all",
+    date: "29/06/2025",
+    fileName: "Ata_001_2025_06_29_Instalacao_XXIII.pdf",
+    fileUrl: "/documentos/atas/Ata_001_2025_06_29_Instalacao_XXIII.pdf",
+  },
+  {
+    id: "ata-23-02",
+    title: "Ata nº 002/2025 — Reunião Ordinária da Gestão XXIII",
+    category: "atas",
+    management: "Gestão XXIII (2025.2)",
+    mcName: "MC João Guilherme",
+    type: "Ata Ordinária",
+    description: "Deliberações administrativas e expediente capitular.",
+    visibility: "all",
+    date: "21/07/2025",
+    fileName: "Ata_002_2025_07_21_Sessao_Ordinaria.pdf",
+    fileUrl: "/documentos/atas/Ata_002_2025_07_21_Sessao_Ordinaria.pdf",
+  },
+  {
+    id: "ata-23-03",
+    title: "Ata nº 003/2025 — Comemoração ao Dia dos Pais",
+    category: "atas",
+    management: "Gestão XXIII (2025.2)",
+    mcName: "MC João Guilherme",
+    type: "Ata Solene",
+    description: "Cerimônia dos Pais (Art. 216 SCDB) com presença de pais e convidados.",
+    visibility: "all",
+    date: "03/08/2025",
+    fileName: "Ata_003_2025_08_03_Pais.pdf",
+    fileUrl: "/documentos/atas/Ata_003_2025_08_03_Pais.pdf",
+  },
+  {
+    id: "ata-23-04",
+    title: "Ata nº 004/2025 — Sessão Ordinária do Grau Iniciático",
+    category: "atas",
+    management: "Gestão XXIII (2025.2)",
+    mcName: "MC João Guilherme",
+    type: "Ata Ordinária",
+    description: "Trabalhos litúrgicos e comissões da Gestão XXIII.",
+    visibility: "all",
+    date: "24/08/2025",
+    fileName: "Ata_004_2025_08_24_Sessao_Ordinaria.pdf",
+    fileUrl: "/documentos/atas/Ata_004_2025_08_24_Sessao_Ordinaria.pdf",
+  },
+  {
+    id: "ata-23-05",
+    title: "Ata nº 005/2025 — Sessão Ordinária do Grau DeMolay",
+    category: "atas",
+    management: "Gestão XXIII (2025.2)",
+    mcName: "MC João Guilherme",
+    type: "Ata Ordinária",
+    description: "Trabalhos litúrgicos do Segundo Grau.",
+    visibility: "all",
+    date: "31/08/2025",
+    fileName: "Ata_005_2025_08_31_Sessao_Ordinaria.pdf",
+    fileUrl: "/documentos/atas/Ata_005_2025_08_31_Sessao_Ordinaria.pdf",
+  },
+  {
+    id: "ata-23-06",
+    title: "Ata nº 006/2025 — Comemoração ao Dia do Patriota",
+    category: "atas",
+    management: "Gestão XXIII (2025.2)",
+    mcName: "MC João Guilherme",
+    type: "Ata Solene",
+    description: "Sessão alusiva ao Dia do Patriota e à Pátria brasileira.",
+    visibility: "all",
+    date: "14/09/2025",
+    fileName: "Ata_006_2025_09_14_Patriota.pdf",
+    fileUrl: "/documentos/atas/Ata_006_2025_09_14_Patriota.pdf",
+  },
+  {
+    id: "ata-23-07",
+    title: "Ata nº 007/2025 — Reunião Ordinária da Gestão XXIII",
+    category: "atas",
+    management: "Gestão XXIII (2025.2)",
+    mcName: "MC João Guilherme",
+    type: "Ata Ordinária",
+    description: "Expediente capitular e finanças.",
+    visibility: "all",
+    date: "21/09/2025",
+    fileName: "Ata_007_2025_09_21_Sessao_Ordinaria.pdf",
+    fileUrl: "/documentos/atas/Ata_007_2025_09_21_Sessao_Ordinaria.pdf",
+  },
+  {
+    id: "ata-23-08",
+    title: "Ata nº 008/2025 — Comemoração ao Dia Educacional",
+    category: "atas",
+    management: "Gestão XXIII (2025.2)",
+    mcName: "MC João Guilherme",
+    type: "Ata Solene",
+    description: "Comemoração ao Dia Educacional e valorização da educação pública.",
+    visibility: "all",
+    date: "05/10/2025",
+    fileName: "Ata_008_2025_10_05_Educacional.pdf",
+    fileUrl: "/documentos/atas/Ata_008_2025_10_05_Educacional.pdf",
+  },
+  {
+    id: "ata-23-09",
+    title: "Ata nº 009/2025 — Reunião Ordinária da Gestão XXIII",
+    category: "atas",
+    management: "Gestão XXIII (2025.2)",
+    mcName: "MC João Guilherme",
+    type: "Ata Ordinária",
+    description: "Deliberações sobre eventos filantrópicos e congresso estadual.",
+    visibility: "all",
+    date: "19/10/2025",
+    fileName: "Ata_009_2025_10_19_Sessao_Ordinaria.pdf",
+    fileUrl: "/documentos/atas/Ata_009_2025_10_19_Sessao_Ordinaria.pdf",
+  },
+  {
+    id: "ata-23-10",
+    title: "Ata nº 010/2025 — Dia em Memória a Frank S. Land e Meu Governo",
+    category: "atas",
+    management: "Gestão XXIII (2025.2)",
+    mcName: "MC João Guilherme",
+    type: "Ata Solene",
+    description: "Sessão solene de homenagem ao fundador Frank Sherman Land.",
+    visibility: "all",
+    date: "23/11/2025",
+    fileName: "Ata_010_2025_11_23_Frank_Land.pdf",
+    fileUrl: "/documentos/atas/Ata_010_2025_11_23_Frank_Land.pdf",
+  },
+  {
+    id: "ata-23-11",
+    title: "Ata nº 011/2025 — Assembleia Ordinária e Eleição da Gestão XXIV",
+    category: "atas",
+    management: "Gestão XXIII (2025.2)",
+    mcName: "MC João Guilherme",
+    type: "Ata de Eleição",
+    description: "Eleição da diretoria da Gestão XXIV (MC José Keltton) e prestação de contas.",
+    visibility: "all",
+    date: "07/12/2025",
+    fileName: "Ata_011_2025_12_07_Eleicoes_XXIV.pdf",
+    fileUrl: "/documentos/atas/Ata_011_2025_12_07_Eleicoes_XXIV.pdf",
+  },
+];
+
 export default function DashboardDocumentosPage() {
   const [userRole, setUserRole] = useState<string>("membro");
   const [viewAsMember, setViewAsMember] = useState(false);
-  const [activeTab, setActiveTab] = useState<"todos" | "cerimonias" | "manuais" | "gestoes">("todos");
+  const [activeTab, setActiveTab] = useState<"todos" | "cerimonias" | "manuais" | "gestoes" | "atas">("todos");
   const [selectedManagement, setSelectedManagement] = useState<string>("todas");
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -400,6 +668,14 @@ export default function DashboardDocumentosPage() {
       });
     });
 
+    // Atas Oficiais e Balaústres das Gestões
+    atasDocuments.forEach((doc) => {
+      list.push({
+        ...doc,
+        downloadUrl: attachments[doc.id] || doc.fileUrl,
+      });
+    });
+
     // Documentos recém-enviados
     uploadedDocs.forEach((doc) => {
       list.unshift({
@@ -420,6 +696,7 @@ export default function DashboardDocumentosPage() {
       if (activeTab === "cerimonias" && doc.category !== "scdb_cerimonias") return false;
       if (activeTab === "manuais" && doc.category !== "scdb_gerais") return false;
       if (activeTab === "gestoes" && doc.category !== "gestao") return false;
+      if (activeTab === "atas" && doc.category !== "atas") return false;
 
       // Filtro de Gestão
       if (
@@ -675,7 +952,7 @@ export default function DashboardDocumentosPage() {
       )}
 
       {/* RESUMO DOS ACERVOS DISPONÍVEIS COM GLASSMORPHISM */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
         <div className="p-4 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/10 hover:border-[#D9AA45]/40 hover:bg-[#064D32]/25 transition-all duration-300 shadow-sm space-y-1.5 group">
           <div className="flex items-center justify-between">
             <span className="font-bold text-[#D9AA45] flex items-center gap-1.5">
@@ -713,11 +990,26 @@ export default function DashboardDocumentosPage() {
               Documentos por Gestão
             </span>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-              {gestaoDocuments.length} atos e editais
+              {gestaoDocuments.length} atos/editais
             </span>
           </div>
           <p className="text-emerald-100/70 text-[11px] leading-relaxed">
             Atos administrativos, editais e relatórios classificados por respectiva gestão e nome do MC.
+          </p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/10 hover:border-amber-400/40 hover:bg-[#064D32]/25 transition-all duration-300 shadow-sm space-y-1.5 group">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-amber-300 flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-[#D9AA45] group-hover:scale-110 transition-transform" />
+              Atas & Balaústres
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/30">
+              {atasDocuments.length} atas
+            </span>
+          </div>
+          <p className="text-emerald-100/70 text-[11px] leading-relaxed">
+            Balaústres oficiais assinados de reuniões magnas e ordinárias com presenças registradas.
           </p>
         </div>
       </div>
@@ -766,6 +1058,16 @@ export default function DashboardDocumentosPage() {
               }`}
             >
               Documentos por Gestão & MC ({gestaoDocuments.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("atas")}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                activeTab === "atas"
+                  ? "bg-gradient-to-r from-[#D9AA45] to-[#E5BC5C] text-[#04281A] shadow-[0_4px_14px_rgba(217,170,69,0.3)]"
+                  : "bg-white/[0.05] text-gray-300 hover:bg-white/[0.09] border border-white/10 hover:border-white/20 backdrop-blur-sm"
+              }`}
+            >
+              Atas & Balaústres ({atasDocuments.length})
             </button>
           </div>
 
@@ -821,12 +1123,16 @@ export default function DashboardDocumentosPage() {
                       ? "bg-amber-500/10 text-[#D9AA45] border border-[#D9AA45]/30"
                       : doc.category === "scdb_gerais"
                       ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
+                      : doc.category === "atas"
+                      ? "bg-amber-400/15 text-[#D9AA45] border border-[#D9AA45]/40"
                       : "bg-blue-500/10 text-blue-300 border border-blue-500/30"
                   }`}>
                     {doc.category === "scdb_cerimonias" ? (
                       <Award className="w-5 h-5 text-[#D9AA45]" />
                     ) : doc.category === "scdb_gerais" ? (
                       <Building className="w-5 h-5 text-emerald-300" />
+                    ) : doc.category === "atas" ? (
+                      <FileText className="w-5 h-5 text-[#D9AA45]" />
                     ) : (
                       <Shield className="w-5 h-5 text-blue-300" />
                     )}
@@ -839,6 +1145,8 @@ export default function DashboardDocumentosPage() {
                           ? "bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/40"
                           : doc.category === "scdb_gerais"
                           ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                          : doc.category === "atas"
+                          ? "bg-gradient-to-r from-amber-500/20 to-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/50"
                           : "bg-blue-500/20 text-blue-300 border border-blue-500/40"
                       }`}>
                         {doc.type}

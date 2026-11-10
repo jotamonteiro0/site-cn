@@ -25,8 +25,13 @@ import {
   Share2,
   UserCheck,
   Info,
-  Camera
+  Camera,
+  Users,
+  Download,
+  MapPin,
+  Sparkles
 } from "lucide-react";
+import { HISTORICAL_MEETINGS } from "@/lib/data/historicalMeetings";
 
 interface MemberData {
   id: string;
@@ -50,6 +55,15 @@ interface MeetingItem {
   location: string;
   status: string;
   description?: string;
+  ata_pdf_url?: string | null;
+  ata_num?: string;
+  livro_demolay_page?: string;
+  livro_macom_page?: string;
+  demolays_present_count?: number;
+  masons_present_count?: number;
+  total_quorum?: number;
+  demolays_present?: string[];
+  masons_present?: string[];
 }
 
 interface AttendanceItem {
@@ -123,6 +137,7 @@ export default function MemberSelfServicePage() {
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [declarations, setDeclarations] = useState<IssuedDeclarationItem[]>([]);
   const [birthdays, setBirthdays] = useState<BirthdayItem[]>([]);
+  const [selectedMeetingForQuorum, setSelectedMeetingForQuorum] = useState<MeetingItem | null>(null);
 
   // Filtros de Data de Assiduidade
   const [dateFilterStart, setDateFilterStart] = useState("2026-01-01");
@@ -214,7 +229,29 @@ export default function MemberSelfServicePage() {
           .from("meetings")
           .select("id, title, starts_at, location, status, description")
           .order("starts_at", { ascending: true });
-        if (meetData) setMeetings(meetData);
+
+        const baseMeetings = meetData && meetData.length > 0 ? meetData : HISTORICAL_MEETINGS;
+        const enrichedMeetings: MeetingItem[] = baseMeetings.map((m) => {
+          const hist = HISTORICAL_MEETINGS.find(
+            (h) => h.id === m.id || h.starts_at.substring(0, 10) === m.starts_at.substring(0, 10)
+          );
+          return {
+            ...m,
+            status: m.status || hist?.status || "realizada",
+            description: m.description || hist?.description,
+            ata_pdf_url: hist?.ata_pdf_url || null,
+            ata_num: hist?.ata_num || "Ata Oficial",
+            livro_demolay_page: hist?.livro_demolay_page,
+            livro_macom_page: hist?.livro_macom_page,
+            demolays_present_count: hist?.demolays_present_count,
+            masons_present_count: hist?.masons_present_count,
+            total_quorum: hist?.total_quorum,
+            demolays_present: hist?.demolays_present,
+            masons_present: hist?.masons_present,
+          };
+        });
+
+        setMeetings(enrichedMeetings);
 
         // 3. Carrega Aniversariantes via view
         const { data: bData } = await supabase
@@ -1031,7 +1068,8 @@ export default function MemberSelfServicePage() {
                       <th className="py-3 px-4">Data</th>
                       <th className="py-3 px-4">Sessão / Pauta</th>
                       <th className="py-3 px-4">Local</th>
-                      <th className="py-3 px-4 text-center">Status</th>
+                      <th className="py-3 px-4 text-center">Sua Presença</th>
+                      <th className="py-3 px-4 text-center">Ata & Frequência</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -1069,6 +1107,30 @@ export default function MemberSelfServicePage() {
                                 Ausente
                               </span>
                             )}
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              {m.ata_pdf_url && (
+                                <a
+                                  href={m.ata_pdf_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 text-[#D9AA45] border border-[#D9AA45]/40 transition-colors shadow-sm cursor-pointer"
+                                  title="Visualizar Ata Oficial assinada (PDF)"
+                                >
+                                  <FileText className="w-3.5 h-3.5" />
+                                  <span>Ata (PDF)</span>
+                                </a>
+                              )}
+                              <button
+                                onClick={() => setSelectedMeetingForQuorum(m)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-gray-200 border border-white/20 transition-colors cursor-pointer"
+                                title="Ver lista de presentes e quórum desta sessão"
+                              >
+                                <Users className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>Quórum</span>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1196,30 +1258,100 @@ export default function MemberSelfServicePage() {
             </div>
           )}
 
-          {/* Todas as Próximas Sessões do Calendário */}
+          {/* Todas as Sessões do Calendário */}
           <div className="bg-[#04281A]/90 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
-            <h3 className="text-base font-bold text-white mb-4">Calendário Geral de Sessões</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-white">Calendário Capitular de Sessões</h3>
+              <span className="text-xs text-gray-400">Total: {meetings.length} sessões oficiais</span>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {meetings.map((m) => (
-                <div key={m.id} className="bg-black/30 border border-white/10 rounded-xl p-4 flex items-start justify-between gap-4">
-                  <div>
-                    <span className="text-xs font-mono text-[#D9AA45]">
-                      {new Date(m.starts_at).toLocaleDateString("pt-BR")} às {new Date(m.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                    <h4 className="text-sm font-bold text-white mt-1">{m.title}</h4>
-                    <p className="text-xs text-gray-400 mt-1">{m.location || "A∴R∴L∴S∴ Caridade II nº 135"}</p>
+              {meetings.map((m) => {
+                const att = attendances[m.id];
+                const isPresent = att?.status === "presente";
+
+                return (
+                  <div key={m.id} className="bg-black/30 border border-white/10 rounded-2xl p-4 flex flex-col justify-between gap-3 hover:border-emerald-500/40 transition-all">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-[#D9AA45]">
+                            {new Date(m.starts_at).toLocaleDateString("pt-BR")} às {new Date(m.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                          {m.status === "realizada" ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                              Realizada
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                              Agendada
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="text-sm font-bold text-white mt-1.5">{m.title}</h4>
+                        <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
+                          <MapPin className="w-3 h-3 text-emerald-400" />
+                          <span>{m.location || "A∴R∴L∴S∴ Caridade II nº 135"}</span>
+                        </p>
+                      </div>
+
+                      <a
+                        href={getGoogleCalendarUrl(m)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-colors"
+                        title="Adicionar à Google Agenda"
+                      >
+                        <Calendar className="w-4 h-4" />
+                      </a>
+                    </div>
+
+                    {/* Rodapé com Ata e Quórum */}
+                    <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        {isPresent ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Você Compareceu
+                          </span>
+                        ) : m.status === "realizada" ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-white/5 text-gray-400">
+                            Ausente
+                          </span>
+                        ) : null}
+
+                        {m.total_quorum ? (
+                          <span className="text-[11px] text-gray-300 font-mono">
+                            Quórum: <strong>{m.total_quorum}</strong>
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        {m.ata_pdf_url && (
+                          <a
+                            href={m.ata_pdf_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 text-[#D9AA45] border border-[#D9AA45]/40 transition-colors shadow-sm"
+                            title="Abrir Ata Oficial assinada (PDF)"
+                          >
+                            <FileText className="w-3 h-3" />
+                            <span>Ata (PDF)</span>
+                          </a>
+                        )}
+
+                        <button
+                          onClick={() => setSelectedMeetingForQuorum(m)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/10 hover:bg-white/20 text-gray-200 border border-white/20 transition-colors cursor-pointer"
+                        >
+                          <Users className="w-3 h-3 text-emerald-400" />
+                          <span>Ver Frequência</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <a
-                    href={getGoogleCalendarUrl(m)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-colors"
-                    title="Adicionar à Google Agenda"
-                  >
-                    <Calendar className="w-4 h-4" />
-                  </a>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -2027,6 +2159,175 @@ export default function MemberSelfServicePage() {
               >
                 <Printer className="w-4 h-4 text-[#D9AA45]" />
                 <span>Imprimir / Salvar em PDF</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: QUÓRUM, FREQUÊNCIA E ATA DA REUNIÃO */}
+      {selectedMeetingForQuorum && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay">
+          <div className="ios-glass-card max-w-2xl w-full p-6 sm:p-8 rounded-3xl shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
+              <div>
+                <span className="text-xs font-mono text-[#D9AA45]">
+                  {new Date(selectedMeetingForQuorum.starts_at).toLocaleDateString("pt-BR", {
+                    weekday: "long",
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </span>
+                <h3 className="text-xl font-bold text-white mt-1">{selectedMeetingForQuorum.title}</h3>
+                <p className="text-xs text-emerald-200/80 mt-1 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{selectedMeetingForQuorum.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedMeetingForQuorum(null)}
+                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-colors cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Banner da Ata Oficial se disponível */}
+            {selectedMeetingForQuorum.ata_pdf_url && (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 to-[#04281A] border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-[#D9AA45]" />
+                      Balaústre Oficial no Acervo
+                    </span>
+                    <h4 className="text-xs font-bold text-white">
+                      {selectedMeetingForQuorum.ata_num || "Ata da Sessão Registrada"}
+                    </h4>
+                    <p className="text-[11px] text-emerald-200/80">
+                      Documento assinado digitalmente disponível para consulta e download.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <a
+                    href={selectedMeetingForQuorum.ata_pdf_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-1.5 rounded-xl bg-[#D9AA45] hover:bg-amber-400 text-black text-xs font-bold transition-all flex items-center gap-1.5 shadow cursor-pointer"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Visualizar (PDF)</span>
+                  </a>
+                  <a
+                    href={selectedMeetingForQuorum.ata_pdf_url}
+                    download
+                    className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Baixar</span>
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Resumo do Quórum */}
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider">DeMolays</p>
+                <p className="text-xl font-extrabold text-emerald-400 mt-1">
+                  {selectedMeetingForQuorum.demolays_present_count || (selectedMeetingForQuorum.demolays_present ? selectedMeetingForQuorum.demolays_present.length : "—")}
+                </p>
+                <p className="text-[10px] text-gray-400">presentes</p>
+              </div>
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider">Tios Maçons</p>
+                <p className="text-xl font-extrabold text-[#D9AA45] mt-1">
+                  {selectedMeetingForQuorum.masons_present_count || (selectedMeetingForQuorum.masons_present ? selectedMeetingForQuorum.masons_present.length : "—")}
+                </p>
+                <p className="text-[10px] text-gray-400">presentes</p>
+              </div>
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider">Quórum Total</p>
+                <p className="text-xl font-extrabold text-white mt-1">
+                  {selectedMeetingForQuorum.total_quorum || "—"}
+                </p>
+                <p className="text-[10px] text-gray-400">irmãos</p>
+              </div>
+            </div>
+
+            {/* Páginas do Livro Oficial */}
+            {(selectedMeetingForQuorum.livro_demolay_page || selectedMeetingForQuorum.livro_macom_page) && (
+              <div className="flex flex-wrap items-center gap-4 text-xs font-mono p-3 rounded-xl bg-black/30 border border-white/10">
+                {selectedMeetingForQuorum.livro_demolay_page && (
+                  <span className="text-emerald-300">
+                    📘 Livro Presença DeMolay: <strong>Pág. {selectedMeetingForQuorum.livro_demolay_page}</strong>
+                  </span>
+                )}
+                {selectedMeetingForQuorum.livro_macom_page && (
+                  <span className="text-purple-300">
+                    🏛️ Livro Presença Maçons: <strong>Pág. {selectedMeetingForQuorum.livro_macom_page}</strong>
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Listagem Nominal dos Irmãos Presentes */}
+            {selectedMeetingForQuorum.demolays_present && selectedMeetingForQuorum.demolays_present.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-300 flex items-center justify-between">
+                  <span>DeMolays Presentes</span>
+                  <span className="text-gray-400 font-normal">{selectedMeetingForQuorum.demolays_present.length} membros</span>
+                </h4>
+                <div className="p-3 rounded-xl bg-black/40 border border-white/10 max-h-40 overflow-y-auto">
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedMeetingForQuorum.demolays_present.map((name, idx) => (
+                      <span key={idx} className="px-2 py-0.5 rounded-md bg-emerald-950/60 text-emerald-200 border border-emerald-500/30 text-[11px]">
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Listagem Nominal dos Maçons Presentes */}
+            {selectedMeetingForQuorum.masons_present && selectedMeetingForQuorum.masons_present.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#D9AA45] flex items-center justify-between">
+                  <span>Tios Maçons / Conselho Presentes</span>
+                  <span className="text-gray-400 font-normal">{selectedMeetingForQuorum.masons_present.length} tios</span>
+                </h4>
+                <div className="p-3 rounded-xl bg-black/40 border border-white/10 max-h-36 overflow-y-auto">
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedMeetingForQuorum.masons_present.map((name, idx) => (
+                      <span key={idx} className="px-2 py-0.5 rounded-md bg-amber-950/60 text-amber-200 border border-amber-500/30 text-[11px]">
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Deliberações e Descrição */}
+            {selectedMeetingForQuorum.description && (
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-xs text-gray-300 space-y-1">
+                <span className="font-bold text-white block">Pauta e Deliberações da Sessão:</span>
+                <p className="leading-relaxed">{selectedMeetingForQuorum.description}</p>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setSelectedMeetingForQuorum(null)}
+                className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer"
+              >
+                Fechar Detalhes
               </button>
             </div>
           </div>

@@ -23,8 +23,10 @@ import {
   Compass,
   FileText,
   Printer,
-  Sparkles
+  Sparkles,
+  Download
 } from "lucide-react";
+import { HISTORICAL_MEETINGS } from "@/lib/data/historicalMeetings";
 
 interface MemberRecord {
   id: string;
@@ -42,6 +44,12 @@ interface MeetingRecord {
   location: string;
   status: string;
   description?: string;
+  ata_pdf_url?: string | null;
+  ata_num?: string;
+  livro_demolay_page?: string;
+  livro_macom_page?: string;
+  management?: string;
+  mc_name?: string;
 }
 
 interface VisitingMasonRecord {
@@ -149,105 +157,21 @@ const getMandatoryDayWarning = (title: string, dateStr: string) => {
   return null;
 };
 
-// Calendário Oficial das Gestões XXIV (MC José Keltton) e XXV (MC Rafael Inácio) - Ato nº 002/2026 & Edital nº 001/2026
-const officialCalendarMeetings: MeetingRecord[] = [
-  {
-    id: "reuniao-2026-01-25",
-    title: "Reunião Magna | Cerimônia de Instalações dos Oficiais",
-    starts_at: "2026-01-25T09:00:00",
-    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    status: "realizada",
-    description: "Cerimônia de Instalação e Posse dos Oficiais da Gestão XXIV — MC José Keltton.",
-  },
-  {
-    id: "reuniao-2026-02-08",
-    title: "Assembleia Ordinária | Apresentação Plano de Gestão",
-    starts_at: "2026-02-08T09:00:00",
-    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    status: "realizada",
-    description: "Apresentação e deliberação das metas e diretrizes administrativas para 2026.1.",
-  },
-  {
-    id: "reuniao-2026-02-22",
-    title: "Reunião Ordinária | Dia Devocional e Escrutínio Secreto",
-    starts_at: "2026-02-22T09:00:00",
-    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    status: "realizada",
-    description: "Comemoração devocional e votação de sindicâncias de novos membros.",
-  },
-  {
-    id: "reuniao-2026-03-15",
-    title: "Reunião Ordinária | Dia do DeMolay e Dia em Memória a Jacques DeMolay",
-    starts_at: "2026-03-15T09:00:00",
-    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    status: "realizada",
-    description: "Sessão alusiva ao Dia Nacional do DeMolay e ao martírio de Jacques DeMolay.",
-  },
-  {
-    id: "reuniao-2026-03-29",
-    title: "Reunião Magna | Iniciação à Ordem DeMolay",
-    starts_at: "2026-03-29T09:00:00",
-    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    status: "realizada",
-    description: "Cerimônia solene de Iniciação de novos irmãos no Capítulo 500.",
-  },
-  {
-    id: "reuniao-2026-04-12",
-    title: "Reunião Ordinária | Instrução Ritualística e Histórica",
-    starts_at: "2026-04-12T09:00:00",
-    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    status: "realizada",
-    description: "Instrução litúrgica aprofundada para os graus capitulares.",
-  },
-  {
-    id: "reuniao-2026-04-26",
-    title: "Reunião Ordinária | Conscientização ao TEA",
-    starts_at: "2026-04-26T09:00:00",
-    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    status: "realizada",
-    description: "Ação educativa de conscientização sobre o Transtorno do Espectro Autista.",
-  },
-  {
-    id: "reuniao-2026-05-17",
-    title: "Reunião Ordinária | História Capitular Prof. Carvalho Neves",
-    starts_at: "2026-05-17T09:00:00",
-    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    status: "realizada",
-    description: "Resgate histórico da fundação e dos pioneiros do Capítulo 500.",
-  },
-  {
-    id: "reuniao-2026-05-31",
-    title: "Reunião Ordinária | Instrução Administrativa e Exame de Proficiência",
-    starts_at: "2026-05-31T09:00:00",
-    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    status: "realizada",
-    description: "Instrução administrativa e exame de proficiência dos neófitos.",
-  },
-  {
-    id: "reuniao-2026-06-14",
-    title: "Reunião Magna | Elevação ao Grau DeMolay e Lançamento de Candidaturas",
-    starts_at: "2026-06-14T09:00:00",
-    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    status: "realizada",
-    description: "Cerimônia de Elevação ao Grau DeMolay e lançamento do Edital de Eleição da Gestão XXV.",
-  },
-  {
-    id: "reuniao-2026-06-28",
-    title: "Assembleia Ordinária | Eleição da Gestão XXV e Prestação de Contas",
-    starts_at: "2026-06-28T09:00:00",
-    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    status: "realizada",
-    description: "Processo eleitoral da nova diretoria (MC Rafael Inácio) e prestação de contas de 2026.1.",
-  },
-  {
-    id: "reuniao-2026-12-13",
-    title: "Assembleia Ordinária | Eleição da Gestão XXVI (Edital 001/2026)",
-    starts_at: "2026-12-13T09:00:00",
-    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    status: "agendada",
-    description: "Eleição presencial da Diretoria da Gestão XXVI convocada pelo MC Rafael Inácio (Edital nº 001/2026).",
-  },
-];
+// Calendário Oficial das Gestões XXIV (MC José Keltton) e XXV (MC Rafael Inácio) integrado com o Acervo
+const officialCalendarMeetings: MeetingRecord[] = HISTORICAL_MEETINGS.map((h) => ({
+  id: h.id,
+  title: h.title,
+  starts_at: h.starts_at,
+  location: h.location,
+  status: h.status,
+  description: h.description,
+  ata_pdf_url: h.ata_pdf_url,
+  ata_num: h.ata_num,
+  livro_demolay_page: h.livro_demolay_page,
+  livro_macom_page: h.livro_macom_page,
+  management: h.management,
+  mc_name: h.mc_name,
+}));
 
 export default function ChamadaPage() {
   const [meetings, setMeetings] = useState<MeetingRecord[]>([]);
@@ -270,10 +194,12 @@ export default function ChamadaPage() {
     number: string;
     degree: string;
     content: string;
+    storage_path?: string;
   }>({
     number: "Ata Oficial nº 24",
     degree: "Grau Iniciático",
     content: "",
+    storage_path: "",
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -322,13 +248,24 @@ export default function ChamadaPage() {
           .select("id, title, starts_at, location, status, description")
           .order("starts_at", { ascending: true });
 
-        if (mData && mData.length > 0) {
-          setMeetings(mData);
-          setSelectedMeetingId(mData[0].id);
-        } else {
-          setMeetings(officialCalendarMeetings);
-          setSelectedMeetingId(officialCalendarMeetings[0].id);
-        }
+        const baseMeetings = mData && mData.length > 0 ? mData : officialCalendarMeetings;
+        const enrichedMeetings: MeetingRecord[] = baseMeetings.map((m) => {
+          const hist = HISTORICAL_MEETINGS.find(
+            (h) => h.id === m.id || h.starts_at.substring(0, 10) === m.starts_at.substring(0, 10)
+          );
+          return {
+            ...m,
+            ata_pdf_url: hist?.ata_pdf_url || null,
+            ata_num: hist?.ata_num || "Ata Oficial",
+            livro_demolay_page: hist?.livro_demolay_page,
+            livro_macom_page: hist?.livro_macom_page,
+            management: hist?.management,
+            mc_name: hist?.mc_name,
+          };
+        });
+
+        setMeetings(enrichedMeetings);
+        setSelectedMeetingId(enrichedMeetings[0].id);
 
         // Carrega Membros
         const { data: memData } = await supabase
@@ -409,22 +346,52 @@ export default function ChamadaPage() {
           }
         }
 
-        // Carrega conteúdo da Ata correspondente
+        // Carrega conteúdo e PDF da Ata correspondente do Supabase e do Acervo
         const currentM = meetings.find((m) => m.id === selectedMeetingId);
+        const hist = HISTORICAL_MEETINGS.find(
+          (h) => h.id === selectedMeetingId || (currentM && h.starts_at.substring(0, 10) === currentM.starts_at.substring(0, 10))
+        );
+
+        const { data: minData } = await supabase
+          .from("meeting_minutes")
+          .select("content, storage_path, status, published_at")
+          .eq("meeting_id", selectedMeetingId)
+          .maybeSingle();
+
         const savedAta = localStorage.getItem(`cn_meeting_minute_${selectedMeetingId}`);
         if (savedAta) {
-          setMinuteData(JSON.parse(savedAta));
+          const parsed = JSON.parse(savedAta);
+          setMinuteData({
+            ...parsed,
+            storage_path: minData?.storage_path || hist?.ata_pdf_url || parsed.storage_path || "",
+          });
+        } else if (minData?.content) {
+          setMinuteData({
+            number: hist?.ata_num || "Ata Oficial Registrada",
+            degree: "Grau Iniciático",
+            content: minData.content,
+            storage_path: minData.storage_path || hist?.ata_pdf_url || "",
+          });
+        } else if (hist?.ata_pdf_url) {
+          setMinuteData({
+            number: hist.ata_num,
+            degree: "Grau Iniciático",
+            content: `Balaústre oficial registrado na ${hist.ata_num}.\nSessão realizada em ${new Date(currentM?.starts_at || Date.now()).toLocaleDateString("pt-BR")} na ${currentM?.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"}.\n\nDeliberações:\n${hist.description}\n\nQuórum Registrado:\n- DeMolays Presentes: ${hist.demolays_present_count}\n- Tios Maçons Presentes: ${hist.masons_present_count}\n- Total Quórum: ${hist.total_quorum}`,
+            storage_path: hist.ata_pdf_url,
+          });
         } else if (currentM?.description) {
           setMinuteData({
-            number: "Ata da Sessão Ordinária",
+            number: hist?.ata_num || "Ata da Sessão Ordinária",
             degree: "Grau Iniciático",
             content: currentM.description,
+            storage_path: hist?.ata_pdf_url || "",
           });
         } else {
           setMinuteData({
             number: `Ata da Sessão do dia ${new Date(currentM?.starts_at || Date.now()).toLocaleDateString("pt-BR")}`,
             degree: "Grau Iniciático",
             content: `Aos ${new Date(currentM?.starts_at || Date.now()).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}, no Templo da A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI), sob a presidência do Mestre Conselheiro, reuniu-se o Capítulo Professor Carvalho Neves Nº 500 para a realização dos seus regulares trabalhos ritualísticos.\n\nAberta a sessão na forma regulamentar, procedeu-se à chamada geral dos irmãos presentes, verificação do quórum legal e leitura do balaústre da reunião anterior, que foi aprovado sem restrições. Seguiu-se com as deliberações administrativas e expediente do Escrivão.`,
+            storage_path: hist?.ata_pdf_url || "",
           });
         }
       } catch (err) {
@@ -868,6 +835,21 @@ export default function ChamadaPage() {
                 <span>Convocação Oficial</span>
               </button>
 
+              {/* Botão Ver Ata Oficial (se disponível) */}
+              {(minuteData.storage_path || selectedMeeting.ata_pdf_url) && (
+                <a
+                  href={minuteData.storage_path || selectedMeeting.ata_pdf_url || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 border border-[#D9AA45]/50 text-[#D9AA45] text-xs font-bold transition-all cursor-pointer"
+                  title="Abrir Ata Oficial assinada em PDF"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Ata da Sessão (PDF)</span>
+                  <ExternalLink className="w-3 h-3 opacity-70" />
+                </a>
+              )}
+
               {/* Botão Editar Dados da Sessão */}
               <button
                 onClick={() => {
@@ -912,6 +894,22 @@ export default function ChamadaPage() {
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-emerald-400" />
               <span>{selectedMeeting.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"}</span>
+            </div>
+            {selectedMeeting.livro_demolay_page && (
+              <div className="flex items-center gap-1.5 text-xs text-[#D9AA45]">
+                <FileText className="w-3.5 h-3.5" />
+                <span>Livro Presença DM: pág. {selectedMeeting.livro_demolay_page}</span>
+              </div>
+            )}
+            {selectedMeeting.livro_macom_page && (
+              <div className="flex items-center gap-1.5 text-xs text-purple-300">
+                <FileText className="w-3.5 h-3.5" />
+                <span>Livro Presença Maçom: pág. {selectedMeeting.livro_macom_page}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 text-xs text-emerald-300 font-semibold">
+              <Users className="w-3.5 h-3.5" />
+              <span>Quórum: {presentesDemolay.length + presentesMacons.length} presentes</span>
             </div>
           </div>
         )}
@@ -1344,6 +1342,49 @@ export default function ChamadaPage() {
           </div>
 
           <form onSubmit={handleSaveMinute} className="space-y-6">
+            {/* Banner de Ata Oficial Digitalizada em PDF */}
+            {(minuteData.storage_path || selectedMeeting.ata_pdf_url) && (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-[#04281A] to-emerald-950/80 border-2 border-emerald-500/50 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#D9AA45]" />
+                      Documento Oficial Assinado em Acervo
+                    </span>
+                    <h4 className="text-sm font-bold text-white">
+                      {minuteData.number || selectedMeeting.ata_num || "Ata Oficial Registrada"}
+                    </h4>
+                    <p className="text-xs text-emerald-200/80">
+                      Balaústre autenticado e assinado pelo Mestre Conselheiro e Escrivão.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+                  <a
+                    href={minuteData.storage_path || selectedMeeting.ata_pdf_url || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 rounded-xl bg-[#D9AA45] hover:bg-amber-400 text-black text-xs font-bold transition-all flex items-center gap-2 shadow cursor-pointer"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Visualizar Ata (PDF)</span>
+                  </a>
+                  <a
+                    href={minuteData.storage_path || selectedMeeting.ata_pdf_url || "#"}
+                    download
+                    className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 text-emerald-300" />
+                    <span>Baixar</span>
+                  </a>
+                </div>
+              </div>
+            )}
+
             {/* Metadados da Ata */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div>
