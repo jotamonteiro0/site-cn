@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server.js";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
 
 /**
@@ -9,11 +9,19 @@ function verifyWebhookSignature(
   rawBody: string,
   signatureHeader: string | null,
   authHeader: string | null,
+  tokenQuery: string | null,
   configuredSecret: string
 ): boolean {
   if (!configuredSecret) return false;
 
-  // 1. Verificação via Bearer Token
+  // 1. Verificação via Query Parameter (?token=...)
+  if (tokenQuery && tokenQuery.length === configuredSecret.length) {
+    if (crypto.timingSafeEqual(Buffer.from(tokenQuery), Buffer.from(configuredSecret))) {
+      return true;
+    }
+  }
+
+  // 2. Verificação via Bearer Token (Authorization: Bearer <secret>)
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.slice(7).trim();
     if (token.length === configuredSecret.length) {
@@ -23,39 +31,56 @@ function verifyWebhookSignature(
     }
   }
 
-  if (!signatureHeader) return false;
-
-  // 2. Verificação direta de Secret Header
-  if (signatureHeader.length === configuredSecret.length) {
+  // 3. Verificação direta de Secret Header (x-webhook-secret ou x-infinitepay-signature)
+  if (signatureHeader && signatureHeader.length === configuredSecret.length) {
     if (crypto.timingSafeEqual(Buffer.from(signatureHeader), Buffer.from(configuredSecret))) {
       return true;
     }
   }
 
-  // 3. Verificação de Assinatura HMAC-SHA256
-  const computedHmac = crypto.createHmac("sha256", configuredSecret).update(rawBody).digest("hex");
-  if (signatureHeader.length === computedHmac.length) {
-    if (crypto.timingSafeEqual(Buffer.from(signatureHeader), Buffer.from(computedHmac))) {
-      return true;
+  // 4. Verificação de Assinatura HMAC-SHA256 (caso configurado com HMAC)
+  if (signatureHeader) {
+    const computedHmac = crypto.createHmac("sha256", configuredSecret).update(rawBody).digest("hex");
+    if (signatureHeader.length === computedHmac.length) {
+      if (crypto.timingSafeEqual(Buffer.from(signatureHeader), Buffer.from(computedHmac))) {
+        return true;
+      }
     }
   }
 
   return false;
 }
 
-interface InfinitePayWebhookPayload {
+/**
+ * Estrutura do payload enviada pelo Checkout Integrado da InfinitePay
+ * Documentação oficial: order_nsu, transaction_nsu, slug, paid, amount, capture_method, event
+ */
+export interface InfinitePayWebhookPayload {
   event?: string;
   type?: string;
   status?: string;
   id?: string | number;
   transaction_id?: string;
+  order_nsu?: string;
+  transaction_nsu?: string;
+  slug?: string;
+  paid?: boolean;
+  amount?: number;
+  paid_amount?: number;
+  capture_method?: string;
+  handle?: string;
   data?: {
     id?: string;
     transaction_id?: string;
+    transaction_nsu?: string;
+    order_nsu?: string;
     status?: string;
+    paid?: boolean;
     external_reference?: string;
     order_nfe_id?: string;
     amount?: number;
+    paid_amount?: number;
+    capture_method?: string;
     metadata?: {
       charge_id?: string;
       member_cid?: string;
@@ -64,10 +89,14 @@ interface InfinitePayWebhookPayload {
   transaction?: {
     id?: string;
     transaction_id?: string;
+    transaction_nsu?: string;
+    order_nsu?: string;
     status?: string;
+    paid?: boolean;
     external_reference?: string;
     order_nfe_id?: string;
     amount?: number;
+    capture_method?: string;
     metadata?: {
       charge_id?: string;
       member_cid?: string;
@@ -81,8 +110,13 @@ interface InfinitePayWebhookPayload {
   };
 }
 
-// Webhook para conciliação automática de pagamentos da InfinitePay
-export async function POST(req: NextRequest) {
+/**
+ * Handler central do webhook, permitindo injeção de dependência para testes isolados
+ */
+export async function handleInfinitePayWebhook(
+  req: NextRequest,
+  injectedSupabase?: SupabaseClient
+) {
   try {
     const rawBody = await req.text();
     if (!rawBody || rawBody.trim() === "") {
@@ -99,13 +133,15 @@ export async function POST(req: NextRequest) {
     const signature =
       req.headers.get("x-infinitepay-signature") ||
       req.headers.get("x-signature") ||
-      req.headers.get("x-webhook-signature");
+      req.headers.get("x-webhook-signature") ||
+      req.headers.get("x-webhook-secret");
     const authHeader = req.headers.get("authorization");
+    const tokenQuery = req.nextUrl?.searchParams?.get("token") || null;
     const configuredSecret = process.env.INFINITEPAY_WEBHOOK_SECRET;
 
-    // Verificação estrita de segurança
+    // 1. VERIFICAÇÃO DE AUTENTICIDADE E ASSINATURA
     if (configuredSecret) {
-      const isValid = verifyWebhookSignature(rawBody, signature, authHeader, configuredSecret);
+      const isValid = verifyWebhookSignature(rawBody, signature, authHeader, tokenQuery, configuredSecret);
       if (!isValid) {
         return NextResponse.json(
           { error: "Assinatura ou token do webhook inválido" },
@@ -113,7 +149,6 @@ export async function POST(req: NextRequest) {
         );
       }
     } else if (process.env.NODE_ENV === "production") {
-      // Em produção, a chave de assinatura é mandatória para impedir injeção de pagamentos falsos
       console.error("ALERTA CRÍTICO: INFINITEPAY_WEBHOOK_SECRET não configurado em ambiente de produção.");
       return NextResponse.json(
         { error: "Configuração de segurança do webhook pendente no servidor" },
@@ -121,25 +156,46 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // Instancia o cliente Supabase (usando injeção de teste se fornecida)
+    let supabase: SupabaseClient;
+    if (injectedSupabase) {
+      supabase = injectedSupabase;
+    } else {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json({ error: "Configuração do servidor incompleta" }, { status: 500 });
+      if (!supabaseUrl || !supabaseServiceKey) {
+        return NextResponse.json({ error: "Configuração do servidor incompleta" }, { status: 500 });
+      }
+
+      supabase = createClient(supabaseUrl, supabaseServiceKey);
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Identificação dos dados do evento da InfinitePay
+    // 2. PARSE DOS CAMPOS OFICIAIS DO CHECKOUT INFINITEPAY
     const eventType = String(payload.event || payload.type || payload.status || "").toLowerCase();
     const transaction = payload.data || payload.transaction || payload;
     const txStatus = String(transaction.status || payload.status || "").toLowerCase();
 
-    const transactionId = String(transaction.id || transaction.transaction_id || payload.id || "").trim();
-    const chargeId = transaction.external_reference || transaction.metadata?.charge_id || transaction.order_nfe_id;
+    // Mapeamento de campos canônicos da InfinitePay (order_nsu / transaction_nsu)
+    const transactionId = String(
+      payload.transaction_nsu ||
+      transaction.transaction_nsu ||
+      transaction.id ||
+      transaction.transaction_id ||
+      payload.id ||
+      ""
+    ).trim();
+
+    const chargeId =
+      payload.order_nsu ||
+      transaction.order_nsu ||
+      transaction.external_reference ||
+      transaction.metadata?.charge_id ||
+      transaction.order_nfe_id;
+
     const payerCid = transaction.metadata?.member_cid;
 
-    // 1. CHECAGEM DE IDEMPOTÊNCIA POR ID DA TRANSAÇÃO
+    // 3. CHECAGEM DE IDEMPOTÊNCIA POR ID DA TRANSAÇÃO INFINITEPAY
     if (transactionId) {
       const { data: alreadyProcessed } = await supabase
         .from("member_charges")
@@ -157,7 +213,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. TRATAMENTO DE FALHA OU CANCELAMENTO
+    // 4. TRATAMENTO DE EVENTOS DE FALHA OU CANCELAMENTO
     const isFailed =
       eventType.includes("fail") ||
       eventType.includes("cancel") ||
@@ -174,15 +230,51 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 3. TRATAMENTO DE PAGAMENTO CONFIRMADO
+    // 5. TRATAMENTO DE PAGAMENTO CONFIRMADO
     const isPaid =
-      eventType === "transaction_paid" ||
+      payload.paid === true ||
+      transaction.paid === true ||
       eventType === "paid" ||
+      eventType === "transaction_paid" ||
+      eventType === "settled" ||
       eventType === "invoice.paid" ||
       txStatus === "paid" ||
       txStatus === "approved";
 
     if (isPaid) {
+      // 5.1 VERIFICAÇÃO REVERSA OFICIAL (Reverse Check via API InfinitePay)
+      // Se houver chave de API configurada, valida diretamente com o endpoint oficial
+      const apiKey = process.env.INFINITEPAY_API_KEY;
+      if (apiKey && transactionId) {
+        try {
+          const verifyRes = await fetch("https://api.checkout.infinitepay.io/payment_check", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Api-Key": apiKey,
+            },
+            body: JSON.stringify({
+              handle: payload.handle || process.env.INFINITEPAY_HANDLE,
+              order_nsu: chargeId,
+              transaction_nsu: transactionId,
+              slug: payload.slug,
+            }),
+          });
+
+          if (verifyRes.ok) {
+            const checkData = (await verifyRes.json()) as { paid?: boolean };
+            if (checkData.paid === false) {
+              return NextResponse.json(
+                { error: "Verificação reversa rejeitou confirmação do pagamento" },
+                { status: 400 }
+              );
+            }
+          }
+        } catch (checkErr) {
+          console.warn("Aviso na chamada payment_check da InfinitePay:", checkErr);
+        }
+      }
+
       let targetCharge: { id: string; chapter_id: string; amount: number; status: string } | null = null;
 
       if (chargeId) {
@@ -221,7 +313,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // IDEMPOTÊNCIA: Se a cobrança já constar confirmada, não reprocessa
+      // IDEMPOTÊNCIA: Se a cobrança já estiver confirmada, não duplica
       if (targetCharge.status === "confirmado") {
         return NextResponse.json({
           success: true,
@@ -232,6 +324,7 @@ export async function POST(req: NextRequest) {
       }
 
       const now = new Date().toISOString();
+      const method = payload.capture_method || transaction.capture_method || "infinitepay";
 
       // Atualiza a cobrança para confirmada
       const { error: updateError } = await supabase
@@ -240,7 +333,7 @@ export async function POST(req: NextRequest) {
           status: "confirmado",
           paid_at: now,
           infinitepay_transaction_id: transactionId || null,
-          payment_method: "infinitepay",
+          payment_method: method,
         })
         .eq("id", targetCharge.id);
 
@@ -261,7 +354,6 @@ export async function POST(req: NextRequest) {
           confirmed_at: now,
         });
       } catch (payErr) {
-        // Log de aviso se falhar insert em payments, mas não quebra o webhook
         console.warn("Aviso ao registrar payment record:", payErr);
       }
 
@@ -282,4 +374,9 @@ export async function POST(req: NextRequest) {
     console.error("Erro interno no webhook InfinitePay:", err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+// Endpoint padrão POST do Next.js
+export async function POST(req: NextRequest) {
+  return handleInfinitePayWebhook(req);
 }

@@ -84,11 +84,11 @@ describe("Capítulo Carvalho Neves Nº 500 — Suíte Completa de Testes Institu
     });
 
     test("Membro sem autenticação é bloqueado por RLS para dados privados de membros", async () => {
-      // Cliente anônimo tentando atualizar membro sem sessão
+      // Cliente anônimo tentando atualizar membro sem sessão - utiliza CID fictício para não expor membros reais
       const { error } = await publicClient
         .from("members")
         .update({ full_name: "Tentativa Não Autorizada" })
-        .eq("cid", "127738");
+        .eq("cid", "000000000");
 
       assert.ok(error || true, "Operação deve ser negada por RLS para anônimos");
     });
