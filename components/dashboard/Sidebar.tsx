@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ProfilePhotoCropper } from "@/components/ui/ProfilePhotoCropper";
 import { 
   Shield, 
   LayoutDashboard, 
@@ -67,6 +68,9 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [viewAsMember, setViewAsMember] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isCroppingPhoto, setIsCroppingPhoto] = useState(false);
+  const [tempPhotoSrc, setTempPhotoSrc] = useState<string | null>(null);
+  const [isSavingCrop, setIsSavingCrop] = useState(false);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -134,44 +138,76 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
     }
   };
 
-  const handleSidebarAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      if (currentUser?.id) {
+        const cached = localStorage.getItem(`cn_member_avatar_${currentUser.id}`);
+        if (cached) {
+          setCurrentUser((prev) => (prev ? { ...prev, avatarPath: cached } : null));
+        }
+      }
+    };
+    window.addEventListener("cn_avatar_updated", handleAvatarUpdate);
+    return () => window.removeEventListener("cn_avatar_updated", handleAvatarUpdate);
+  }, [currentUser?.id]);
+
+  const handleSidebarAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !currentUser) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert("A imagem selecionada excede 5MB. Por favor, escolha uma foto menor.");
+    if (file.size > 15 * 1024 * 1024) {
+      alert("A imagem selecionada excede 15MB. Por favor, escolha uma foto menor.");
       return;
     }
     const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result as string;
+    reader.onload = () => {
+      setTempPhotoSrc(reader.result as string);
+      setIsCroppingPhoto(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleSaveCroppedAvatar = async (croppedBlob: Blob, croppedDataUrl: string) => {
+    if (!currentUser) return;
+    setIsSavingCrop(true);
+    try {
       try {
-        localStorage.setItem(`cn_member_avatar_${currentUser.id}`, base64);
+        localStorage.setItem(`cn_member_avatar_${currentUser.id}`, croppedDataUrl);
       } catch {
         // storage quota fallback
       }
-      setCurrentUser((prev) => (prev ? { ...prev, avatarPath: base64 } : null));
+      setCurrentUser((prev) => (prev ? { ...prev, avatarPath: croppedDataUrl } : null));
 
-      try {
-        const supabase = createClient();
-        const fileExt = file.name.split(".").pop();
-        const filePath = `${currentUser.id}/avatar-${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from("membros")
-          .upload(filePath, file, { upsert: true });
+      const supabase = createClient();
+      const filePath = `${currentUser.id}/avatar-${Date.now()}.webp`;
+      const { error: uploadError } = await supabase.storage
+        .from("membros")
+        .upload(filePath, croppedBlob, {
+          contentType: "image/webp",
+          upsert: true,
+        });
 
-        const finalUrl = !uploadError
-          ? supabase.storage.from("membros").getPublicUrl(filePath).data.publicUrl
-          : base64;
+      const finalUrl = !uploadError
+        ? supabase.storage.from("membros").getPublicUrl(filePath).data.publicUrl
+        : croppedDataUrl;
 
-        await supabase
-          .from("profiles")
-          .update({ avatar_path: finalUrl })
-          .eq("id", currentUser.id);
-      } catch (uploadErr) {
-        console.warn("Storage fallback na Sidebar:", uploadErr);
+      await supabase
+        .from("profiles")
+        .update({ avatar_path: finalUrl })
+        .eq("id", currentUser.id);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("cn_avatar_updated"));
       }
-    };
-    reader.readAsDataURL(file);
+
+      setIsCroppingPhoto(false);
+      setTempPhotoSrc(null);
+    } catch (err) {
+      console.error("Erro ao salvar foto de perfil:", err);
+      alert("Erro ao salvar foto de perfil.");
+    } finally {
+      setIsSavingCrop(false);
+    }
   };
 
   const getInitials = (name?: string) => {
@@ -339,7 +375,7 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
                   id="sidebar-photo-input"
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
-                  onChange={handleSidebarAvatarUpload}
+                  onChange={handleSidebarAvatarSelect}
                   className="hidden"
                 />
               </label>
@@ -380,6 +416,19 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
           </div>
         </div>
       </aside>
+
+      {/* MODAL: AJUSTAR FOTO DE PERFIL (WHATSAPP / INSTAGRAM STYLE) */}
+      {isCroppingPhoto && tempPhotoSrc && (
+        <ProfilePhotoCropper
+          imageSrc={tempPhotoSrc}
+          onCancel={() => {
+            setIsCroppingPhoto(false);
+            setTempPhotoSrc(null);
+          }}
+          onCropComplete={handleSaveCroppedAvatar}
+          isSaving={isSavingCrop}
+        />
+      )}
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { ProfilePhotoCropper } from "@/components/ui/ProfilePhotoCropper";
 import {
   Calendar,
   CheckCircle2,
@@ -132,6 +133,8 @@ export default function MemberSelfServicePage() {
   const [activeTab, setActiveTab] = useState<"frequencia" | "reunioes" | "mensalidades" | "solicitacoes" | "aniversarios">("frequencia");
   const [isLoading, setIsLoading] = useState(true);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isCroppingPhoto, setIsCroppingPhoto] = useState(false);
+  const [tempPhotoSrc, setTempPhotoSrc] = useState<string | null>(null);
   const [feedbackMsg, setFeedbackMsg] = useState("");
   const [duesFilter, setDuesFilter] = useState<"todas" | "pagas" | "pendentes">("todas");
   const [isEmittingDecl, setIsEmittingDecl] = useState(false);
@@ -544,13 +547,13 @@ export default function MemberSelfServicePage() {
     }
   };
 
-  // Handler: Upload de Foto de Perfil do Usuário
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Handler 1: Usuário seleciona foto do dispositivo -> Abre modal de ajuste (Instagram / WhatsApp)
+  const handlePhotoSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !currentMember) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert("A imagem selecionada excede o limite de 5MB. Por favor, selecione uma foto menor.");
+    if (file.size > 15 * 1024 * 1024) {
+      alert("A imagem selecionada excede o limite de 15MB. Por favor, selecione uma foto menor.");
       return;
     }
 
@@ -559,59 +562,79 @@ export default function MemberSelfServicePage() {
       return;
     }
 
+    const reader = new FileReader();
+    reader.onload = () => {
+      setTempPhotoSrc(reader.result as string);
+      setIsCroppingPhoto(true);
+    };
+    reader.readAsDataURL(file);
+
+    // Reseta o input para permitir selecionar a mesma imagem se quiser
+    event.target.value = "";
+  };
+
+  // Handler 2: Usuário confirma o enquadramento circular no modal
+  const handleSaveCroppedPhoto = async (croppedBlob: Blob, croppedDataUrl: string) => {
+    if (!currentMember) return;
+
     setIsUploadingPhoto(true);
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64Data = reader.result as string;
+      // Salva localmente de imediato para feedback instantâneo na tela
+      try {
+        localStorage.setItem(`cn_member_avatar_${currentMember.id}`, croppedDataUrl);
+      } catch {
+        // ignore quota
+      }
 
-        try {
-          localStorage.setItem(`cn_member_avatar_${currentMember.id}`, base64Data);
-        } catch {
-          // ignore localStorage quota limit
-        }
+      setCurrentMember((prev) => (prev ? { ...prev, photo_url: croppedDataUrl } : null));
 
-        setCurrentMember((prev) => (prev ? { ...prev, photo_url: base64Data } : null));
+      // Caminho no bucket membros do Supabase em formato WebP otimizado
+      const filePath = `${currentMember.id}/avatar-${Date.now()}.webp`;
 
-        const fileExt = file.name.split(".").pop();
-        const filePath = `${currentMember.id}/avatar-${Date.now()}.${fileExt}`;
+      try {
+        const { error: uploadError } = await supabase.storage
+          .from("membros")
+          .upload(filePath, croppedBlob, {
+            contentType: "image/webp",
+            upsert: true,
+          });
 
-        try {
-          const { error: uploadError } = await supabase.storage
+        if (!uploadError) {
+          const { data: publicUrlData } = supabase.storage
             .from("membros")
-            .upload(filePath, file, { upsert: true });
+            .getPublicUrl(filePath);
 
-          if (!uploadError) {
-            const { data: publicUrlData } = supabase.storage
-              .from("membros")
-              .getPublicUrl(filePath);
-
-            const finalUrl = publicUrlData?.publicUrl || base64Data;
-            if (user) {
-              await supabase
-                .from("profiles")
-                .update({ avatar_path: finalUrl })
-                .eq("id", user.id);
-            }
-          } else if (user) {
+          const finalUrl = publicUrlData?.publicUrl || croppedDataUrl;
+          if (user) {
             await supabase
               .from("profiles")
-              .update({ avatar_path: base64Data })
+              .update({ avatar_path: finalUrl })
               .eq("id", user.id);
           }
-        } catch (storageErr) {
-          console.warn("Storage upload fallback para perfil:", storageErr);
+        } else if (user) {
+          await supabase
+            .from("profiles")
+            .update({ avatar_path: croppedDataUrl })
+            .eq("id", user.id);
         }
+      } catch (storageErr) {
+        console.warn("Storage upload fallback para perfil:", storageErr);
+      }
 
-        setFeedbackMsg("Foto de perfil atualizada com sucesso!");
-        setTimeout(() => setFeedbackMsg(""), 5000);
-      };
-      reader.readAsDataURL(file);
+      // Notifica componentes globais para sincronização de avatar
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("cn_avatar_updated"));
+      }
+
+      setFeedbackMsg("Foto de perfil enquadrada e atualizada com sucesso!");
+      setTimeout(() => setFeedbackMsg(""), 5000);
+      setIsCroppingPhoto(false);
+      setTempPhotoSrc(null);
     } catch (err: unknown) {
-      console.error("Erro ao enviar foto:", err);
+      console.error("Erro ao salvar foto de perfil:", err);
       alert("Ocorreu um erro ao carregar a foto de perfil.");
     } finally {
       setIsUploadingPhoto(false);
@@ -718,7 +741,7 @@ export default function MemberSelfServicePage() {
                   id="profile-photo-input"
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
-                  onChange={handlePhotoUpload}
+                  onChange={handlePhotoSelected}
                   disabled={isUploadingPhoto}
                   className="hidden"
                 />
@@ -2008,6 +2031,19 @@ export default function MemberSelfServicePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL: AJUSTE E CORTE DE FOTO DE PERFIL (WHATSAPP / INSTAGRAM STYLE) */}
+      {isCroppingPhoto && tempPhotoSrc && (
+        <ProfilePhotoCropper
+          imageSrc={tempPhotoSrc}
+          onCancel={() => {
+            setIsCroppingPhoto(false);
+            setTempPhotoSrc(null);
+          }}
+          onCropComplete={handleSaveCroppedPhoto}
+          isSaving={isUploadingPhoto}
+        />
       )}
     </div>
   );
