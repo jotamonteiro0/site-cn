@@ -37,69 +37,112 @@ interface DocumentRecord {
 
 // 1. Acervo Completo do SCDB (Cerimônias Públicas e Manuais Oficiais)
 const scdbPublicCeremonies = [
-  "Instruções gerais para todas as cerimônias públicas",
-  "Cerimônia De Instalação Do Conselho Consultivo",
-  "Cerimônia Da Luz",
-  "Cerimônia De Recepção De Grande Mestre",
-  "Investidura Chevalier",
-  "Investidura Chevalier (Singular)",
-  "Investidura Na Cruz De Honra",
-  "Investidura Na Cruz De Honra (Singular)",
-  "Cerimônia Das Flores",
-  "Cerimônia Fúnebre - Em Memória",
-  "Cerimônia De Instalação De Oficiais",
-  "Cerimônia De Instalação De Oficiais Em Ordem Inversa",
-  "Apresentação De Visitantes",
-  "Investidura à Legião De Honra",
-  "Investidura à Legião De Honra (Singular)",
-  "Cerimônia Da Maioridade",
-  "Cerimônia Da Maioridade (Singular)",
-  "Cerimônia Em Memória Para Adultos",
-  "Cerimônia Das Nove Horas",
-  "Cerimônia Do Representante DeMolay",
-  "Cerimônia Do Representante DeMolay (Singular)",
-  "Cerimônia Do Abraço",
-  "Cerimônia De Apresentação De Visitantes Ilustres",
-  "Tributo Aos Maçons",
   "Abertura E Encerramento De Cerimônias Públicas Da Ordem DeMolay",
   "Abertura e Encerramento De Congressos DeMolay",
-  "Cerimônia De Instalação Do Supremo Conselho",
-  "Cerimônia De Instalação Do Mestre Conselheiro Nacional E Mestre Conselheiro Nacional Adjunto",
+  "Apresentação De Visitantes",
+  "Cerimônia Antes que Seja Tarde",
+  "Cerimônia Da Luz",
+  "Cerimônia Da Maioridade",
+  "Cerimônia Das Flores",
+  "Cerimônia Das Nove Horas",
+  "Cerimônia De Apresentação De Visitantes Ilustres",
+  "Cerimônia De Instalação De Oficiais Em Ordem Inversa",
+  "Cerimônia De Instalação De Oficial Executivo",
+  "Cerimônia De Instalação Do Conselho Consultivo",
   "Cerimônia De Instalação Do Grande Conselho Estadual-Distrital",
   "Cerimônia De Instalação Do MCE-Distrital e do MCE-Distrital Adjunto",
-  "Cerimônia De Instalação De Oficial Executivo",
+  "Cerimônia De Instalação Do Mestre Conselheiro Nacional E Mestre Conselheiro Nacional Adjunto",
   "Cerimônia De Instalação Do Mestre Conselheiro Regional",
-  "Pin De Membro DeMolay",
-  "Cerimônia Dos Pais",
-  "Uma Lição Histórica",
+  "Cerimônia De Instalação Do Supremo Conselho",
+  "Cerimônia De Recepção De Grande Mestre",
+  "Cerimônia Do Abraço",
   "Cerimônia Do Emblema",
+  "Cerimônia Do Representante DeMolay",
+  "Cerimônia Dos Pais",
+  "Cerimônia Em Memória Para Adultos",
+  "Cerimônia Fúnebre - Em Memória",
+  "Instruções Gerais para todas as Cerimônias Públicas",
+  "Investidura Chevalier",
+  "Investidura Na Cruz De Honra",
+  "Investidura à Legião De Honra",
+  "Pin De Membro DeMolay",
+  "Tributo Aos Maçons",
   "Tributo às Mães",
-  "Cerimônia De Homenagem à Bandeira Nacional - Ordem Dos Escudeiros",
-  "Cerimônia Do Dia Das Mães - Ordem Dos Escudeiros",
-  "Cerimônia Do Dia Dos Pais - Ordem Dos Escudeiros",
-  "Cerimônia Antes que Seja Tarde"
+  "Uma Lição Histórica"
 ];
 
 const scdbGeneralManuals = [
   {
-    title: "Serviço de Instalação do Clube de Mães e Amigos",
-    description: "Normas, ritual de posse e diretrizes de apoio fraterno do Clube de Mães e Amigos do Capítulo.",
-    type: "Manual Institucional",
-  },
-  {
     title: "Vade Mecum DeMolay",
     description: "Compêndio oficial com a legislação, estatuto, regulamento geral e orientações administrativas nacionais.",
     type: "Legislação & Normas",
+    fileName: "Vade Mecum DeMolay.pdf",
   },
   {
-    title: "Supremas Instruções",
-    description: "Instruções normativas e decretos regulamentares emitidos pelo Supremo Conselho DeMolay Brasil.",
-    type: "Instruções Normativas",
-  },
-  {
-    title: "Plano Pedagógico",
+    title: "Plano Pedagógico - Supremo Conselho DeMolay Brasil",
     description: "Diretrizes educacionais, trilhas de liderança, virtudes e formação continuada da juventude DeMolay.",
     type: "Diretriz Educacional",
+    fileName: "Plano Pedagógico - Supremo Conselho DeMolay Brasil.pdf",
+  },
+  {
+    title: "Guia de Honrarias, Prêmios e Títulos (7° Edição -2026)",
+    description: "Manual completo de condecorações, distinções e méritos concedidos pelo Supremo Conselho DeMolay Brasil.",
+    type: "Guia & Regulamento",
+    fileName: "Guia de Honrarias, Prêmios e Títulos (7° Edição -2026).pdf",
+  },
+  {
+    title: "Guia Administrativo para Capítulos",
+    description: "Manual de gestão capitular, procedimentos de secretaria, tesouraria e governança interna.",
+    type: "Manual Administrativo",
+    fileName: "Guia Administrativo para Capítulos.pdf",
+  },
+  {
+    title: "Guia Novo Membro",
+    description: "Instruções fundamentais para novos iniciados sobre a vivência, estrutura e deveres na Ordem DeMolay.",
+    type: "Guia de Iniciação",
+    fileName: "Guia Novo Membro.pdf",
+  },
+  {
+    title: "Guia do Candidato - 1ª Edição",
+    description: "Orientações formais para candidatos que pleiteiam admissão nas fileiras da Ordem DeMolay.",
+    type: "Guia de Admissão",
+    fileName: "Guia do Candidato - 1ª Edição.pdf",
+  },
+  {
+    title: "Guia do Sindicante - 1ª Edição",
+    description: "Diretrizes e protocolos para comissões sindicantes no processo de averiguação e sindicância.",
+    type: "Guia de Sindicância",
+    fileName: "Guia do Sindicante - 1ª Edição.pdf",
+  },
+  {
+    title: "Serviço de Instalação do Clube de Mães e Amigos",
+    description: "Normas, ritual de posse e diretrizes de apoio fraterno do Clube de Mães e Amigos do Capítulo.",
+    type: "Manual Institucional",
+    fileName: "Serviço de Instalação do Clube de Mães e Amigos.pdf",
+  },
+  {
+    title: "Devocional: Clube de Mães e Amigos da Ordem DeMolay",
+    description: "Compilação de leituras, orações e reflexões devocionais dedicadas aos encontros do Clube de Mães e Amigos.",
+    type: "Manual Devocional",
+    fileName: "Devocional: Clube de Mães e Amigos da Ordem DeMolay.pdf",
+  },
+  {
+    title: "Treinamento para Clubes de Mães e Amigos. A Ordem DeMolay: Uma escola de valores. Módulo I",
+    description: "Capacitação introdutória sobre valores, história e propósito da Ordem DeMolay para o Clube de Mães.",
+    type: "Treinamento & Formação",
+    fileName: "Treinamento para Clubes de Mães e Amigos. A Ordem DeMolay: Uma escola de valores. Módulo I.pdf",
+  },
+  {
+    title: "Treinamento para Clubes de Mães e Amigos. Missão, história e identidade. Módulo II",
+    description: "Segundo módulo de capacitação aprofundando a missão, identidade e trabalho conjunto com os Capítulos.",
+    type: "Treinamento & Formação",
+    fileName: "Treinamento para Clubes de Mães e Amigos. Missão, história e identidade. Módulo II.pdf",
+  },
+  {
+    title: "Treinamento para Clube de Mães Amigos. Organização, atuação e continuidade. Módulo III",
+    description: "Terceiro módulo abordando rotinas organizacionais, planejamento de eventos e continuidade do projeto.",
+    type: "Treinamento & Formação",
+    fileName: "Treinamento para Clube de Mães Amigos. Organização, atuação e continuidade. Módulo III.pdf",
   },
 ];
 
@@ -287,7 +330,7 @@ export default function DashboardDocumentosPage() {
   const allCatalog = useMemo(() => {
     const list: DocumentRecord[] = [];
 
-    // Cerimônias Públicas SCDB
+    // Cerimônias Públicas SCDB (com link automático para PDF local)
     scdbPublicCeremonies.forEach((title, idx) => {
       const id = `scdb-cer-${idx + 1}`;
       list.push({
@@ -298,11 +341,11 @@ export default function DashboardDocumentosPage() {
         description: `Cerimonial público oficial padronizado pelo Supremo Conselho DeMolay Brasil.`,
         visibility: "members",
         date: "SCDB Oficial",
-        downloadUrl: attachments[id],
+        downloadUrl: attachments[id] || `/api/documents/${encodeURIComponent(title + ".pdf")}`,
       });
     });
 
-    // Manuais Gerais SCDB
+    // Manuais Gerais SCDB (com link automático para PDF local)
     scdbGeneralManuals.forEach((m, idx) => {
       const id = `scdb-man-${idx + 1}`;
       list.push({
@@ -313,7 +356,7 @@ export default function DashboardDocumentosPage() {
         description: m.description,
         visibility: "members",
         date: "Norma SCDB",
-        downloadUrl: attachments[id],
+        downloadUrl: attachments[id] || `/api/documents/${encodeURIComponent(m.fileName)}`,
       });
     });
 
@@ -647,7 +690,7 @@ export default function DashboardDocumentosPage() {
             </span>
           </div>
           <p className="text-emerald-100/70 text-[11px] leading-relaxed">
-            Vade Mecum DeMolay, Supremas Instruções, Plano Pedagógico e Clube de Mães e Amigos.
+            Vade Mecum, Plano Pedagógico, Guias Oficiais e Treinamentos do Clube de Mães e Amigos.
           </p>
         </div>
 
