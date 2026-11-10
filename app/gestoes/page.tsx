@@ -341,6 +341,7 @@ export default function GestoesPage() {
                       src={mcAtual.foto}
                       alt={`Foto oficial de ${mcAtual.mc}`}
                       fill
+                      priority
                       sizes="(max-width: 768px) 100vw, 320px"
                       className="z-[1] object-cover"
                       onError={(event) => {
@@ -436,6 +437,7 @@ export default function GestoesPage() {
                         src={item.foto}
                         alt={`Foto oficial de ${item.mc}, gestão ${item.periodo}`}
                         fill
+                        loading="lazy"
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                         className="z-[1] object-cover"
                         onError={(event) => {

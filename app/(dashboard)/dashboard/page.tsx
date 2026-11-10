@@ -44,20 +44,19 @@ export default function DashboardOverviewPage() {
       try {
         const supabase = createClient();
 
-        // 1. Reuniões
-        const { data: mData } = await supabase
-          .from("meetings")
-          .select("id, title, starts_at, location, status")
-          .order("starts_at", { ascending: true });
+        // Carregamento em paralelo de Reuniões e Membros
+        const [mRes, memRes] = await Promise.all([
+          supabase
+            .from("meetings")
+            .select("id, title, starts_at, location, status")
+            .order("starts_at", { ascending: true }),
+          supabase
+            .from("members")
+            .select("id, cid, full_name, category, masonic_lodge"),
+        ]);
 
-        if (mData) setMeetings(mData);
-
-        // 2. Membros
-        const { data: memData } = await supabase
-          .from("members")
-          .select("id, cid, full_name, category, masonic_lodge");
-
-        if (memData) setMembers(memData as MemberRecord[]);
+        if (mRes.data) setMeetings(mRes.data);
+        if (memRes.data) setMembers(memRes.data as MemberRecord[]);
       } catch (err) {
         console.error("Erro ao carregar dados do dashboard:", err);
       } finally {

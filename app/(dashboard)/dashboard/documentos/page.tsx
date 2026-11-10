@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { authenticGestaoDocuments } from "@/lib/data/historicalGestaoDocs";
+import { authenticAtasDocuments } from "@/lib/data/historicalAtasDocs";
 import {
   FileText,
   PlusCircle,
@@ -19,7 +21,8 @@ import {
   Paperclip,
   Trash2,
   Printer,
-  AlertTriangle
+  AlertTriangle,
+  Calendar
 } from "lucide-react";
 
 interface DocumentRecord {
@@ -35,6 +38,7 @@ interface DocumentRecord {
   downloadUrl?: string;
   fileName?: string;
   fileUrl?: string;
+  timestamp?: string;
 }
 
 // 1. Acervo Completo do SCDB (Cerimônias Públicas e Manuais Oficiais)
@@ -154,374 +158,11 @@ const scdbGeneralManuals = [
   },
 ];
 
-// 2. Documentos Capitulares (Atos, Editais e Relatórios por Gestão e Nome do MC)
-const gestaoDocuments: DocumentRecord[] = [
-  {
-    id: "g25-01",
-    title: "Ato Capitular nº 01/2026 — Nomeação da Nominata e Oficiais Colaboradores",
-    category: "gestao",
-    management: "Gestão XXV (2026.2)",
-    mcName: "MC Rafael Inácio",
-    type: "Ato Administrativo",
-    description: "Nomeação oficial dos 22 oficiais e comissões permanentes sob a liderança do MC Rafael Inácio do Nascimento de Morais.",
-    visibility: "members",
-    date: "Julho 2026",
-  },
-  {
-    id: "g25-02",
-    title: "Edital de Convocação Geral — Sessão Solene de Instalação e Posse",
-    category: "gestao",
-    management: "Gestão XXV (2026.2)",
-    mcName: "MC Rafael Inácio",
-    type: "Edital de Convocação",
-    description: "Convocatória capitular a todos os membros ativos, seniores e conselho consultivo para a posse da Gestão XXV.",
-    visibility: "members",
-    date: "Julho 2026",
-  },
-  {
-    id: "g24-01",
-    title: "Ato Capitular nº 01/2026 — Transmissão e Calendário da Gestão XXIV",
-    category: "gestao",
-    management: "Gestão XXIV (2026.1)",
-    mcName: "MC José Keltton",
-    type: "Ato Administrativo",
-    description: "Planejamento semestral e designação de oficiais sob liderança do MC José Keltton da Silva Cardoso Viana.",
-    visibility: "members",
-    date: "Janeiro 2026",
-  },
-  {
-    id: "g24-02",
-    title: "Relatório de Atividades e Balancete Financeiro Semestral — Gestão XXIV",
-    category: "gestao",
-    management: "Gestão XXIV (2026.1)",
-    mcName: "MC José Keltton",
-    type: "Balancete & Relatório",
-    description: "Prestação de contas e relatório filantrópico aprovado pelo Conselho Consultivo da Gestão XXIV.",
-    visibility: "members",
-    date: "Junho 2026",
-  },
-  {
-    id: "g23-01",
-    title: "Regimento Interno do Capítulo Professor Carvalho Neves Nº 500",
-    category: "gestao",
-    management: "Gestão XXIII (2025.2)",
-    mcName: "MC João Guilherme",
-    type: "Regimento Interno",
-    description: "Estatuto normativo local revisado e promulgado sob a liderança do MC João Guilherme Martins Lopes Monteiro.",
-    visibility: "members",
-    date: "Agosto 2025",
-  },
-  {
-    id: "g23-02",
-    title: "Ato Capitular nº 01/2025 — Nomeação de Oficiais e Comissões de Sindicância",
-    category: "gestao",
-    management: "Gestão XXIII (2025.2)",
-    mcName: "MC João Guilherme",
-    type: "Ato Administrativo",
-    description: "Estruturação das comissões permanentes de finanças, filantropia e sindicância da Gestão XXIII.",
-    visibility: "members",
-    date: "Agosto 2025",
-  },
-  {
-    id: "g23-03",
-    title: "Edital de Convocação — Sessão Magna de Iniciação da Gestão XXIII",
-    category: "gestao",
-    management: "Gestão XXIII (2025.2)",
-    mcName: "MC João Guilherme",
-    type: "Edital",
-    description: "Convocatória magna para a iniciação de novos irmãos no Capítulo Carvalho Neves.",
-    visibility: "members",
-    date: "Setembro 2025",
-  },
-  {
-    id: "g22-01",
-    title: "Prestação de Contas Semestral e Balancete — Gestão XXII",
-    category: "gestao",
-    management: "Gestão XXII (2025.1)",
-    mcName: "Past MC Epaminondas Júnior",
-    type: "Balancete",
-    description: "Demonstrativo financeiro e relatório de encerramento da Gestão XXII liderada pelo Past MC Epaminondas Jr.",
-    visibility: "members",
-    date: "Julho 2025",
-  },
-  {
-    id: "g21-01",
-    title: "Relatório de Gestão e Livro de Presenças — Gestão XXI",
-    category: "gestao",
-    management: "Gestão XXI (2024.2)",
-    mcName: "Past MC Fábio Anicácio",
-    type: "Relatório Administrativo",
-    description: "Registros de sessões, balanço patrimonial e histórico da Gestão XXI liderada pelo Past MC Fábio Anicácio.",
-    visibility: "members",
-    date: "Dezembro 2024",
-  },
-];
+// 2. Documentos Capitulares Autênticos extraídos diretamente do Google Drive das Gestões
+const gestaoDocuments: DocumentRecord[] = authenticGestaoDocuments as DocumentRecord[];
 
 // 3. Atas Oficiais e Balaústres das Gestões (Documentos Digitalizados e Assinados)
-const atasDocuments: DocumentRecord[] = [
-  // Gestão XXIV (MC José Keltton - 2026.1)
-  {
-    id: "ata-24-01",
-    title: "Ata Magna nº 001/2026 — Cerimônia de Instalação e Posse dos Oficiais",
-    category: "atas",
-    management: "Gestão XXIV (2026.1)",
-    mcName: "MC José Keltton",
-    type: "Ata de Instalação",
-    description: "Balaústre solene de instalação e posse dos oficiais capitulares da Gestão XXIV.",
-    visibility: "all",
-    date: "25/01/2026",
-    fileName: "Ata_001_2026_01_25_Instalacao_Oficiais.pdf",
-    fileUrl: "/documentos/atas/Ata_001_2026_01_25_Instalacao_Oficiais.pdf",
-  },
-  {
-    id: "ata-24-02",
-    title: "Ata nº 002/2026 — Assembleia Ordinária de Apresentação do Plano de Gestão",
-    category: "atas",
-    management: "Gestão XXIV (2026.1)",
-    mcName: "MC José Keltton",
-    type: "Ata Ordinária",
-    description: "Apresentação e deliberação das diretrizes e calendário administrativo de 2026.1.",
-    visibility: "all",
-    date: "08/02/2026",
-    fileName: "Ata_002_2026_02_08_Plano_Gestao.pdf",
-    fileUrl: "/documentos/atas/Ata_002_2026_02_08_Plano_Gestao.pdf",
-  },
-  {
-    id: "ata-24-03",
-    title: "Ata nº 003/2026 — Reunião Ordinária, Dia Devocional e Escrutínio Secreto",
-    category: "atas",
-    management: "Gestão XXIV (2026.1)",
-    mcName: "MC José Keltton",
-    type: "Ata Ordinária",
-    description: "Comemoração devocional e deliberação em escrutínio secreto de sindicâncias.",
-    visibility: "all",
-    date: "22/02/2026",
-    fileName: "Ata_003_2026_02_22_Devocional.pdf",
-    fileUrl: "/documentos/atas/Ata_003_2026_02_22_Devocional.pdf",
-  },
-  {
-    id: "ata-24-04",
-    title: "Ata nº 004/2026 — Reunião Ordinária, Dia do DeMolay e Jacques DeMolay",
-    category: "atas",
-    management: "Gestão XXIV (2026.1)",
-    mcName: "MC José Keltton",
-    type: "Ata Ordinária",
-    description: "Sessão solene alusiva ao Dia Nacional do DeMolay e ao martírio de Jacques DeMolay.",
-    visibility: "all",
-    date: "15/03/2026",
-    fileName: "Ata_004_2026_03_15_Jacques_DeMolay.pdf",
-    fileUrl: "/documentos/atas/Ata_004_2026_03_15_Jacques_DeMolay.pdf",
-  },
-  {
-    id: "ata-24-05",
-    title: "Ata Magna nº 005/2026 — Cerimônia de Iniciação à Ordem DeMolay",
-    category: "atas",
-    management: "Gestão XXIV (2026.1)",
-    mcName: "MC José Keltton",
-    type: "Ata de Iniciação",
-    description: "Balaústre ritualístico da Iniciação solene de novos irmãos no Capítulo 500.",
-    visibility: "all",
-    date: "29/03/2026",
-    fileName: "Ata_005_2026_03_29_Iniciacao.pdf",
-    fileUrl: "/documentos/atas/Ata_005_2026_03_29_Iniciacao.pdf",
-  },
-  {
-    id: "ata-24-06",
-    title: "Ata nº 006/2026 — Reunião Ordinária e Instrução Ritualística e Histórica",
-    category: "atas",
-    management: "Gestão XXIV (2026.1)",
-    mcName: "MC José Keltton",
-    type: "Ata Ordinária",
-    description: "Instrução litúrgica aprofundada dos graus e histórico da Ordem DeMolay.",
-    visibility: "all",
-    date: "12/04/2026",
-    fileName: "Ata_006_2026_04_12_Instrucao.pdf",
-    fileUrl: "/documentos/atas/Ata_006_2026_04_12_Instrucao.pdf",
-  },
-  {
-    id: "ata-24-07",
-    title: "Ata nº 007/2026 — Reunião Ordinária e Conscientização ao TEA (Autismo)",
-    category: "atas",
-    management: "Gestão XXIV (2026.1)",
-    mcName: "MC José Keltton",
-    type: "Ata Ordinária",
-    description: "Palestra e deliberação especial em apoio e conscientização sobre o autismo.",
-    visibility: "all",
-    date: "26/04/2026",
-    fileName: "Ata_007_2026_04_26_TEA_Autismo.pdf",
-    fileUrl: "/documentos/atas/Ata_007_2026_04_26_TEA_Autismo.pdf",
-  },
-  {
-    id: "ata-24-08",
-    title: "Ata nº 008/2026 — Reunião Ordinária e História Capitular Prof. Carvalho Neves",
-    category: "atas",
-    management: "Gestão XXIV (2026.1)",
-    mcName: "MC José Keltton",
-    type: "Ata Ordinária",
-    description: "Resgate histórico da fundação e do patrono Professor Carvalho Neves.",
-    visibility: "all",
-    date: "17/05/2026",
-    fileName: "Ata_008_2026_05_17_Historia_Capitular.pdf",
-    fileUrl: "/documentos/atas/Ata_008_2026_05_17_Historia_Capitular.pdf",
-  },
-  {
-    id: "ata-24-09",
-    title: "Ata nº 009/2026 — Instrução Administrativa e Exame de Proficiência",
-    category: "atas",
-    management: "Gestão XXIV (2026.1)",
-    mcName: "MC José Keltton",
-    type: "Ata Ordinária",
-    description: "Instrução administrativa do SCDB e avaliação de proficiência dos iniciáticos.",
-    visibility: "all",
-    date: "31/05/2026",
-    fileName: "Ata_009_2026_05_31_Instrucao_Administrativa.pdf",
-    fileUrl: "/documentos/atas/Ata_009_2026_05_31_Instrucao_Administrativa.pdf",
-  },
-  // Gestão XXIII (MC João Guilherme - 2025.2)
-  {
-    id: "ata-23-01",
-    title: "Ata Magna nº 001/2025 — Instalação e Posse dos Oficiais da Gestão XXIII",
-    category: "atas",
-    management: "Gestão XXIII (2025.2)",
-    mcName: "MC João Guilherme",
-    type: "Ata de Instalação",
-    description: "Cerimônia solene de posse da tríplice liderada pelo MC João Guilherme.",
-    visibility: "all",
-    date: "29/06/2025",
-    fileName: "Ata_001_2025_06_29_Instalacao_XXIII.pdf",
-    fileUrl: "/documentos/atas/Ata_001_2025_06_29_Instalacao_XXIII.pdf",
-  },
-  {
-    id: "ata-23-02",
-    title: "Ata nº 002/2025 — Reunião Ordinária da Gestão XXIII",
-    category: "atas",
-    management: "Gestão XXIII (2025.2)",
-    mcName: "MC João Guilherme",
-    type: "Ata Ordinária",
-    description: "Deliberações administrativas e expediente capitular.",
-    visibility: "all",
-    date: "21/07/2025",
-    fileName: "Ata_002_2025_07_21_Sessao_Ordinaria.pdf",
-    fileUrl: "/documentos/atas/Ata_002_2025_07_21_Sessao_Ordinaria.pdf",
-  },
-  {
-    id: "ata-23-03",
-    title: "Ata nº 003/2025 — Comemoração ao Dia dos Pais",
-    category: "atas",
-    management: "Gestão XXIII (2025.2)",
-    mcName: "MC João Guilherme",
-    type: "Ata Solene",
-    description: "Cerimônia dos Pais (Art. 216 SCDB) com presença de pais e convidados.",
-    visibility: "all",
-    date: "03/08/2025",
-    fileName: "Ata_003_2025_08_03_Pais.pdf",
-    fileUrl: "/documentos/atas/Ata_003_2025_08_03_Pais.pdf",
-  },
-  {
-    id: "ata-23-04",
-    title: "Ata nº 004/2025 — Sessão Ordinária do Grau Iniciático",
-    category: "atas",
-    management: "Gestão XXIII (2025.2)",
-    mcName: "MC João Guilherme",
-    type: "Ata Ordinária",
-    description: "Trabalhos litúrgicos e comissões da Gestão XXIII.",
-    visibility: "all",
-    date: "24/08/2025",
-    fileName: "Ata_004_2025_08_24_Sessao_Ordinaria.pdf",
-    fileUrl: "/documentos/atas/Ata_004_2025_08_24_Sessao_Ordinaria.pdf",
-  },
-  {
-    id: "ata-23-05",
-    title: "Ata nº 005/2025 — Sessão Ordinária do Grau DeMolay",
-    category: "atas",
-    management: "Gestão XXIII (2025.2)",
-    mcName: "MC João Guilherme",
-    type: "Ata Ordinária",
-    description: "Trabalhos litúrgicos do Segundo Grau.",
-    visibility: "all",
-    date: "31/08/2025",
-    fileName: "Ata_005_2025_08_31_Sessao_Ordinaria.pdf",
-    fileUrl: "/documentos/atas/Ata_005_2025_08_31_Sessao_Ordinaria.pdf",
-  },
-  {
-    id: "ata-23-06",
-    title: "Ata nº 006/2025 — Comemoração ao Dia do Patriota",
-    category: "atas",
-    management: "Gestão XXIII (2025.2)",
-    mcName: "MC João Guilherme",
-    type: "Ata Solene",
-    description: "Sessão alusiva ao Dia do Patriota e à Pátria brasileira.",
-    visibility: "all",
-    date: "14/09/2025",
-    fileName: "Ata_006_2025_09_14_Patriota.pdf",
-    fileUrl: "/documentos/atas/Ata_006_2025_09_14_Patriota.pdf",
-  },
-  {
-    id: "ata-23-07",
-    title: "Ata nº 007/2025 — Reunião Ordinária da Gestão XXIII",
-    category: "atas",
-    management: "Gestão XXIII (2025.2)",
-    mcName: "MC João Guilherme",
-    type: "Ata Ordinária",
-    description: "Expediente capitular e finanças.",
-    visibility: "all",
-    date: "21/09/2025",
-    fileName: "Ata_007_2025_09_21_Sessao_Ordinaria.pdf",
-    fileUrl: "/documentos/atas/Ata_007_2025_09_21_Sessao_Ordinaria.pdf",
-  },
-  {
-    id: "ata-23-08",
-    title: "Ata nº 008/2025 — Comemoração ao Dia Educacional",
-    category: "atas",
-    management: "Gestão XXIII (2025.2)",
-    mcName: "MC João Guilherme",
-    type: "Ata Solene",
-    description: "Comemoração ao Dia Educacional e valorização da educação pública.",
-    visibility: "all",
-    date: "05/10/2025",
-    fileName: "Ata_008_2025_10_05_Educacional.pdf",
-    fileUrl: "/documentos/atas/Ata_008_2025_10_05_Educacional.pdf",
-  },
-  {
-    id: "ata-23-09",
-    title: "Ata nº 009/2025 — Reunião Ordinária da Gestão XXIII",
-    category: "atas",
-    management: "Gestão XXIII (2025.2)",
-    mcName: "MC João Guilherme",
-    type: "Ata Ordinária",
-    description: "Deliberações sobre eventos filantrópicos e congresso estadual.",
-    visibility: "all",
-    date: "19/10/2025",
-    fileName: "Ata_009_2025_10_19_Sessao_Ordinaria.pdf",
-    fileUrl: "/documentos/atas/Ata_009_2025_10_19_Sessao_Ordinaria.pdf",
-  },
-  {
-    id: "ata-23-10",
-    title: "Ata nº 010/2025 — Dia em Memória a Frank S. Land e Meu Governo",
-    category: "atas",
-    management: "Gestão XXIII (2025.2)",
-    mcName: "MC João Guilherme",
-    type: "Ata Solene",
-    description: "Sessão solene de homenagem ao fundador Frank Sherman Land.",
-    visibility: "all",
-    date: "23/11/2025",
-    fileName: "Ata_010_2025_11_23_Frank_Land.pdf",
-    fileUrl: "/documentos/atas/Ata_010_2025_11_23_Frank_Land.pdf",
-  },
-  {
-    id: "ata-23-11",
-    title: "Ata nº 011/2025 — Assembleia Ordinária e Eleição da Gestão XXIV",
-    category: "atas",
-    management: "Gestão XXIII (2025.2)",
-    mcName: "MC João Guilherme",
-    type: "Ata de Eleição",
-    description: "Eleição da diretoria da Gestão XXIV (MC José Keltton) e prestação de contas.",
-    visibility: "all",
-    date: "07/12/2025",
-    fileName: "Ata_011_2025_12_07_Eleicoes_XXIV.pdf",
-    fileUrl: "/documentos/atas/Ata_011_2025_12_07_Eleicoes_XXIV.pdf",
-  },
-];
+const atasDocuments: DocumentRecord[] = authenticAtasDocuments as DocumentRecord[];
 
 export default function DashboardDocumentosPage() {
   const [userRole, setUserRole] = useState<string>("membro");
@@ -645,7 +286,7 @@ export default function DashboardDocumentosPage() {
       });
     });
 
-    // Manuais Gerais SCDB (com link automático para PDF local)
+    // Manuais Gerais SCDB (com link automático para PDF local ou Supabase Storage)
     scdbGeneralManuals.forEach((m, idx) => {
       const id = `scdb-man-${idx + 1}`;
       list.push({
@@ -660,11 +301,11 @@ export default function DashboardDocumentosPage() {
       });
     });
 
-    // Documentos Capitulares de Gestões
+    // Documentos Capitulares Autênticos das Gestões
     gestaoDocuments.forEach((doc) => {
       list.push({
         ...doc,
-        downloadUrl: attachments[doc.id] || doc.downloadUrl,
+        downloadUrl: attachments[doc.id] || doc.fileUrl || doc.downloadUrl,
       });
     });
 
@@ -691,7 +332,7 @@ export default function DashboardDocumentosPage() {
   const filteredDocs = useMemo(() => {
     const term = searchTerm.toLowerCase();
 
-    return allCatalog.filter((doc) => {
+    const filtered = allCatalog.filter((doc) => {
       // Filtro de Aba
       if (activeTab === "cerimonias" && doc.category !== "scdb_cerimonias") return false;
       if (activeTab === "manuais" && doc.category !== "scdb_gerais") return false;
@@ -717,6 +358,16 @@ export default function DashboardDocumentosPage() {
       }
 
       return true;
+    });
+
+    // Priorizar sempre os documentos mais recentes (ordenação cronológica decrescente)
+    return filtered.sort((a, b) => {
+      if (a.timestamp && b.timestamp) {
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      }
+      if (a.timestamp) return -1;
+      if (b.timestamp) return 1;
+      return 0;
     });
   }, [allCatalog, activeTab, selectedManagement, searchTerm]);
 
@@ -1084,8 +735,6 @@ export default function DashboardDocumentosPage() {
                 <option value="Gestão XXV (2026.2)">Gestão XXV (2026.2) — MC Rafael Inácio</option>
                 <option value="Gestão XXIV (2026.1)">Gestão XXIV (2026.1) — MC José Keltton</option>
                 <option value="Gestão XXIII (2025.2)">Gestão XXIII (2025.2) — MC João Guilherme</option>
-                <option value="Gestão XXII (2025.1)">Gestão XXII (2025.1) — Past MC Epaminondas Jr</option>
-                <option value="Gestão XXI (2024.2)">Gestão XXI (2024.2) — Past MC Fábio Anicácio</option>
               </select>
             </div>
           )}
@@ -1159,7 +808,7 @@ export default function DashboardDocumentosPage() {
                       )}
 
                       {doc.mcName && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-black/30 text-[#D9AA45] border border-white/10">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-white/[0.08] backdrop-blur-sm text-[#D9AA45] border border-white/10">
                           {doc.mcName}
                         </span>
                       )}
@@ -1172,10 +821,12 @@ export default function DashboardDocumentosPage() {
                       </p>
                     )}
 
-                    <div className="flex items-center gap-3 mt-2 text-[10px] text-gray-400">
-                      <span>Origem: {doc.date}</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1 text-emerald-300">
+                    <div className="flex flex-wrap items-center gap-2.5 mt-2.5 text-[11px]">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-white/[0.08] backdrop-blur-sm border border-white/10 text-emerald-200 font-mono text-[10px] shadow-inner">
+                        <Calendar className="w-3 h-3 text-[#D9AA45]" />
+                        <span>Publicado: <strong className="text-white font-semibold">{doc.date}</strong></span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 text-[10px]">
                         <Lock className="w-3 h-3 text-emerald-400" />
                         <span>Acesso Membro</span>
                       </span>
@@ -1251,13 +902,13 @@ export default function DashboardDocumentosPage() {
         )}
       </div>
 
-      {/* MODAL DE VISUALIZAÇÃO E EMISSÃO DE PDF OFICIAL (CLIENT-SIDE PRINT / PDF) */}
+      {/* MODAL DE VISUALIZAÇÃO E EMISSÃO DE PDF OFICIAL (DESIGN APPLE GLASSMORPHISM) */}
       {viewingDoc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in overflow-y-auto">
-          <div className="w-full max-w-2xl bg-gradient-to-b from-[#064D32]/95 via-[#04281A]/95 to-[#021810]/95 backdrop-blur-2xl border border-[#D9AA45]/40 rounded-2xl shadow-[0_20px_60px_-15px_rgba(4,40,26,0.8),0_0_40px_rgba(217,170,69,0.15)] p-6 md:p-8 space-y-6 text-white my-8 print-area animate-in zoom-in-95">
+          <div className="w-full max-w-2xl rounded-3xl ios-glass-card p-6 md:p-8 space-y-6 text-white my-8 print-area animate-in zoom-in-95">
             {/* Header Timbre Oficial Capitular */}
             <div className="text-center pb-4 border-b border-white/10 space-y-2">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-[#087443] to-[#04281A] border border-[#D9AA45] text-[#D9AA45] mb-1 shadow-lg shadow-[#087443]/30">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#087443] to-[#04281A] border border-[#D9AA45] text-[#D9AA45] mb-1 shadow-lg shadow-[#087443]/30">
                 <Shield className="w-7 h-7" />
               </div>
               <h2 className="text-lg font-black tracking-wide uppercase text-white">
@@ -1272,13 +923,14 @@ export default function DashboardDocumentosPage() {
             </div>
 
             {/* Identificação do Documento */}
-            <div className="space-y-2 bg-white/[0.04] backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-inner">
+            <div className="space-y-2 bg-white/[0.06] backdrop-blur-md p-4 rounded-2xl border border-white/10 shadow-inner">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/40">
                   {viewingDoc.type}
                 </span>
-                <span className="text-xs text-emerald-200/70 font-mono">
-                  {viewingDoc.date}
+                <span className="inline-flex items-center gap-1.5 text-xs text-emerald-200 font-mono">
+                  <Calendar className="w-3.5 h-3.5 text-[#D9AA45]" />
+                  <span>{viewingDoc.date}</span>
                 </span>
               </div>
               <h3 className="text-base font-bold text-white">
@@ -1292,7 +944,7 @@ export default function DashboardDocumentosPage() {
             </div>
 
             {/* Conteúdo / Descrição */}
-            <div className="p-4 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10 text-xs text-emerald-100/90 leading-relaxed space-y-3">
+            <div className="p-4 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/10 text-xs text-emerald-100/90 leading-relaxed space-y-3">
               <p className="font-semibold text-white">Resumo e Diretrizes Oficiais:</p>
               <p>{viewingDoc.description}</p>
               {viewingDoc.category === "scdb_cerimonias" && (
@@ -1304,7 +956,7 @@ export default function DashboardDocumentosPage() {
 
             {/* Arquivo PDF Anexo */}
             {viewingDoc.downloadUrl ? (
-              <div className="p-3.5 rounded-xl bg-emerald-950/40 backdrop-blur-sm border border-emerald-500/40 flex items-center justify-between gap-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-emerald-950/40 backdrop-blur-md border border-emerald-500/40 flex items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2 text-emerald-300">
                   <Paperclip className="w-4 h-4 text-[#D9AA45]" />
                   <span>Arquivo PDF oficial vinculado a este documento.</span>
@@ -1313,14 +965,14 @@ export default function DashboardDocumentosPage() {
                   href={viewingDoc.downloadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#D9AA45] to-[#E5BC5C] hover:brightness-110 text-[#04281A] font-bold flex items-center gap-1.5 transition-all shadow-md hover:shadow-[0_0_15px_rgba(217,170,69,0.35)]"
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#D9AA45] to-[#E5BC5C] hover:brightness-110 active:scale-95 text-[#04281A] font-bold flex items-center gap-1.5 transition-all shadow-md hover:shadow-[0_0_15px_rgba(217,170,69,0.35)] ios-glass-btn"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Abrir Arquivo PDF</span>
                 </a>
               </div>
             ) : (
-              <div className="p-3.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs text-emerald-200/70">
+              <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 text-xs text-emerald-200/70 backdrop-blur-md">
                 <p>
                   Documento oficial registrado no acervo capitular. Utilize a opção abaixo para emitir e imprimir diretamente em folha A4 com o timbre capitular.
                 </p>
@@ -1331,7 +983,7 @@ export default function DashboardDocumentosPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/10 no-print">
               <button
                 onClick={() => setViewingDoc(null)}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold cursor-pointer transition-all border border-white/10"
+                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold cursor-pointer transition-all border border-white/10 ios-glass-btn"
               >
                 Fechar
               </button>
@@ -1340,7 +992,7 @@ export default function DashboardDocumentosPage() {
                 {canManageDocs && (
                   <label
                     htmlFor="modal-attach-file"
-                    className="px-3.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm hover:shadow-[0_0_12px_rgba(16,185,129,0.2)]"
+                    className="px-3.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm hover:shadow-[0_0_12px_rgba(16,185,129,0.2)] ios-glass-btn active:scale-95"
                   >
                     <Upload className="w-3.5 h-3.5 text-[#D9AA45]" />
                     <span>{viewingDoc.downloadUrl ? "Substituir PDF" : "Anexar PDF"}</span>
@@ -1361,7 +1013,7 @@ export default function DashboardDocumentosPage() {
 
                 <button
                   onClick={() => window.print()}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#D9AA45] via-[#E5BC5C] to-[#D9AA45] hover:brightness-110 text-[#04281A] font-extrabold text-xs cursor-pointer transition-all shadow-md hover:shadow-[0_0_18px_rgba(217,170,69,0.4)] flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#D9AA45] via-[#E5BC5C] to-[#D9AA45] hover:brightness-110 active:scale-95 text-[#04281A] font-extrabold text-xs cursor-pointer transition-all shadow-md hover:shadow-[0_0_18px_rgba(217,170,69,0.4)] flex items-center gap-1.5 ios-glass-btn"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Imprimir / Salvar em PDF</span>
@@ -1375,7 +1027,7 @@ export default function DashboardDocumentosPage() {
       {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO (DESIGN CAPITULAR EM GLASSMORPHISM) */}
       {docToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-gradient-to-b from-[#064D32]/95 via-[#04281A]/95 to-[#021810]/95 backdrop-blur-2xl border border-[#D9AA45]/50 shadow-[0_20px_60px_-15px_rgba(4,40,26,0.8),0_0_40px_rgba(217,170,69,0.15)] p-6 text-white space-y-5 animate-in zoom-in-95">
+          <div className="w-full max-w-md rounded-3xl ios-glass-card p-6 text-white space-y-5 animate-in zoom-in-95">
             {/* Cabeçalho */}
             <div className="flex items-center gap-3.5 pb-4 border-b border-white/10">
               <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0 shadow-lg shadow-rose-500/20">
@@ -1392,7 +1044,7 @@ export default function DashboardDocumentosPage() {
             </div>
 
             {/* Cartão Informativo com Glassmorphism */}
-            <div className="p-4 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/10 space-y-2 shadow-inner">
+            <div className="p-4 rounded-2xl bg-white/[0.06] backdrop-blur-md border border-white/10 space-y-2 shadow-inner">
               <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/30">
                 {docToDelete.type}
               </span>
@@ -1406,7 +1058,7 @@ export default function DashboardDocumentosPage() {
               )}
             </div>
 
-            <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/30 text-xs text-rose-200/90 leading-relaxed space-y-1">
+            <div className="p-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/30 text-xs text-rose-200/90 leading-relaxed space-y-1">
               <p className="font-bold text-rose-300 flex items-center gap-1.5">
                 <span>⚠️ Confirmação Definitiva</span>
               </p>
@@ -1421,7 +1073,7 @@ export default function DashboardDocumentosPage() {
                 type="button"
                 onClick={() => setDocToDelete(null)}
                 disabled={isDeleting}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 border border-white/10"
+                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 border border-white/10 ios-glass-btn"
               >
                 Cancelar
               </button>
@@ -1429,7 +1081,7 @@ export default function DashboardDocumentosPage() {
                 type="button"
                 onClick={confirmDeleteDoc}
                 disabled={isDeleting}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white text-xs font-bold transition-all shadow-lg hover:shadow-rose-600/30 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 active:scale-95 text-white text-xs font-bold transition-all shadow-lg hover:shadow-rose-600/30 flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ios-glass-btn"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>{isDeleting ? "Excluindo..." : "Confirmar Exclusão"}</span>
@@ -1442,7 +1094,7 @@ export default function DashboardDocumentosPage() {
       {/* MODAL DE CADASTRO COM GLASSMORPHISM E UPLOAD DE PDF (APENAS MASTER E ESCRIVÃO) */}
       {isModalOpen && canPublish && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
-          <div className="w-full max-w-lg p-6 rounded-2xl bg-gradient-to-b from-[#064D32]/95 via-[#04281A]/95 to-[#021810]/95 backdrop-blur-2xl border border-[#D9AA45]/40 shadow-[0_20px_60px_-15px_rgba(4,40,26,0.8),0_0_40px_rgba(217,170,69,0.15)] space-y-4 text-white animate-in zoom-in-95">
+          <div className="w-full max-w-lg p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-[#D9AA45]" />
               <h3 className="text-lg font-bold">Cadastrar Documento Capitular</h3>
@@ -1459,13 +1111,11 @@ export default function DashboardDocumentosPage() {
                 <select
                   value={newDoc.management}
                   onChange={(e) => setNewDoc({ ...newDoc, management: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
+                  className="w-full px-3 py-2 rounded-xl bg-white/[0.06] backdrop-blur-md border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
                 >
-                  <option value="Gestão XXV (2026.2) — MC Rafael Inácio">Gestão XXV (2026.2) — MC Rafael Inácio</option>
-                  <option value="Gestão XXIV (2026.1) — MC José Keltton">Gestão XXIV (2026.1) — MC José Keltton</option>
-                  <option value="Gestão XXIII (2025.2) — MC João Guilherme">Gestão XXIII (2025.2) — MC João Guilherme</option>
-                  <option value="Gestão XXII (2025.1) — Past MC Epaminondas Jr">Gestão XXII (2025.1) — Past MC Epaminondas Jr</option>
-                  <option value="Gestão XXI (2024.2) — Past MC Fábio Anicácio">Gestão XXI (2024.2) — Past MC Fábio Anicácio</option>
+                  <option value="Gestão XXV (2026.2) — MC Rafael Inácio" className="bg-[#051F14] text-white">Gestão XXV (2026.2) — MC Rafael Inácio</option>
+                  <option value="Gestão XXIV (2026.1) — MC José Keltton" className="bg-[#051F14] text-white">Gestão XXIV (2026.1) — MC José Keltton</option>
+                  <option value="Gestão XXIII (2025.2) — MC João Guilherme" className="bg-[#051F14] text-white">Gestão XXIII (2025.2) — MC João Guilherme</option>
                 </select>
               </div>
 
@@ -1479,7 +1129,7 @@ export default function DashboardDocumentosPage() {
                   value={newDoc.title}
                   onChange={(e) => setNewDoc({ ...newDoc, title: e.target.value })}
                   placeholder="Ex: Ato Capitular nº 02/2026 — Comissão Eleitoral"
-                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  className="w-full px-3 py-2 rounded-xl bg-white/[0.06] backdrop-blur-md border border-white/20 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
                 />
               </div>
 
@@ -1487,7 +1137,7 @@ export default function DashboardDocumentosPage() {
                 <label className="block font-semibold mb-1 text-emerald-200">
                   Anexar Arquivo Oficial (PDF)
                 </label>
-                <label className="flex items-center justify-center gap-2 px-3 py-3 rounded-lg bg-black/40 border border-dashed border-[#D9AA45]/40 hover:border-[#D9AA45] text-white cursor-pointer transition-colors text-xs">
+                <label className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-white/[0.06] backdrop-blur-md border border-dashed border-[#D9AA45]/50 hover:border-[#D9AA45] hover:bg-white/[0.1] text-white cursor-pointer transition-colors text-xs">
                   <Upload className="w-4 h-4 text-[#D9AA45]" />
                   <span className="truncate">
                     {docFile ? docFile.name : "Clique para selecionar o PDF do seu computador..."}
@@ -1525,7 +1175,7 @@ export default function DashboardDocumentosPage() {
                   value={newDoc.description}
                   onChange={(e) => setNewDoc({ ...newDoc, description: e.target.value })}
                   placeholder="Explique o teor ou assunto do documento..."
-                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  className="w-full px-3 py-2 rounded-xl bg-white/[0.06] backdrop-blur-md border border-white/20 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
                 />
               </div>
 

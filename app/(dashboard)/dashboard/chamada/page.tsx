@@ -236,18 +236,25 @@ export default function ChamadaPage() {
   const [isConvocationModalOpen, setIsConvocationModalOpen] = useState(false);
   const [convocationCopied, setConvocationCopied] = useState(false);
 
-  // 1. Carregar Reuniões e Membros
+  // 1. Carregar Reuniões e Membros em Paralelo
   useEffect(() => {
     async function init() {
       try {
         const supabase = createClient();
 
-        // Carrega Reuniões
-        const { data: mData } = await supabase
-          .from("meetings")
-          .select("id, title, starts_at, location, status, description")
-          .order("starts_at", { ascending: true });
+        // Carrega Reuniões e Membros concorrentemente
+        const [mRes, memRes] = await Promise.all([
+          supabase
+            .from("meetings")
+            .select("id, title, starts_at, location, status, description")
+            .order("starts_at", { ascending: true }),
+          supabase
+            .from("members")
+            .select("id, cid, full_name, category, regularity, masonic_lodge")
+            .order("full_name", { ascending: true }),
+        ]);
 
+        const mData = mRes.data;
         const baseMeetings = mData && mData.length > 0 ? mData : officialCalendarMeetings;
         const enrichedMeetings: MeetingRecord[] = baseMeetings.map((m) => {
           const hist = HISTORICAL_MEETINGS.find(
@@ -267,14 +274,8 @@ export default function ChamadaPage() {
         setMeetings(enrichedMeetings);
         setSelectedMeetingId(enrichedMeetings[0].id);
 
-        // Carrega Membros
-        const { data: memData } = await supabase
-          .from("members")
-          .select("id, cid, full_name, category, regularity, masonic_lodge")
-          .order("full_name", { ascending: true });
-
-        if (memData) {
-          setMembers(memData as MemberRecord[]);
+        if (memRes.data) {
+          setMembers(memRes.data as MemberRecord[]);
         }
       } catch (err) {
         console.error("Erro ao carregar dados iniciais:", err);
@@ -283,7 +284,7 @@ export default function ChamadaPage() {
     init();
   }, []);
 
-  // 2. Carregar Chamada, Visitantes e Ata da Reunião Selecionada
+  // 2. Carregar Chamada, Visitantes e Ata da Reunião Selecionada em Paralelo
   useEffect(() => {
     if (!selectedMeetingId) return;
 
@@ -291,12 +292,30 @@ export default function ChamadaPage() {
       try {
         const supabase = createClient();
 
-        // Presenças registradas
-        const { data: attData } = await supabase
-          .from("meeting_attendance")
-          .select("member_id, status")
-          .eq("meeting_id", selectedMeetingId);
+        // Execução paralela das 4 consultas de detalhes da reunião
+        const [attRes, visRes, dmVisRes, minRes] = await Promise.all([
+          supabase
+            .from("meeting_attendance")
+            .select("member_id, status")
+            .eq("meeting_id", selectedMeetingId),
+          supabase
+            .from("meeting_visiting_masons")
+            .select("id, meeting_id, cim, name, masonic_lodge, potency, created_at")
+            .eq("meeting_id", selectedMeetingId)
+            .order("created_at", { ascending: true }),
+          supabase
+            .from("meeting_visiting_demolays")
+            .select("id, meeting_id, cid, name, chapter, created_at")
+            .eq("meeting_id", selectedMeetingId)
+            .order("created_at", { ascending: true }),
+          supabase
+            .from("meeting_minutes")
+            .select("content, storage_path, status, published_at")
+            .eq("meeting_id", selectedMeetingId)
+            .maybeSingle(),
+        ]);
 
+        const attData = attRes.data;
         const newMap: Record<string, AttendanceStatus> = {};
         if (attData && attData.length > 0) {
           attData.forEach((row) => {
@@ -305,39 +324,17 @@ export default function ChamadaPage() {
         }
         setAttendanceMap(newMap);
 
-        // Visitantes Maçons da reunião
-        const { data: visData } = await supabase
-          .from("meeting_visiting_masons")
-          .select("id, meeting_id, cim, name, masonic_lodge, potency, created_at")
-          .eq("meeting_id", selectedMeetingId)
-          .order("created_at", { ascending: true });
-
+        const visData = visRes.data;
         if (visData) {
           setVisitingMasons(visData as VisitingMasonRecord[]);
         } else {
           setVisitingMasons([]);
         }
 
-        // Visitantes DeMolays da reunião
-        try {
-          const { data: dmVisData, error: dmErr } = await supabase
-            .from("meeting_visiting_demolays")
-            .select("id, meeting_id, cid, name, chapter, created_at")
-            .eq("meeting_id", selectedMeetingId)
-            .order("created_at", { ascending: true });
-
-          if (!dmErr && dmVisData) {
-            setVisitingDemolays(dmVisData as VisitingDemolayRecord[]);
-          } else {
-            // Fallback localStorage
-            const localData = localStorage.getItem(`cn_visiting_dm_${selectedMeetingId}`);
-            if (localData) {
-              setVisitingDemolays(JSON.parse(localData));
-            } else {
-              setVisitingDemolays([]);
-            }
-          }
-        } catch {
+        const dmVisData = dmVisRes.data;
+        if (!dmVisRes.error && dmVisData) {
+          setVisitingDemolays(dmVisData as VisitingDemolayRecord[]);
+        } else {
           const localData = localStorage.getItem(`cn_visiting_dm_${selectedMeetingId}`);
           if (localData) {
             setVisitingDemolays(JSON.parse(localData));
@@ -352,11 +349,7 @@ export default function ChamadaPage() {
           (h) => h.id === selectedMeetingId || (currentM && h.starts_at.substring(0, 10) === currentM.starts_at.substring(0, 10))
         );
 
-        const { data: minData } = await supabase
-          .from("meeting_minutes")
-          .select("content, storage_path, status, published_at")
-          .eq("meeting_id", selectedMeetingId)
-          .maybeSingle();
+        const minData = minRes.data;
 
         const savedAta = localStorage.getItem(`cn_meeting_minute_${selectedMeetingId}`);
         if (savedAta) {

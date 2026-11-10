@@ -183,13 +183,27 @@ export default function MemberSelfServicePage() {
       setIsLoading(true);
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
 
-        // 1. Carrega todos os membros (para switcher de teste ou identificação)
-        const { data: memData } = await supabase
-          .from("members")
-          .select("id, cid, full_name, category, regularity, masonic_lodge, initiation_date, demolay_degree_date, birth_date, email, phone")
-          .order("full_name", { ascending: true });
+        // 1. Carrega usuário, membros, reuniões e aniversariantes em paralelo
+        const [authRes, memRes, meetRes, bRes] = await Promise.all([
+          supabase.auth.getUser(),
+          supabase
+            .from("members")
+            .select("id, cid, full_name, category, regularity, masonic_lodge, initiation_date, demolay_degree_date, birth_date, email, phone")
+            .order("full_name", { ascending: true }),
+          supabase
+            .from("meetings")
+            .select("id, title, starts_at, location, status, description")
+            .order("starts_at", { ascending: true }),
+          supabase
+            .from("view_member_birthdays")
+            .select("member_id, full_name, cid, birthday_formatted, birth_day, birth_month")
+            .order("birth_month", { ascending: true })
+            .order("birth_day", { ascending: true }),
+        ]);
+
+        const user = authRes.data?.user;
+        const memData = memRes.data;
 
         if (memData && memData.length > 0) {
           const typedMembers = memData as MemberData[];
@@ -224,12 +238,8 @@ export default function MemberSelfServicePage() {
           setCurrentMember(userMember);
         }
 
-        // 2. Carrega Reuniões
-        const { data: meetData } = await supabase
-          .from("meetings")
-          .select("id, title, starts_at, location, status, description")
-          .order("starts_at", { ascending: true });
-
+        // 2. Processa Reuniões
+        const meetData = meetRes.data;
         const baseMeetings = meetData && meetData.length > 0 ? meetData : HISTORICAL_MEETINGS;
         const enrichedMeetings: MeetingItem[] = baseMeetings.map((m) => {
           const hist = HISTORICAL_MEETINGS.find(
@@ -253,13 +263,8 @@ export default function MemberSelfServicePage() {
 
         setMeetings(enrichedMeetings);
 
-        // 3. Carrega Aniversariantes via view
-        const { data: bData } = await supabase
-          .from("view_member_birthdays")
-          .select("member_id, full_name, cid, birthday_formatted, birth_day, birth_month")
-          .order("birth_month", { ascending: true })
-          .order("birth_day", { ascending: true });
-        if (bData) setBirthdays(bData as BirthdayItem[]);
+        // 3. Processa Aniversariantes
+        if (bRes.data) setBirthdays(bRes.data as BirthdayItem[]);
 
       } catch (err) {
         console.error("Erro ao carregar dados do membro:", err);
@@ -270,66 +275,66 @@ export default function MemberSelfServicePage() {
     loadData();
   }, []);
 
-  // 2. Carrega dados específicos do membro selecionado
+  // 2. Carrega dados específicos do membro selecionado em Paralelo
   useEffect(() => {
     if (!currentMember) return;
 
     async function loadMemberDetails() {
       try {
         const supabase = createClient();
+        const memId = currentMember!.id;
+
+        // Executa as 4 consultas do membro em paralelo
+        const [attRes, chgRes, reqRes, declRes] = await Promise.all([
+          supabase
+            .from("meeting_attendance")
+            .select("id, meeting_id, status, rsvp_status, rsvp_notes")
+            .eq("member_id", memId),
+          supabase
+            .from("member_charges")
+            .select("id, description, amount, due_date, status, paid_at, infinitepay_checkout_url, pix_qrcode_payload")
+            .eq("member_id", memId)
+            .order("due_date", { ascending: false }),
+          supabase
+            .from("member_requests")
+            .select("id, protocol, target_role, status, description, created_at")
+            .eq("requester_member_id", memId)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("issued_declarations")
+            .select("id, declaration_type, verification_code, valid_until, created_at, period_start, period_end, content_data")
+            .eq("member_id", memId)
+            .order("created_at", { ascending: false }),
+        ]);
 
         // A. Frequência / Presença
-        const { data: attData } = await supabase
-          .from("meeting_attendance")
-          .select("id, meeting_id, status, rsvp_status, rsvp_notes")
-          .eq("member_id", currentMember!.id);
-
-        if (attData) {
+        if (attRes.data) {
           const map: Record<string, AttendanceItem> = {};
-          attData.forEach((a) => {
+          attRes.data.forEach((a) => {
             map[a.meeting_id] = a as AttendanceItem;
           });
           setAttendances(map);
         }
 
         // B. Mensalidades / Cobranças
-        const { data: chgData } = await supabase
-          .from("member_charges")
-          .select("id, description, amount, due_date, status, paid_at, infinitepay_checkout_url, pix_qrcode_payload")
-          .eq("member_id", currentMember!.id)
-          .order("due_date", { ascending: false });
-
-        if (chgData) {
-          setCharges(chgData as ChargeItem[]);
+        if (chgRes.data) {
+          setCharges(chgRes.data as ChargeItem[]);
         }
 
         // C. Solicitações
-        const { data: reqData } = await supabase
-          .from("member_requests")
-          .select("id, protocol, target_role, status, description, created_at")
-          .eq("requester_member_id", currentMember!.id)
-          .order("created_at", { ascending: false });
-
-        if (reqData) {
-          setRequests(reqData as RequestItem[]);
+        if (reqRes.data) {
+          setRequests(reqRes.data as RequestItem[]);
         }
 
         // D. Declarações Oficiais Emitidas
-        const { data: declData } = await supabase
-          .from("issued_declarations")
-          .select("id, declaration_type, verification_code, valid_until, created_at, period_start, period_end, content_data")
-          .eq("member_id", currentMember!.id)
-          .order("created_at", { ascending: false });
-
-        if (declData) {
-          setDeclarations(declData as IssuedDeclarationItem[]);
+        if (declRes.data) {
+          setDeclarations(declRes.data as IssuedDeclarationItem[]);
         }
 
       } catch (err) {
         console.error("Erro ao carregar detalhes do membro:", err);
       }
     }
-
     loadMemberDetails();
   }, [currentMember]);
 

@@ -92,18 +92,22 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name, avatar_path")
-            .eq("id", user.id)
-            .maybeSingle();
+          const [profileRes, membershipRes] = await Promise.all([
+            supabase
+              .from("profiles")
+              .select("full_name, avatar_path")
+              .eq("id", user.id)
+              .maybeSingle(),
+            supabase
+              .from("chapter_memberships")
+              .select("role_code")
+              .eq("user_id", user.id)
+              .eq("is_active", true)
+              .maybeSingle(),
+          ]);
 
-          const { data: membership } = await supabase
-            .from("chapter_memberships")
-            .select("role_code")
-            .eq("user_id", user.id)
-            .eq("is_active", true)
-            .maybeSingle();
+          const profile = profileRes.data;
+          const membership = membershipRes.data;
 
           const cachedAvatar = typeof window !== "undefined" ? localStorage.getItem(`cn_member_avatar_${user.id}`) : null;
 

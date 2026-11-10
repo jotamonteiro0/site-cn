@@ -128,27 +128,28 @@ export default function NominataPage() {
       try {
         const supabase = createClient();
 
-        // A. Gestões
-        const { data: mData } = await supabase
-          .from("managements")
-          .select("id, code, title, theme, starts_on, ends_on, status")
-          .order("code", { ascending: false });
+        // Carregamento em paralelo de Gestões e Membros
+        const [mRes, memRes] = await Promise.all([
+          supabase
+            .from("managements")
+            .select("id, code, title, theme, starts_on, ends_on, status")
+            .order("code", { ascending: false }),
+          supabase
+            .from("members")
+            .select("id, cid, full_name, category")
+            .eq("is_active", true)
+            .order("full_name", { ascending: true }),
+        ]);
 
+        const mData = mRes.data;
         if (mData && mData.length > 0) {
           setManagements(mData as Management[]);
           const active = mData.find((m) => m.status === "ativa");
           setSelectedManagementId(active ? active.id : mData[0].id);
         }
 
-        // B. Membros do Capítulo
-        const { data: memData } = await supabase
-          .from("members")
-          .select("id, cid, full_name, category")
-          .eq("is_active", true)
-          .order("full_name", { ascending: true });
-
-        if (memData) {
-          setMembers(memData as MemberOption[]);
+        if (memRes.data) {
+          setMembers(memRes.data as MemberOption[]);
         }
       } catch (err) {
         console.error("Erro ao carregar dados da nominata:", err);

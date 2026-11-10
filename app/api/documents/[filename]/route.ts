@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { createClient } from "@supabase/supabase-js";
 
 function sanitize(name: string): string {
   return name
@@ -22,83 +21,69 @@ export async function GET(
     const decoded = decodeURIComponent(filename);
     const safeName = path.basename(decoded);
     const finalFilename = safeName.endsWith(".pdf") ? safeName : `${safeName}.pdf`;
+    const sanitizedName = sanitize(finalFilename);
     const dispositionType = isDownload ? "attachment" : "inline";
 
-    // 1. Check local filesystem first (development or self-hosted)
-    const targetPath = path.join(process.cwd(), "exemplo", finalFilename);
-    if (fs.existsSync(targetPath)) {
-      const fileBuffer = fs.readFileSync(targetPath);
-      return new NextResponse(fileBuffer, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `${dispositionType}; filename="${encodeURIComponent(finalFilename)}"`,
-          "Cache-Control": "public, max-age=3600, s-maxage=86400",
-        },
-      });
-    }
+    // 1. Direct Static Resolution from local filesystem (instantaneous)
+    const localCandidates = [
+      path.join(process.cwd(), "public", "documentos", "gestao", finalFilename),
+      path.join(process.cwd(), "public", "documentos", "gestao", sanitizedName),
+      path.join(process.cwd(), "public", "documentos", "atas", finalFilename),
+      path.join(process.cwd(), "public", "documentos", "atas", sanitizedName),
+      path.join(process.cwd(), "public", "documentos", "acervo", finalFilename),
+      path.join(process.cwd(), "public", "documentos", "acervo", sanitizedName),
+      path.join(process.cwd(), "public", "documentos", finalFilename),
+      path.join(process.cwd(), "exemplo", finalFilename),
+      path.join(process.cwd(), "exemplo", sanitizedName),
+    ];
 
-    // 2. Fallback to Supabase Storage (Vercel Serverless Production)
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (supabaseUrl && supabaseKey) {
-      const supabase = createClient(supabaseUrl, supabaseKey);
-      const sanitizedName = sanitize(finalFilename);
-
-      const candidateKeys = [
-        `acervo/${sanitizedName}`,
-        `acervo/${finalFilename}`,
-        sanitizedName,
-        finalFilename,
-      ];
-
-      for (const key of candidateKeys) {
-        const { data, error } = await supabase.storage.from("documentos").download(key);
-        if (!error && data) {
-          const arrayBuffer = await data.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-          return new NextResponse(buffer, {
-            headers: {
-              "Content-Type": "application/pdf",
-              "Content-Disposition": `${dispositionType}; filename="${encodeURIComponent(finalFilename)}"`,
-              "Cache-Control": "public, max-age=3600, s-maxage=86400",
-            },
-          });
-        }
-      }
-
-      // Fuzzy lookup if exact match wasn't found
-      const { data: listData } = await supabase.storage.from("documentos").list("acervo", { limit: 100 });
-      if (listData && listData.length > 0) {
-        const normTarget = sanitizedName.toLowerCase().replace(/[^a-z0-9]/g, "");
-        const match = listData.find((item) => {
-          const itemNorm = item.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-          return itemNorm === normTarget || itemNorm.includes(normTarget) || normTarget.includes(itemNorm);
+    for (const testPath of localCandidates) {
+      if (fs.existsSync(/*turbopackIgnore: true*/ testPath)) {
+        const fileBuffer = fs.readFileSync(/*turbopackIgnore: true*/ testPath);
+        return new NextResponse(fileBuffer, {
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `${dispositionType}; filename="${encodeURIComponent(finalFilename)}"`,
+            "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400",
+          },
         });
-
-        if (match) {
-          const { data: matchedData, error: matchErr } = await supabase.storage
-            .from("documentos")
-            .download(`acervo/${match.name}`);
-          if (!matchErr && matchedData) {
-            const arrayBuffer = await matchedData.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            return new NextResponse(buffer, {
-              headers: {
-                "Content-Type": "application/pdf",
-                "Content-Disposition": `${dispositionType}; filename="${encodeURIComponent(finalFilename)}"`,
-                "Cache-Control": "public, max-age=3600, s-maxage=86400",
-              },
-            });
-          }
-        }
       }
     }
 
-    return NextResponse.json({ error: "Arquivo não encontrado." }, { status: 404 });
+    // 2. High-Performance CDN Redirect (Zero Serverless RAM, Range Requests, <20ms execution)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://qvvmpskixyjbislcatso.supabase.co";
+
+    // Map to folder convention
+    let folder = "acervo";
+    if (finalFilename.startsWith("Ata_") || sanitizedName.startsWith("Ata_")) {
+      folder = "atas";
+    } else if (
+      finalFilename.startsWith("Ato_") ||
+      sanitizedName.startsWith("Ato_") ||
+      finalFilename.startsWith("Edital_") ||
+      sanitizedName.startsWith("Edital_") ||
+      finalFilename.startsWith("Carta_") ||
+      sanitizedName.startsWith("Carta_")
+    ) {
+      folder = "gestao";
+    } else if (finalFilename.startsWith("anexo_") || sanitizedName.startsWith("anexo_")) {
+      folder = "anexos";
+    }
+
+    const cdnBase = `${supabaseUrl}/storage/v1/object/public/documentos`;
+    const objectPath = `${folder}/${sanitizedName}`;
+    const redirectUrl = isDownload
+      ? `${cdnBase}/${objectPath}?download=${encodeURIComponent(finalFilename)}`
+      : `${cdnBase}/${objectPath}`;
+
+    return NextResponse.redirect(redirectUrl, {
+      status: 307,
+      headers: {
+        "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400",
+      },
+    });
   } catch (err) {
     console.error("Erro ao servir documento PDF:", err);
-    return NextResponse.json({ error: "Falha ao ler documento." }, { status: 500 });
+    return NextResponse.json({ error: "Falha ao processar documento." }, { status: 500 });
   }
 }

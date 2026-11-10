@@ -2,6 +2,7 @@
 
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { ContactForm } from "@/components/site/ContactForm";
 import Image from "next/image";
 import { 
   Heart, 
@@ -15,8 +16,7 @@ import {
   BookOpen,
   Lock,
   Mail,
-  MapPin,
-  Send
+  MapPin
 } from "lucide-react";
 import Link from "next/link";
 
@@ -250,6 +250,7 @@ export default function Home() {
                   src="/gestoes/jose-keltton.2026.1.jpg"
                   alt="Foto oficial de José Keltton Cardoso da Silva Viana"
                   fill
+                  loading="lazy"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover z-0"
                   onError={(event) => {
@@ -281,6 +282,7 @@ export default function Home() {
                   src="/gestoes/rafael-inacio.2026.2.jpg"
                   alt="Foto oficial de Rafael Inácio do Nascimento de Morais"
                   fill
+                  loading="lazy"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover z-0"
                   onError={(event) => {
@@ -312,7 +314,7 @@ export default function Home() {
                   src="/gestoes/joao-guilherme.2027.1.jpg"
                   alt="Foto oficial de João Guilherme Martins Lopes Monteiro"
                   fill
-                  preload
+                  priority
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover z-0"
                   onError={(event) => {
@@ -477,53 +479,7 @@ export default function Home() {
               <h3 className="text-lg font-bold text-gray-900 mb-6">
                 Envie uma mensagem ao Mestre Conselheiro
               </h3>
-              <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert("Mensagem institucional simulada enviada com sucesso!"); }}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Seu Nome</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Nome completo"
-                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#087443]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Seu E-mail</label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="seu.email@exemplo.com"
-                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#087443]"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Assunto</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ex: Informações sobre ingresso de novos membros"
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#087443]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Mensagem</label>
-                  <textarea
-                    rows={4}
-                    required
-                    placeholder="Escreva sua mensagem aqui..."
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#087443]"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#087443] hover:bg-[#064D32] text-white font-semibold text-sm transition-all shadow-md cursor-pointer"
-                >
-                  <Send className="w-4 h-4 text-[#D9AA45]" />
-                  <span>Enviar Mensagem</span>
-                </button>
-              </form>
+              <ContactForm />
             </div>
           </div>
         </section>
