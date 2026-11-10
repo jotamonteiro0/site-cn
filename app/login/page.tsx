@@ -145,34 +145,43 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 pt-1 text-xs text-emerald-100">
-            <CheckCircle2 className="w-4 h-4 text-[#D9AA45]" />
-            <span>Acesso protegido com autenticação RBAC</span>
+          {/* reCAPTCHA Checkbox */}
+          <div className="pt-2">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all">
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  required
+                  className="w-5 h-5 rounded border-gray-300 text-[#087443] focus:ring-[#D9AA45] accent-[#087443] cursor-pointer"
+                />
+                <span className="text-xs text-emerald-100 font-medium">
+                  Não sou um robô
+                </span>
+              </label>
+              <div className="flex flex-col items-center">
+                <div className="w-6 h-6 flex items-center justify-center text-[#D9AA45]">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <span className="text-[8px] text-emerald-200/50 uppercase font-mono">
+                  reCAPTCHA
+                </span>
+              </div>
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3.5 px-4 rounded-lg bg-gradient-to-r from-[#D9AA45] to-[#c59637] hover:from-[#e3b64f] hover:to-[#d0a040] text-[#04281A] font-bold text-sm tracking-wide shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3.5 px-4 rounded-lg bg-gradient-to-r from-[#D9AA45] to-[#c59637] hover:from-[#e3b64f] hover:to-[#d0a040] text-[#04281A] font-bold text-sm tracking-wide shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
           >
             {isLoading ? (
               <span className="inline-block w-5 h-5 border-2 border-[#04281A] border-t-transparent rounded-full animate-spin" />
             ) : (
-              <>
-                <Lock className="w-4 h-4" />
-                <span>Entrar no Painel</span>
-              </>
+              <span>Entrar</span>
             )}
           </button>
           {error && <p role="alert" className="rounded-lg border border-red-300/40 bg-red-950/30 px-3 py-2 text-xs text-red-100">{error}</p>}
         </form>
-
-        {/* Rodapé do card */}
-        <div className="mt-8 pt-6 border-t border-white/10 text-center">
-          <p className="text-xs text-emerald-200/70">
-            Capítulo Professor Carvalho Neves Nº 500 — Teresina/PI
-          </p>
-        </div>
       </div>
     </div>
   );
