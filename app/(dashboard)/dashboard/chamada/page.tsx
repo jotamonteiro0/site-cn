@@ -149,6 +149,106 @@ const getMandatoryDayWarning = (title: string, dateStr: string) => {
   return null;
 };
 
+// Calendário Oficial das Gestões XXIV (MC José Keltton) e XXV (MC Rafael Inácio) - Ato nº 002/2026 & Edital nº 001/2026
+const officialCalendarMeetings: MeetingRecord[] = [
+  {
+    id: "reuniao-2026-01-25",
+    title: "Reunião Magna | Cerimônia de Instalações dos Oficiais",
+    starts_at: "2026-01-25T09:00:00",
+    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+    status: "realizada",
+    description: "Cerimônia de Instalação e Posse dos Oficiais da Gestão XXIV — MC José Keltton.",
+  },
+  {
+    id: "reuniao-2026-02-08",
+    title: "Assembleia Ordinária | Apresentação Plano de Gestão",
+    starts_at: "2026-02-08T09:00:00",
+    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+    status: "realizada",
+    description: "Apresentação e deliberação das metas e diretrizes administrativas para 2026.1.",
+  },
+  {
+    id: "reuniao-2026-02-22",
+    title: "Reunião Ordinária | Dia Devocional e Escrutínio Secreto",
+    starts_at: "2026-02-22T09:00:00",
+    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+    status: "realizada",
+    description: "Comemoração devocional e votação de sindicâncias de novos membros.",
+  },
+  {
+    id: "reuniao-2026-03-15",
+    title: "Reunião Ordinária | Dia do DeMolay e Dia em Memória a Jacques DeMolay",
+    starts_at: "2026-03-15T09:00:00",
+    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+    status: "realizada",
+    description: "Sessão alusiva ao Dia Nacional do DeMolay e ao martírio de Jacques DeMolay.",
+  },
+  {
+    id: "reuniao-2026-03-29",
+    title: "Reunião Magna | Iniciação à Ordem DeMolay",
+    starts_at: "2026-03-29T09:00:00",
+    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+    status: "realizada",
+    description: "Cerimônia solene de Iniciação de novos irmãos no Capítulo 500.",
+  },
+  {
+    id: "reuniao-2026-04-12",
+    title: "Reunião Ordinária | Instrução Ritualística e Histórica",
+    starts_at: "2026-04-12T09:00:00",
+    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+    status: "realizada",
+    description: "Instrução litúrgica aprofundada para os graus capitulares.",
+  },
+  {
+    id: "reuniao-2026-04-26",
+    title: "Reunião Ordinária | Conscientização ao TEA",
+    starts_at: "2026-04-26T09:00:00",
+    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+    status: "realizada",
+    description: "Ação educativa de conscientização sobre o Transtorno do Espectro Autista.",
+  },
+  {
+    id: "reuniao-2026-05-17",
+    title: "Reunião Ordinária | História Capitular Prof. Carvalho Neves",
+    starts_at: "2026-05-17T09:00:00",
+    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+    status: "realizada",
+    description: "Resgate histórico da fundação e dos pioneiros do Capítulo 500.",
+  },
+  {
+    id: "reuniao-2026-05-31",
+    title: "Reunião Ordinária | Instrução Administrativa e Exame de Proficiência",
+    starts_at: "2026-05-31T09:00:00",
+    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+    status: "realizada",
+    description: "Instrução administrativa e exame de proficiência dos neófitos.",
+  },
+  {
+    id: "reuniao-2026-06-14",
+    title: "Reunião Magna | Elevação ao Grau DeMolay e Lançamento de Candidaturas",
+    starts_at: "2026-06-14T09:00:00",
+    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+    status: "realizada",
+    description: "Cerimônia de Elevação ao Grau DeMolay e lançamento do Edital de Eleição da Gestão XXV.",
+  },
+  {
+    id: "reuniao-2026-06-28",
+    title: "Assembleia Ordinária | Eleição da Gestão XXV e Prestação de Contas",
+    starts_at: "2026-06-28T09:00:00",
+    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+    status: "realizada",
+    description: "Processo eleitoral da nova diretoria (MC Rafael Inácio) e prestação de contas de 2026.1.",
+  },
+  {
+    id: "reuniao-2026-12-13",
+    title: "Assembleia Ordinária | Eleição da Gestão XXVI (Edital 001/2026)",
+    starts_at: "2026-12-13T09:00:00",
+    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+    status: "agendada",
+    description: "Eleição presencial da Diretoria da Gestão XXVI convocada pelo MC Rafael Inácio (Edital nº 001/2026).",
+  },
+];
+
 export default function ChamadaPage() {
   const [meetings, setMeetings] = useState<MeetingRecord[]>([]);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string>("");
@@ -225,6 +325,9 @@ export default function ChamadaPage() {
         if (mData && mData.length > 0) {
           setMeetings(mData);
           setSelectedMeetingId(mData[0].id);
+        } else {
+          setMeetings(officialCalendarMeetings);
+          setSelectedMeetingId(officialCalendarMeetings[0].id);
         }
 
         // Carrega Membros
