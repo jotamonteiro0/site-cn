@@ -18,7 +18,8 @@ import {
   X,
   ChevronRight,
   FileText,
-  UserCheck
+  UserCheck,
+  Crown
 } from "lucide-react";
 
 export interface DashboardUser {
@@ -95,6 +96,7 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
   const navigation: NavItem[] = [
     { name: "Visão Geral", href: "/dashboard", icon: LayoutDashboard },
     { name: "Meu Autoatendimento", href: "/dashboard/membro", icon: UserCheck },
+    { name: "Gestões & Nominata", href: "/dashboard/nominata", icon: Crown },
     { name: "Calendário & Chamada", href: "/dashboard/chamada", icon: ClipboardCheck },
     { name: "Quadro de Membros", href: "/dashboard/membros", icon: Users },
     { name: "Conselho Consultivo", href: "/dashboard/conselho", icon: Shield },
@@ -129,7 +131,7 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
   // Filtro estrito de permissões RBAC para navegação
   const allowedNavigation = useMemo(() => {
     return navigation.filter((item) => {
-      if (item.href === "/dashboard" || item.href === "/dashboard/membro") {
+      if (item.href === "/dashboard" || item.href === "/dashboard/membro" || item.href === "/dashboard/nominata") {
         return true;
       }
       if (effectiveRole === "master") {
