@@ -44,6 +44,38 @@ export default function LoginPage() {
   const [firstAccessError, setFirstAccessError] = useState("");
   const [firstAccessSuccess, setFirstAccessSuccess] = useState("");
 
+  // Estado de Recuperação de Senha
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetMsg, setResetMsg] = useState("");
+  const [resetError, setResetError] = useState("");
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.trim() || !resetEmail.includes("@")) {
+      setResetError("Por favor, informe um endereço de e-mail válido.");
+      return;
+    }
+    setIsResetting(true);
+    setResetError("");
+    setResetMsg("");
+    try {
+      const supabase = createClient();
+      const origin = typeof window !== "undefined" ? window.location.origin : "https://site-cn-mu.vercel.app";
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+        redirectTo: `${origin}/login?redefinir=1`,
+      });
+      if (resetErr) throw resetErr;
+      setResetMsg("E-mail com instruções para redefinição de senha enviado com sucesso! Verifique sua caixa de entrada.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Falha ao solicitar recuperação de senha.";
+      setResetError(msg);
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   // Estado do reCAPTCHA
   const [captchaToken, setCaptchaToken] = useState("");
   const [isCaptchaReady, setIsCaptchaReady] = useState(false);
@@ -328,12 +360,13 @@ export default function LoginPage() {
               </label>
               <button
                 type="button"
-                className="text-xs text-[#D9AA45] hover:underline transition-colors"
-                onClick={() =>
-                  setError(
-                    "A recuperação de senha será liberada após a configuração do e-mail transacional no Supabase."
-                  )
-                }
+                className="text-xs text-[#D9AA45] hover:underline transition-colors cursor-pointer"
+                onClick={() => {
+                  setIsResetModalOpen(true);
+                  setResetEmail(email.includes("@") ? email.trim() : "");
+                  setResetMsg("");
+                  setResetError("");
+                }}
               >
                 Esqueceu a senha?
               </button>
@@ -542,6 +575,83 @@ export default function LoginPage() {
                     className="px-5 py-2.5 rounded-lg bg-[#D9AA45] hover:bg-amber-400 text-black font-bold cursor-pointer disabled:opacity-50 transition-all shadow"
                   >
                     {isSubmittingFirstAccess ? "Ativando..." : "Ativar Conta e Criar Senha"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE RECUPERAÇÃO DE ACESSO / SENHA */}
+      {isResetModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="ios-glass-card rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-white space-y-4 animate-in zoom-in-95">
+            <button
+              onClick={() => setIsResetModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white text-xs cursor-pointer"
+            >
+              ✕
+            </button>
+
+            <div className="text-center space-y-1 pb-2 border-b border-white/10">
+              <div className="inline-flex w-12 h-12 rounded-xl bg-[#087443] border border-[#D9AA45] items-center justify-center text-[#D9AA45] shadow mb-1">
+                <Lock className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Recuperar Acesso</h3>
+              <p className="text-xs text-emerald-200/80">
+                Informe o seu e-mail cadastrado para receber o link de redefinição de senha.
+              </p>
+            </div>
+
+            {resetMsg ? (
+              <div className="p-4 rounded-xl bg-emerald-900/60 border border-emerald-500 text-emerald-200 text-xs space-y-3 text-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+                <p className="font-semibold leading-relaxed">{resetMsg}</p>
+                <button
+                  type="button"
+                  onClick={() => setIsResetModalOpen(false)}
+                  className="w-full py-2.5 rounded-lg bg-[#D9AA45] text-[#04281A] font-bold text-xs hover:bg-amber-400 transition-all cursor-pointer"
+                >
+                  Voltar ao Login
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleResetPassword} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="block text-emerald-200 font-semibold mb-1">
+                    E-mail Cadastrado *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="seu.email@exemplo.com"
+                    className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  />
+                </div>
+
+                {resetError && (
+                  <p className="p-2.5 rounded-lg bg-red-950/50 border border-red-500/40 text-red-200 text-[11px] text-center">
+                    {resetError}
+                  </p>
+                )}
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setIsResetModalOpen(false)}
+                    className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isResetting}
+                    className="px-5 py-2.5 rounded-lg bg-[#D9AA45] hover:bg-amber-400 text-black font-bold cursor-pointer disabled:opacity-50 transition-all shadow"
+                  >
+                    {isResetting ? "Enviando..." : "Enviar Link de Recuperação"}
                   </button>
                 </div>
               </form>
