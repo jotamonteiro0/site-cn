@@ -36,7 +36,10 @@ Acesse cada documento pelos links abaixo:
 | Etapa | Descrição | Status |
 |:---:|---|:---:|
 | **1** | Documentação e Arquitetura no Obsidian | ✅ Concluído e Organizado |
-| **2** | Base do Código (Next.js + Tailwind v4 + Supabase) | ✅ Inicializado |
-| **3** | Tokens de Cores e Estrutura de Pastas | 🔄 Em andamento |
-| **4** | Portal Público (Landing Page Oficial) | ⏳ Próximo passo |
-| **5** | Autenticação e Painel Administrativo (RBAC) | ⏳ Aguardando credenciais Supabase |
+| **2** | Base do Código (Next.js + Tailwind v4 + Supabase) | ✅ Concluído e Otimizado |
+| **3** | Tokens de Cores, Identidade Visual e Layout | ✅ Concluído (Verde Escuro + DeMolay Gold) |
+| **4** | Portal Público (Landing Page Oficial, Galeria e Docs) | ✅ Concluído e Publicado |
+| **5** | Autenticação, ReCAPTCHA e RBAC (4 Níveis Isolados) | ✅ Concluído e Testado |
+| **6** | Tesouraria por Mês (DeMolay R$ 22, Maçom R$ 25, Venc. 28) | ✅ Concluído e Operacional |
+| **7** | Área de Autoatendimento do Membro (RSVP, Frequência, PIX) | ✅ Concluído e Operacional |
+| **8** | Gestões & Nominata com Transmissão Automática de Permissões | ✅ Concluído (22 Oficiais da Gestão XXV) |
