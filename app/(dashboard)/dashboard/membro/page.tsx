@@ -122,6 +122,9 @@ export default function MemberSelfServicePage() {
   const [activeTab, setActiveTab] = useState<"frequencia" | "reunioes" | "mensalidades" | "solicitacoes" | "aniversarios">("frequencia");
   const [isLoading, setIsLoading] = useState(true);
   const [feedbackMsg, setFeedbackMsg] = useState("");
+  const [duesFilter, setDuesFilter] = useState<"todas" | "pagas" | "pendentes">("todas");
+  const [isEmittingDecl, setIsEmittingDecl] = useState(false);
+  const [requestsFolderTab, setRequestsFolderTab] = useState<"declaracoes" | "solicitacoes">("declaracoes");
 
   // Modal RSVP Justificação
   const [isRsvpModalOpen, setIsRsvpModalOpen] = useState(false);
@@ -467,6 +470,46 @@ export default function MemberSelfServicePage() {
     }
   };
 
+  // Handler: Emissão Instantânea de Declaração Oficial (PDF Automático)
+  const handleGenerateDeclaration = async (type: "quitacao_tesouraria" | "frequencia") => {
+    if (!currentMember) return;
+    setIsEmittingDecl(true);
+    try {
+      const res = await fetch("/api/declarations/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          member_id: currentMember.id,
+          declaration_type: type,
+          period_start: type === "frequencia" ? dateFilterStart : "2026-07-01",
+          period_end: type === "frequencia" ? dateFilterEnd : "2026-12-31",
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        alert("Erro ao emitir declaração: " + (data.error || "Tente novamente"));
+        return;
+      }
+
+      if (data.declaration) {
+        setDeclarations((prev) => [data.declaration, ...prev]);
+        setViewDeclaration(data.declaration);
+        setFeedbackMsg(
+          `Declaração de ${
+            type === "quitacao_tesouraria" ? "Quitação Financeira" : "Frequência"
+          } gerada com sucesso! O documento oficial em PDF já está pronto para visualização e impressão.`
+        );
+        setTimeout(() => setFeedbackMsg(""), 6000);
+      }
+    } catch (err: any) {
+      console.error("Erro ao gerar declaração:", err);
+      alert("Falha de conexão ao emitir declaração.");
+    } finally {
+      setIsEmittingDecl(false);
+    }
+  };
+
   // Link para Adicionar ao Google Calendar
   const getGoogleCalendarUrl = (m?: MeetingItem | null) => {
     if (!m) return "#";
@@ -550,8 +593,6 @@ export default function MemberSelfServicePage() {
               </h1>
               <p className="text-sm text-gray-300 flex items-center gap-2 mt-1">
                 <span>Capítulo Professor Carvalho Neves Nº 500</span>
-                <span>•</span>
-                <span>A∴R∴L∴S∴ Caridade II nº 135</span>
               </p>
             </div>
           </div>
@@ -656,7 +697,7 @@ export default function MemberSelfServicePage() {
           }`}
         >
           <Clock className="w-4 h-4" />
-          Próxima Reunião & RSVP
+          Próxima Reunião
         </button>
 
         <button
@@ -788,15 +829,12 @@ export default function MemberSelfServicePage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-white">Sessões Realizadas no Período</h3>
               <button
-                onClick={() => {
-                  setRequestTargetRole("escrivao");
-                  setRequestDescription(`Solicito a emissão formal de Declaração de Frequência referente ao período de ${new Date(dateFilterStart).toLocaleDateString("pt-BR")} a ${new Date(dateFilterEnd).toLocaleDateString("pt-BR")}. Frequência registrada: ${attendanceStats.rate}%.`);
-                  setIsNewRequestModalOpen(true);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 border border-[#D9AA45]/40 text-[#D9AA45] text-xs font-semibold transition-all"
+                onClick={() => handleGenerateDeclaration("frequencia")}
+                disabled={isEmittingDecl}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 border border-[#D9AA45]/40 text-[#D9AA45] text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
               >
                 <FileText className="w-3.5 h-3.5" />
-                Pedir Declaração de Frequência ao Escrivão
+                {isEmittingDecl ? "Emitindo..." : "Emitir Declaração de Frequência (PDF Automático)"}
               </button>
             </div>
 
@@ -1029,93 +1067,216 @@ export default function MemberSelfServicePage() {
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => {
-                  setSelectedCharge(charges[0] || null);
+                  setSelectedCharge(charges.find(c => c.status !== "confirmado") || charges[0] || null);
                   setIsPayModalOpen(true);
                 }}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#D9AA45] to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black text-xs font-bold shadow-lg transition-all flex items-center gap-2"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#D9AA45] to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black text-xs font-bold shadow-lg transition-all flex items-center gap-2 cursor-pointer"
               >
                 <QrCode className="w-4 h-4" />
                 Pagar com PIX / Cartão InfinitePay
               </button>
 
               <button
-                onClick={() => {
-                  setRequestTargetRole("tesoureiro");
-                  setRequestDescription("Solicito a emissão de Declaração de Quitação Financeira atestando a regularidade de mensalidades junto à Tesouraria do Capítulo.");
-                  setIsNewRequestModalOpen(true);
-                }}
-                className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-xs font-semibold transition-all flex items-center gap-2"
+                onClick={() => handleGenerateDeclaration("quitacao_tesouraria")}
+                disabled={isEmittingDecl}
+                className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <FileText className="w-4 h-4 text-[#D9AA45]" />
-                Pedir Declaração de Quitação
+                {isEmittingDecl ? "Emitindo..." : "Emitir Declaração de Quitação (PDF Automático)"}
               </button>
             </div>
           </div>
 
-          {/* Lista de Mensalidades */}
-          <div className="bg-[#04281A]/90 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
-            <h3 className="text-base font-bold text-white mb-4">Histórico de Cobranças do Membro</h3>
+          {/* Cards de Métricas: Quais já paguei vs Pendentes */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/30">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-emerald-300">Mensalidades Quitadas</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              </div>
+              <p className="text-2xl font-extrabold text-white mt-1">
+                {charges.filter((c) => c.status === "confirmado").length}
+              </p>
+              <p className="text-[11px] text-emerald-200/70 mt-0.5">
+                Total Pago: R${" "}
+                {charges
+                  .filter((c) => c.status === "confirmado")
+                  .reduce((acc, c) => acc + Number(c.amount || 0), 0)
+                  .toFixed(2)
+                  .replace(".", ",")}
+              </p>
+            </div>
 
-            {charges.length === 0 ? (
-              <p className="text-sm text-gray-400 py-8 text-center">Nenhuma mensalidade gerada para este membro.</p>
+            <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-500/30">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-amber-300">Mensalidades Pendentes</span>
+                <Clock className="w-4 h-4 text-amber-400" />
+              </div>
+              <p className="text-2xl font-extrabold text-white mt-1">
+                {charges.filter((c) => c.status !== "confirmado").length}
+              </p>
+              <p className="text-[11px] text-amber-200/70 mt-0.5">
+                Total a Pagar: R${" "}
+                {charges
+                  .filter((c) => c.status !== "confirmado")
+                  .reduce((acc, c) => acc + Number(c.amount || 0), 0)
+                  .toFixed(2)
+                  .replace(".", ",")}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-300">Situação Financeira</span>
+                <Shield className="w-4 h-4 text-[#D9AA45]" />
+              </div>
+              <p className="text-sm font-bold text-emerald-300 mt-2">
+                {charges.filter((c) => c.status !== "confirmado").length === 0
+                  ? "100% Em Dia (Adimplente)"
+                  : "Possui mensalidade a quitar"}
+              </p>
+              <p className="text-[11px] text-gray-400 mt-0.5">Capítulo Professor Carvalho Neves Nº 500</p>
+            </div>
+          </div>
+
+          {/* Filtros de Visualização */}
+          <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+            <button
+              onClick={() => setDuesFilter("todas")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                duesFilter === "todas"
+                  ? "bg-[#D9AA45] text-black"
+                  : "bg-white/5 text-gray-300 hover:bg-white/10"
+              }`}
+            >
+              Todas ({charges.length})
+            </button>
+            <button
+              onClick={() => setDuesFilter("pagas")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                duesFilter === "pagas"
+                  ? "bg-emerald-500 text-white"
+                  : "bg-white/5 text-emerald-300 hover:bg-white/10"
+              }`}
+            >
+              Já Pagas / Quitadas ({charges.filter((c) => c.status === "confirmado").length})
+            </button>
+            <button
+              onClick={() => setDuesFilter("pendentes")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                duesFilter === "pendentes"
+                  ? "bg-amber-500 text-black"
+                  : "bg-white/5 text-amber-300 hover:bg-white/10"
+              }`}
+            >
+              Pendentes ({charges.filter((c) => c.status !== "confirmado").length})
+            </button>
+          </div>
+
+          {/* Lista de Mensalidades Filtradas */}
+          <div className="bg-[#04281A]/90 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
+            <h3 className="text-base font-bold text-white mb-4">
+              {duesFilter === "pagas"
+                ? "Mensalidades que você já pagou"
+                : duesFilter === "pendentes"
+                ? "Mensalidades pendentes de regularização"
+                : "Histórico Completo de Mensalidades"}
+            </h3>
+
+            {charges.filter((c) =>
+              duesFilter === "pagas"
+                ? c.status === "confirmado"
+                : duesFilter === "pendentes"
+                ? c.status !== "confirmado"
+                : true
+            ).length === 0 ? (
+              <p className="text-sm text-gray-400 py-8 text-center">
+                {duesFilter === "pagas"
+                  ? "Nenhuma mensalidade paga registrada neste filtro."
+                  : duesFilter === "pendentes"
+                  ? "Parabéns! Todas as suas mensalidades estão em dia."
+                  : "Nenhuma mensalidade gerada para este membro."}
+              </p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="text-xs uppercase bg-black/30 text-gray-400 border-b border-white/10">
                     <tr>
-                      <th className="py-3 px-4">Descrição</th>
+                      <th className="py-3 px-4">Descrição da Mensalidade</th>
                       <th className="py-3 px-4">Vencimento</th>
                       <th className="py-3 px-4">Valor</th>
-                      <th className="py-3 px-4 text-center">Status</th>
+                      <th className="py-3 px-4 text-center">Status / Quitação</th>
                       <th className="py-3 px-4 text-right">Ação</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {charges.map((c) => {
-                      const isPaid = c.status === "confirmado";
+                    {charges
+                      .filter((c) =>
+                        duesFilter === "pagas"
+                          ? c.status === "confirmado"
+                          : duesFilter === "pendentes"
+                          ? c.status !== "confirmado"
+                          : true
+                      )
+                      .map((c) => {
+                        const isPaid = c.status === "confirmado";
 
-                      return (
-                        <tr key={c.id} className="hover:bg-white/5 transition-colors">
-                          <td className="py-3.5 px-4 font-semibold text-white">
-                            {c.description}
-                          </td>
-                          <td className="py-3.5 px-4 font-mono text-xs text-gray-300">
-                            {c.due_date ? new Date(c.due_date).toLocaleDateString("pt-BR") : "Dia 28"}
-                          </td>
-                          <td className="py-3.5 px-4 font-mono text-sm font-bold text-white">
-                            R$ {Number(c.amount).toFixed(2).replace(".", ",")}
-                          </td>
-                          <td className="py-3.5 px-4 text-center">
-                            {isPaid ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                                <CheckCircle2 className="w-3 h-3" />
-                                Pago
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                                <Clock className="w-3 h-3" />
-                                Pendente
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 text-right">
-                            {!isPaid ? (
-                              <button
-                                onClick={() => {
-                                  setSelectedCharge(c);
-                                  setIsPayModalOpen(true);
-                                }}
-                                className="px-3 py-1.5 rounded-lg bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 border border-[#D9AA45]/40 text-[#D9AA45] text-xs font-bold transition-all"
-                              >
-                                Pagar Agora
-                              </button>
-                            ) : (
-                              <span className="text-xs text-emerald-400 font-medium">Baixa Efetuada</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                        return (
+                          <tr key={c.id} className="hover:bg-white/5 transition-colors">
+                            <td className="py-3.5 px-4 font-semibold text-white">
+                              {c.description}
+                              {isPaid && (
+                                <span className="block text-[11px] text-emerald-400/80 font-normal mt-0.5">
+                                  ✓ Pagamento confirmado pelo Tesoureiro
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 font-mono text-xs text-gray-300">
+                              {c.due_date ? new Date(c.due_date).toLocaleDateString("pt-BR") : "Dia 28"}
+                            </td>
+                            <td className="py-3.5 px-4 font-mono text-sm font-bold text-white">
+                              R$ {Number(c.amount).toFixed(2).replace(".", ",")}
+                            </td>
+                            <td className="py-3.5 px-4 text-center">
+                              {isPaid ? (
+                                <div className="inline-flex flex-col items-center">
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                    Quitada / Paga
+                                  </span>
+                                  <span className="text-[10px] text-emerald-300/70 mt-1">
+                                    {c.paid_at
+                                      ? `Baixa: ${new Date(c.paid_at).toLocaleDateString("pt-BR")}`
+                                      : "Baixa Efetuada"}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                  <Clock className="w-3 h-3" />
+                                  Pendente
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              {!isPaid ? (
+                                <button
+                                  onClick={() => {
+                                    setSelectedCharge(c);
+                                    setIsPayModalOpen(true);
+                                  }}
+                                  className="px-3.5 py-1.5 rounded-lg bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 border border-[#D9AA45]/40 text-[#D9AA45] text-xs font-bold transition-all cursor-pointer"
+                                >
+                                  Pagar Agora
+                                </button>
+                              ) : (
+                                <span className="text-xs text-emerald-400 font-semibold inline-flex items-center gap-1">
+                                  <Check className="w-3.5 h-3.5" /> Quitado
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
@@ -1124,97 +1285,195 @@ export default function MemberSelfServicePage() {
         </div>
       )}
 
-      {/* ABA 4: SOLICITAÇÕES AO CAPÍTULO & DECLARAÇÕES */}
+      {/* ABA 4: SOLICITAÇÕES AO CAPÍTULO & DOCUMENTOS */}
       {activeTab === "solicitacoes" && (
         <div className="space-y-6 animate-fade-in">
-          {/* Card de Ação Rápida */}
-          <div className="bg-[#04281A]/90 border border-white/10 rounded-2xl p-6 backdrop-blur-md flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          {/* Card de Ação Rápida: Emissão Instantânea e Requerimentos */}
+          <div className="bg-[#04281A]/90 border border-white/10 rounded-2xl p-6 backdrop-blur-md space-y-4">
             <div>
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-[#D9AA45]" />
-                Ouvidoria & Solicitações Direcionadas
+                <FileText className="w-5 h-5 text-[#D9AA45]" />
+                Solicitação de Documentos & Ouvidoria
               </h2>
-              <p className="text-xs text-gray-400 mt-1 max-w-xl">
-                Envie requerimentos oficiais, solicite certidões, ou converse sigilosamente com o Mestre Conselheiro (MC) ou Presidente do Conselho Consultivo (PCC).
+              <p className="text-xs text-gray-400 mt-1 max-w-2xl">
+                Emita sua declaração oficial timbrada pronta em PDF com autenticação automática, ou protocole uma mensagem para a liderança capitular.
               </p>
             </div>
 
-            <button
-              onClick={() => setIsNewRequestModalOpen(true)}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs font-bold shadow-lg transition-all flex items-center gap-2"
-            >
-              <Send className="w-4 h-4" />
-              Abrir Nova Solicitação
-            </button>
+            {/* Botões diretos do que o irmão quer emitir */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <button
+                onClick={() => handleGenerateDeclaration("quitacao_tesouraria")}
+                disabled={isEmittingDecl}
+                className="p-4 rounded-xl bg-gradient-to-br from-emerald-900/60 to-emerald-950/80 border border-emerald-500/40 hover:border-emerald-400 text-left transition-all group cursor-pointer shadow-md disabled:opacity-50"
+              >
+                <div className="w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                  <Award className="w-5 h-5 text-[#D9AA45]" />
+                </div>
+                <h4 className="text-sm font-bold text-white">Declaração de Quitação</h4>
+                <p className="text-[11px] text-emerald-200/70 mt-1">
+                  PDF automático atestando quitação financeira com a Tesouraria.
+                </p>
+                <span className="inline-block mt-3 text-xs font-bold text-[#D9AA45]">
+                  {isEmittingDecl ? "Emitindo PDF..." : "Emitir Agora →"}
+                </span>
+              </button>
+
+              <button
+                onClick={() => handleGenerateDeclaration("frequencia")}
+                disabled={isEmittingDecl}
+                className="p-4 rounded-xl bg-gradient-to-br from-blue-900/40 to-blue-950/80 border border-blue-500/30 hover:border-blue-400 text-left transition-all group cursor-pointer shadow-md disabled:opacity-50"
+              >
+                <div className="w-9 h-9 rounded-lg bg-blue-500/20 text-blue-300 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                  <CalendarCheck className="w-5 h-5 text-blue-300" />
+                </div>
+                <h4 className="text-sm font-bold text-white">Declaração de Frequência</h4>
+                <p className="text-[11px] text-blue-200/70 mt-1">
+                  PDF automático do Escrivão com a taxa de assiduidade do período.
+                </p>
+                <span className="inline-block mt-3 text-xs font-bold text-[#D9AA45]">
+                  {isEmittingDecl ? "Emitindo PDF..." : "Emitir Agora →"}
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setRequestTargetRole("master");
+                  setIsNewRequestModalOpen(true);
+                }}
+                className="p-4 rounded-xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 hover:border-white/20 text-left transition-all group cursor-pointer shadow-md"
+              >
+                <div className="w-9 h-9 rounded-lg bg-white/10 text-gray-300 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                  <MessageSquare className="w-5 h-5 text-[#D9AA45]" />
+                </div>
+                <h4 className="text-sm font-bold text-white">Outro Requerimento</h4>
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Envie uma mensagem ou solicitação avulsa à administração.
+                </p>
+                <span className="inline-block mt-3 text-xs font-bold text-emerald-300">
+                  Abrir Mensagem →
+                </span>
+              </button>
+            </div>
           </div>
 
-          {/* Declarações Emitidas Prontas para Download */}
-          {declarations.length > 0 && (
-            <div className="bg-[#04281A]/90 border border-[#D9AA45]/30 rounded-2xl p-6 backdrop-blur-md">
-              <h3 className="text-base font-bold text-white flex items-center gap-2 mb-4">
-                <Award className="w-4 h-4 text-[#D9AA45]" />
-                Minhas Declarações Oficiais Emitidas
-              </h3>
+          {/* PASTA DE CONTROLE DE DOCUMENTOS & REQUERIMENTOS */}
+          <div className="bg-[#04281A]/90 border border-white/10 rounded-2xl p-6 backdrop-blur-md space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-[#D9AA45]" />
+                <h3 className="text-base font-bold text-white">
+                  Pasta de Documentos e Requerimentos do Membro
+                </h3>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {declarations.map((d) => (
-                  <div key={d.id} className="bg-black/30 border border-white/10 rounded-xl p-4 flex items-center justify-between gap-4">
-                    <div>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                        {d.declaration_type === "quitacao_tesouraria" ? "Quitação de Mensalidades" : "Declaração de Frequência"}
-                      </span>
-                      <p className="text-xs font-mono text-[#D9AA45] mt-1.5 font-bold">
-                        Código: {d.verification_code}
-                      </p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
-                        Emitida em: {new Date(d.created_at).toLocaleDateString("pt-BR")}
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() => setViewDeclaration(d)}
-                      className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white font-medium transition-all flex items-center gap-1.5"
-                    >
-                      <Printer className="w-3.5 h-3.5 text-[#D9AA45]" />
-                      Visualizar
-                    </button>
-                  </div>
-                ))}
+              {/* Alternador de Pastas */}
+              <div className="flex items-center gap-1 bg-black/30 p-1 rounded-xl border border-white/10">
+                <button
+                  onClick={() => setRequestsFolderTab("declaracoes")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    requestsFolderTab === "declaracoes"
+                      ? "bg-[#D9AA45] text-black shadow"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  Declarações Emitidas ({declarations.length})
+                </button>
+                <button
+                  onClick={() => setRequestsFolderTab("solicitacoes")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    requestsFolderTab === "solicitacoes"
+                      ? "bg-[#D9AA45] text-black shadow"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  Mensagens & Protocolos ({requests.length})
+                </button>
               </div>
             </div>
-          )}
 
-          {/* Histórico das Solicitações */}
-          <div className="bg-[#04281A]/90 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
-            <h3 className="text-base font-bold text-white mb-4">Minhas Solicitações Cadastradas</h3>
+            {/* Conteúdo da Pasta 1: Declarações Oficiais em PDF */}
+            {requestsFolderTab === "declaracoes" && (
+              <div>
+                {declarations.length === 0 ? (
+                  <div className="py-10 text-center text-xs text-gray-400 space-y-2">
+                    <p>Nenhuma declaração emitida ainda nesta pasta.</p>
+                    <p className="text-[11px] text-emerald-300">
+                      Clique em &quot;Declaração de Quitação&quot; ou &quot;Declaração de Frequência&quot; acima para gerar seu documento instantaneamente.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {declarations.map((d) => (
+                      <div
+                        key={d.id}
+                        className="bg-black/30 border border-white/10 hover:border-[#D9AA45]/40 rounded-xl p-4 flex items-center justify-between gap-4 transition-all"
+                      >
+                        <div>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                            {d.declaration_type === "quitacao_tesouraria"
+                              ? "Quitação Financeira"
+                              : "Declaração de Frequência"}
+                          </span>
+                          <p className="text-xs font-mono text-[#D9AA45] mt-1.5 font-bold">
+                            {d.verification_code}
+                          </p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            Emitido em: {new Date(d.created_at).toLocaleDateString("pt-BR")} • Válido por 90 dias
+                          </p>
+                        </div>
 
-            {requests.length === 0 ? (
-              <p className="text-sm text-gray-400 py-8 text-center">Você ainda não enviou solicitações pelo portal.</p>
-            ) : (
-              <div className="space-y-3">
-                {requests.map((r) => (
-                  <div key={r.id} className="bg-black/30 border border-white/10 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-[#D9AA45]">
-                          Protocolo {r.protocol}
-                        </span>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-300 capitalize">
-                          Direcionado a: {r.target_role === "master" ? "MC / PCC" : r.target_role}
+                        <button
+                          onClick={() => setViewDeclaration(d)}
+                          className="px-3.5 py-2 rounded-lg bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 border border-[#D9AA45]/40 text-[#D9AA45] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                          <span>Abrir PDF</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Conteúdo da Pasta 2: Protocolos e Mensagens */}
+            {requestsFolderTab === "solicitacoes" && (
+              <div>
+                {requests.length === 0 ? (
+                  <p className="text-sm text-gray-400 py-8 text-center">
+                    Você ainda não enviou mensagens ou requerimentos avulsos.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {requests.map((r) => (
+                      <div
+                        key={r.id}
+                        className="bg-black/30 border border-white/10 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono font-bold text-[#D9AA45]">
+                              Protocolo {r.protocol}
+                            </span>
+                            <span className="text-xs text-gray-400">•</span>
+                            <span className="text-xs text-gray-300 capitalize">
+                              Assunto: Requerimento Administrativo
+                            </span>
+                          </div>
+                          <p className="text-sm text-white mt-1 font-medium">{r.description}</p>
+                          <p className="text-[11px] text-gray-400 mt-1">
+                            Aberto em: {new Date(r.created_at).toLocaleDateString("pt-BR")}
+                          </p>
+                        </div>
+
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/40 capitalize">
+                          {r.status.replace("_", " ")}
                         </span>
                       </div>
-                      <p className="text-sm text-white mt-1 font-medium">{r.description}</p>
-                      <p className="text-[11px] text-gray-400 mt-1">
-                        Aberto em: {new Date(r.created_at).toLocaleDateString("pt-BR")}
-                      </p>
-                    </div>
-
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/40 capitalize">
-                      {r.status.replace("_", " ")}
-                    </span>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>
@@ -1269,7 +1528,7 @@ export default function MemberSelfServicePage() {
               Justificar Ausência na Reunião
             </h3>
             <p className="text-xs text-gray-300 mt-1">
-              Descreva o motivo da ausência para que o Escrivão e a Comissão Permanente de Sindicância registrem sua justificativa fraternal.
+              Descreva o motivo da ausência para que o Escrivão registre sua justificativa fraternal.
             </p>
 
             <textarea
@@ -1283,14 +1542,14 @@ export default function MemberSelfServicePage() {
             <div className="flex items-center justify-end gap-3 mt-4">
               <button
                 onClick={() => setIsRsvpModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs text-gray-400 hover:text-white"
+                className="px-4 py-2 rounded-xl text-xs text-gray-400 hover:text-white cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleJustifyPresence}
                 disabled={isSubmittingRsvp || !rsvpNotes.trim()}
-                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-all disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isSubmittingRsvp ? "Enviando..." : "Registrar Justificativa"}
               </button>
@@ -1308,7 +1567,7 @@ export default function MemberSelfServicePage() {
                 <QrCode className="w-5 h-5 text-[#D9AA45]" />
                 Pagamento de Mensalidade
               </h3>
-              <button onClick={() => setIsPayModalOpen(false)} className="text-gray-400 hover:text-white text-xs">
+              <button onClick={() => setIsPayModalOpen(false)} className="text-gray-400 hover:text-white text-xs cursor-pointer">
                 ✕
               </button>
             </div>
@@ -1316,13 +1575,12 @@ export default function MemberSelfServicePage() {
             <div className="mt-4 text-center">
               <p className="text-xs text-gray-400">{selectedCharge?.description || "Mensalidade Capitular"}</p>
               <p className="text-3xl font-extrabold text-white mt-1">
-                R$ {Number(selectedCharge?.amount || 50).toFixed(2).replace(".", ",")}
+                R$ {Number(selectedCharge?.amount || (currentMember?.category === "macom" ? 25 : 22)).toFixed(2).replace(".", ",")}
               </p>
             </div>
 
             {/* QR Code Container */}
             <div className="my-5 p-4 rounded-xl bg-white flex flex-col items-center justify-center mx-auto w-52 h-52 shadow-inner">
-              {/* Fallback de Imagem QR Code */}
               <div className="w-full h-full flex items-center justify-center text-center p-2">
                 <QrCode className="w-36 h-36 text-black" />
               </div>
@@ -1331,7 +1589,7 @@ export default function MemberSelfServicePage() {
             <div className="space-y-3">
               <button
                 onClick={handleCopyPix}
-                className="w-full py-2.5 rounded-xl bg-[#D9AA45] hover:bg-amber-400 text-black text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg"
+                className="w-full py-2.5 rounded-xl bg-[#D9AA45] hover:bg-amber-400 text-black text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
               >
                 {pixCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 {pixCopied ? "Código PIX Copiado!" : "Copiar Código PIX Copia e Cola"}
@@ -1349,22 +1607,22 @@ export default function MemberSelfServicePage() {
             </div>
 
             <p className="text-[11px] text-gray-400 text-center mt-4">
-              Após o pagamento, o comprovante pode ser enviado ao Tesoureiro para conferência ou anexado na aba de solicitações.
+              Após o pagamento, o sistema e o Tesoureiro realizam a baixa para atualizar seu histórico de quitação.
             </p>
           </div>
         </div>
       )}
 
-      {/* MODAL: NOVA SOLICITAÇÃO AO CAPÍTULO */}
+      {/* MODAL: NOVA SOLICITAÇÃO AVULSA AO CAPÍTULO */}
       {isNewRequestModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
           <div className="bg-[#04281A] border border-[#D9AA45]/40 rounded-2xl p-6 max-w-lg w-full shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Send className="w-5 h-5 text-[#D9AA45]" />
-                Nova Solicitação ao Capítulo
+                Novo Requerimento / Ouvidoria
               </h3>
-              <button onClick={() => setIsNewRequestModalOpen(false)} className="text-gray-400 hover:text-white text-xs">
+              <button onClick={() => setIsNewRequestModalOpen(false)} className="text-gray-400 hover:text-white text-xs cursor-pointer">
                 ✕
               </button>
             </div>
@@ -1372,53 +1630,12 @@ export default function MemberSelfServicePage() {
             <div className="space-y-4 mt-4">
               <div>
                 <label className="text-xs text-gray-300 font-semibold block mb-1.5">
-                  Destinatário / Comissão Responsável:
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setRequestTargetRole("escrivao")}
-                    className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all text-center ${
-                      requestTargetRole === "escrivao"
-                        ? "bg-[#D9AA45]/20 border-[#D9AA45] text-[#D9AA45]"
-                        : "bg-black/30 border-white/10 text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    Escrivão
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRequestTargetRole("tesoureiro")}
-                    className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all text-center ${
-                      requestTargetRole === "tesoureiro"
-                        ? "bg-[#D9AA45]/20 border-[#D9AA45] text-[#D9AA45]"
-                        : "bg-black/30 border-white/10 text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    Tesoureiro
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRequestTargetRole("master")}
-                    className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all text-center ${
-                      requestTargetRole === "master"
-                        ? "bg-[#D9AA45]/20 border-[#D9AA45] text-[#D9AA45]"
-                        : "bg-black/30 border-white/10 text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    MC ou PCC
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-gray-300 font-semibold block mb-1.5">
-                  Descreva seu Requerimento ou Mensagem:
+                  Descreva seu Requerimento ou Mensagem ao Capítulo:
                 </label>
                 <textarea
                   value={requestDescription}
                   onChange={(e) => setRequestDescription(e.target.value)}
-                  placeholder="Explique com detalhes o que necessita (Declaração, orientação fraternal, proposta de atividade, etc.)..."
+                  placeholder="Escreva sua solicitação, dúvida ou mensagem à administração capitular..."
                   rows={5}
                   className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#D9AA45]"
                 />
@@ -1428,7 +1645,7 @@ export default function MemberSelfServicePage() {
                 <button
                   type="button"
                   onClick={() => setIsNewRequestModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs text-gray-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-xs text-gray-400 hover:text-white cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -1436,7 +1653,7 @@ export default function MemberSelfServicePage() {
                   type="button"
                   onClick={handleCreateRequest}
                   disabled={isSubmittingRequest || !requestDescription.trim()}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs font-bold transition-all shadow-lg disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs font-bold transition-all shadow-lg disabled:opacity-50 cursor-pointer"
                 >
                   {isSubmittingRequest ? "Enviando..." : "Protocolar Solicitação"}
                 </button>
@@ -1446,62 +1663,187 @@ export default function MemberSelfServicePage() {
         </div>
       )}
 
-      {/* MODAL: VISUALIZAR DECLARAÇÃO OFICIAL */}
+      {/* MODAL: VISUALIZAR DECLARAÇÃO OFICIAL (PDF PRONTO COM MODELO EXATO) */}
       {viewDeclaration && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-[#04281A] border border-[#D9AA45] rounded-2xl max-w-2xl w-full p-8 shadow-2xl relative text-gray-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="bg-white text-gray-900 border border-gray-300 rounded-2xl max-w-2xl w-full p-8 sm:p-12 shadow-2xl relative my-8 print:m-0 print:p-0 print:border-none print:shadow-none print:w-full">
+            {/* Botão de Fechar na Tela */}
             <button
               onClick={() => setViewDeclaration(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white text-sm"
+              className="absolute top-4 right-4 text-gray-400 hover:text-black text-sm print:hidden p-1 rounded-full hover:bg-gray-100 cursor-pointer"
             >
               ✕
             </button>
 
-            {/* Cabeçalho da Declaração */}
-            <div className="text-center pb-6 border-b border-[#D9AA45]/30">
-              <p className="text-xs tracking-widest text-[#D9AA45] uppercase font-semibold">
-                Ordem DeMolay • Capítulo Professor Carvalho Neves Nº 500
+            {/* Timbre e Cabeçalho Oficial */}
+            <div className="text-center pb-6 border-b-2 border-gray-900/80">
+              <p className="text-xs uppercase tracking-widest font-bold text-gray-700">
+                Ordem DeMolay • Supremo Conselho DeMolay Brasil
               </p>
-              <h2 className="text-2xl font-serif font-bold text-white mt-1">
-                {viewDeclaration.declaration_type === "quitacao_tesouraria"
-                  ? "DECLARAÇÃO DE QUITAÇÃO FINANCEIRA"
-                  : "DECLARAÇÃO DE REGULARIDADE E FREQUÊNCIA"}
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-gray-950 mt-1">
+                CAPÍTULO PROFESSOR CARVALHO NEVES Nº 500
               </h2>
-              <p className="text-xs text-gray-300 mt-1">
-                Patrocinadora: A∴R∴L∴S∴ Caridade II nº 135 — Teresina/PI
-              </p>
+              <h3 className="text-base sm:text-lg font-serif font-extrabold tracking-wide text-gray-900 mt-2 uppercase border-t border-b border-gray-300 py-1.5 inline-block px-4">
+                {viewDeclaration.declaration_type === "quitacao_tesouraria"
+                  ? "DECLARAÇÃO DE QUITAÇÃO"
+                  : "DECLARAÇÃO DE FREQUÊNCIA"}
+              </h3>
             </div>
 
-            {/* Corpo do Documento */}
-            <div className="py-6 space-y-4 text-sm leading-relaxed text-justify text-gray-200">
-              <p>
-                Declaramos para os devidos fins de direito e comprovação fraternal que o Irmão{" "}
-                <strong className="text-[#D9AA45]">{currentMember?.full_name}</strong>, portador do ID DeMolay{" "}
-                <strong className="text-white">{currentMember?.cid}</strong>, encontra-se devidamente ativo e com sua situação perante o Capítulo Professor Carvalho Neves Nº 500 em pleno estado de regularidade.
-              </p>
-              <p>
-                A presente certidão é autêntica e válida até{" "}
-                <strong className="text-white">
-                  {new Date(viewDeclaration.valid_until).toLocaleDateString("pt-BR")}
-                </strong>.
-              </p>
-            </div>
+            {/* Texto Oficial Exato */}
+            {viewDeclaration.declaration_type === "quitacao_tesouraria" ? (
+              <div className="py-8 space-y-5 text-sm leading-relaxed text-justify text-gray-800 font-serif">
+                <p>
+                  Eu,{" "}
+                  <strong>
+                    {viewDeclaration.content_data?.oficial_responsavel?.nome || "Aloísio Oliveira Neto"}
+                  </strong>
+                  , portador do ID Nº{" "}
+                  <strong>
+                    {viewDeclaration.content_data?.oficial_responsavel?.cid || "134104"}
+                  </strong>
+                  , Tesoureiro do Capítulo Professor Carvalho Neves Nº 500, com sede na cidade de Teresina-PI, localizado na Rua Senador Teodoro Pacheco Nº 882, Centro, Teresina-PI, CEP: 64001-060, venho, por meio desta, declarar para os devidos fins que:
+                </p>
+
+                <p>
+                  O irmão{" "}
+                  <strong className="text-gray-950">
+                    {viewDeclaration.content_data?.solicitante_nome || currentMember?.full_name}
+                  </strong>
+                  , portador do ID Nº{" "}
+                  <strong className="text-gray-950">
+                    {viewDeclaration.content_data?.solicitante_cid || currentMember?.cid}
+                  </strong>
+                  , encontra-se quite com suas obrigações financeiras junto ao Capítulo Professor Carvalho Neves Nº 500, estando em dia com todas as contribuições e demais responsabilidades financeiras referentes ao período de{" "}
+                  <strong>
+                    {viewDeclaration.content_data?.periodo_inicio || "01/07/2026"}
+                  </strong>{" "}
+                  a{" "}
+                  <strong>
+                    {viewDeclaration.content_data?.periodo_fim || "31/12/2026"}
+                  </strong>
+                  .
+                </p>
+
+                <p>
+                  Esta declaração é emitida para comprovação de quitação financeira do mencionado irmão, podendo ser utilizada conforme a necessidade do solicitante.
+                </p>
+
+                <p>
+                  Atesto a veracidade das informações acima e me coloco à disposição para quaisquer esclarecimentos adicionais que se façam necessários.
+                </p>
+
+                <p className="text-right pt-2">
+                  Teresina-PI,{" "}
+                  <strong>
+                    {viewDeclaration.content_data?.data_emissao ||
+                      new Date(viewDeclaration.created_at).toLocaleDateString("pt-BR")}
+                  </strong>
+                </p>
+
+                <div className="pt-8 text-center space-y-1">
+                  <p className="font-semibold text-gray-700">Atenciosamente,</p>
+                  <div className="w-64 h-px bg-gray-400 mx-auto mt-10 mb-2" />
+                  <p className="font-bold text-gray-950">
+                    {viewDeclaration.content_data?.oficial_responsavel?.nome || "Aloísio Oliveira Neto"}
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    ID Nº {viewDeclaration.content_data?.oficial_responsavel?.cid || "134104"}
+                  </p>
+                  <p className="text-xs font-semibold text-gray-800">
+                    Tesoureiro do Capítulo Professor Carvalho Neves Nº 500
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="py-8 space-y-5 text-sm leading-relaxed text-justify text-gray-800 font-serif">
+                <p>
+                  Eu,{" "}
+                  <strong>
+                    {viewDeclaration.content_data?.oficial_responsavel?.nome || "Waldecy Goncalves de Araujo Neto"}
+                  </strong>
+                  , portador do ID Nº{" "}
+                  <strong>
+                    {viewDeclaration.content_data?.oficial_responsavel?.cid || "148200"}
+                  </strong>
+                  , Escrivão do Capítulo Professor Carvalho Neves Nº 500, com sede na cidade de Teresina-PI, localizado na Rua Senador Teodoro Pacheco Nº 882, Centro, Teresina-PI, CEP: 64001-060, venho, por meio desta, em atenção ao pedido do interessado, declarar para os devidos fins que:
+                </p>
+
+                <p>
+                  O irmão{" "}
+                  <strong className="text-gray-950">
+                    {viewDeclaration.content_data?.solicitante_nome || currentMember?.full_name}
+                  </strong>
+                  , portador do ID Nº{" "}
+                  <strong className="text-gray-950">
+                    {viewDeclaration.content_data?.solicitante_cid || currentMember?.cid}
+                  </strong>
+                  , participou regularmente das atividades promovidas pelo Capítulo Professor Carvalho Neves Nº 500 durante o período de{" "}
+                  <strong>
+                    {viewDeclaration.content_data?.periodo_inicio || new Date(dateFilterStart).toLocaleDateString("pt-BR")}
+                  </strong>{" "}
+                  a{" "}
+                  <strong>
+                    {viewDeclaration.content_data?.periodo_fim || new Date(dateFilterEnd).toLocaleDateString("pt-BR")}
+                  </strong>
+                  , contabilizando uma frequência total de{" "}
+                  <strong className="text-gray-950">
+                    {viewDeclaration.content_data?.frequencia_porcentagem || attendanceStats.rate}%
+                  </strong>{" "}
+                  de frequência.
+                </p>
+
+                <p>
+                  Esta declaração é emitida para comprovação de frequência do mencionado irmão e pode ser utilizada conforme a necessidade do solicitante.
+                </p>
+
+                <p>
+                  Atesto a veracidade das informações acima e me coloco à disposição para quaisquer esclarecimentos adicionais que se façam necessários.
+                </p>
+
+                <p className="text-right pt-2">
+                  Teresina-PI,{" "}
+                  <strong>
+                    {viewDeclaration.content_data?.data_emissao ||
+                      new Date(viewDeclaration.created_at).toLocaleDateString("pt-BR")}
+                  </strong>
+                  .
+                </p>
+
+                <div className="pt-8 text-center space-y-1">
+                  <p className="font-semibold text-gray-700">Atenciosamente,</p>
+                  <div className="w-64 h-px bg-gray-400 mx-auto mt-10 mb-2" />
+                  <p className="font-bold text-gray-950">
+                    {viewDeclaration.content_data?.oficial_responsavel?.nome || "Waldecy Goncalves de Araujo Neto"}
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    ID Nº {viewDeclaration.content_data?.oficial_responsavel?.cid || "148200"}
+                  </p>
+                  <p className="text-xs font-semibold text-gray-800">
+                    Escrivão do Capítulo Professor Carvalho Neves Nº 500
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Rodapé e Autenticação */}
-            <div className="pt-6 border-t border-[#D9AA45]/30 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+            <div className="pt-6 border-t border-gray-300 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono">
               <div>
-                <p className="text-gray-400">Código de Verificação de Autenticidade:</p>
-                <p className="font-mono font-bold text-[#D9AA45] text-sm">
+                <p className="text-gray-500 text-[10px] uppercase">Código de Autenticação Digital:</p>
+                <p className="font-bold text-gray-900 text-xs">
                   {viewDeclaration.verification_code}
+                </p>
+                <p className="text-[10px] text-gray-500">
+                  Emitido digitalmente via Sistema Integrado Carvalho Neves Nº 500
                 </p>
               </div>
 
               <button
                 onClick={() => window.print()}
-                className="px-4 py-2 rounded-xl bg-[#D9AA45] text-black font-bold flex items-center gap-2 hover:bg-amber-400 transition-all"
+                className="px-5 py-2.5 rounded-xl bg-gray-900 text-white font-bold flex items-center gap-2 hover:bg-black transition-all cursor-pointer print:hidden shadow"
               >
-                <Printer className="w-4 h-4" />
-                Imprimir Declaração
+                <Printer className="w-4 h-4 text-[#D9AA45]" />
+                <span>Imprimir / Salvar em PDF</span>
               </button>
             </div>
           </div>

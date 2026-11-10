@@ -61,7 +61,9 @@ export default function TesourariaPage() {
   const [charges, setCharges] = useState<MemberCharge[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "pendente" | "confirmado">("todos");
-  const [payerFilter, setPayerFilter] = useState<"todos" | "demolay" | "macom">("todos");
+  
+  // Abas de Planilha dedicadas: DeMolays vs Tios Maçons
+  const [activeSheet, setActiveSheet] = useState<"demolay" | "macom">("demolay");
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState("");
@@ -77,6 +79,14 @@ export default function TesourariaPage() {
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [generateMonth, setGenerateMonth] = useState(11);
   const [generateYear, setGenerateYear] = useState(2026);
+
+  // Modal Relatório Mensal Oficial
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
+  // Modal Alterar Valores de Mensalidade
+  const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
+  const [priceDemolay, setPriceDemolay] = useState<number>(22);
+  const [priceMacom, setPriceMacom] = useState<number>(25);
 
   // Modal Declaração de Quitação
   const [quitacaoMember, setQuitacaoMember] = useState<{
@@ -352,14 +362,60 @@ export default function TesourariaPage() {
     }
   };
 
-  // Filtros Combinados: Categoria (DeMolay/Maçom), Status e Busca
+  // Alterar Valores das Mensalidades no período
+  const handleUpdatePrices = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPeriodId) return;
+    setIsUpdating(true);
+    try {
+      const supabase = createClient();
+      // Atualiza cobranças pendentes de DeMolay
+      await supabase
+        .from("member_charges")
+        .update({ amount: priceDemolay })
+        .eq("financial_period_id", selectedPeriodId)
+        .eq("payer_type", "demolay")
+        .eq("status", "pendente");
+
+      // Atualiza cobranças pendentes de Maçom
+      await supabase
+        .from("member_charges")
+        .update({ amount: priceMacom })
+        .eq("financial_period_id", selectedPeriodId)
+        .eq("payer_type", "macom")
+        .eq("status", "pendente");
+
+      setCharges((prev) =>
+        prev.map((c) => {
+          if (c.status === "pendente") {
+            return {
+              ...c,
+              amount: c.payer_type === "demolay" ? priceDemolay : priceMacom,
+            };
+          }
+          return c;
+        })
+      );
+
+      setIsPriceModalOpen(false);
+      setFeedbackMsg(
+        `Valores atualizados para o período: DeMolay R$ ${priceDemolay.toFixed(2)} | Maçom R$ ${priceMacom.toFixed(2)}`
+      );
+      setTimeout(() => setFeedbackMsg(""), 5000);
+    } catch (err: any) {
+      console.error("Erro ao atualizar valores:", err);
+      alert("Erro ao atualizar valores de mensalidade: " + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Filtros da Planilha Ativa (DeMolay ou Maçom), Status e Busca
   const filteredCharges = useMemo(() => {
     return charges.filter((c) => {
-      // 1. Filtro de Tipo de Pagante
-      const matchesPayer =
-        payerFilter === "todos" ||
-        (payerFilter === "demolay" && c.payer_type === "demolay") ||
-        (payerFilter === "macom" && c.payer_type === "macom");
+      // 1. Planilha Ativa (Aba de DeMolays ou Aba de Maçons)
+      if (activeSheet === "demolay" && c.payer_type !== "demolay") return false;
+      if (activeSheet === "macom" && c.payer_type !== "macom") return false;
 
       // 2. Filtro de Status
       const matchesStatus =
@@ -375,9 +431,9 @@ export default function TesourariaPage() {
         (c.member?.cid && c.member.cid.includes(search)) ||
         (c.member?.masonic_lodge && c.member.masonic_lodge.toLowerCase().includes(search));
 
-      return matchesPayer && matchesStatus && matchesSearch;
+      return matchesStatus && matchesSearch;
     });
-  }, [charges, payerFilter, statusFilter, searchTerm]);
+  }, [charges, activeSheet, statusFilter, searchTerm]);
 
   // Se o usuário não for Tesoureiro nem Master, bloqueia visualização de dados financeiros
   if (isRoleChecked && userRole !== "master" && userRole !== "tesoureiro") {
@@ -423,20 +479,41 @@ export default function TesourariaPage() {
 
         {/* Ações Rápidas do Tesoureiro */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* Botão Principal: Gerar Relatório Mensal */}
+          <button
+            onClick={() => setIsReportModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-extrabold text-xs transition-all shadow-md cursor-pointer"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Gerar Relatório Mensal</span>
+          </button>
+
+          {/* Botão Alterar Valor da Mensalidade */}
+          <button
+            onClick={() => setIsPriceModalOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-xs transition-all cursor-pointer"
+          >
+            <DollarSign className="w-4 h-4 text-[#D9AA45]" />
+            <span>Alterar Valor da Mensalidade</span>
+          </button>
+
+          {/* Botão PIX & InfinitePay */}
           <button
             onClick={() => setIsPixModalOpen(true)}
             className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-xs transition-all cursor-pointer"
           >
-            <QrCode className="w-4 h-4 text-[#D9AA45]" />
-            <span>PIX & InfinitePay API</span>
+            <QrCode className="w-4 h-4 text-emerald-300" />
+            <span>PIX & InfinitePay</span>
           </button>
 
+          {/* Botão Lançar Mensalidades em Lote */}
           <button
             onClick={() => setIsGenerateModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs transition-all shadow-md cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-emerald-200/80 font-medium text-xs transition-all cursor-pointer"
+            title="Lançar mensalidades em lote para um novo mês"
           >
-            <PlusCircle className="w-4 h-4" />
-            <span>Gerar Mensalidades do Mês</span>
+            <PlusCircle className="w-3.5 h-3.5" />
+            <span>Lançar Cobranças</span>
           </button>
         </div>
       </div>
@@ -542,51 +619,62 @@ export default function TesourariaPage() {
         </div>
       </div>
 
-      {/* FILTROS DUPLOS: CATEGORIA E STATUS + BUSCA */}
+      {/* ABAS DE PLANILHA: DEMOLAYS VS MAÇONS */}
       <div className="space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* Linha 1 de Filtros: DeMolay vs Maçom */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-gray-400 mr-1">Pagantes:</span>
-            {[
-              { id: "todos", label: "Todos os Irmãos", count: charges.length },
-              { id: "demolay", label: "DeMolays Ativos (R$ 22)", count: stats.qtdDemolay },
-              { id: "macom", label: "Tios Maçons (R$ 25)", count: stats.qtdMacom },
-            ].map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setPayerFilter(f.id as any)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  payerFilter === f.id
-                    ? "bg-[#D9AA45] text-black shadow-md"
-                    : "bg-white/5 text-emerald-200/70 hover:text-white"
-                }`}
-              >
-                <span>{f.label}</span> ({f.count})
-              </button>
-            ))}
+        {/* Seletor de Planilha por Abas */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveSheet("demolay")}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeSheet === "demolay"
+                  ? "bg-[#087443] text-white border-2 border-[#D9AA45] shadow-lg"
+                  : "bg-white/5 text-emerald-200/70 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <Users className="w-4 h-4 text-[#D9AA45]" />
+              <span>Planilha de DeMolays</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/40 text-emerald-200 font-mono">
+                {stats.qtdDemolay} • R$ {priceDemolay},00
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveSheet("macom")}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeSheet === "macom"
+                  ? "bg-[#087443] text-white border-2 border-[#D9AA45] shadow-lg"
+                  : "bg-white/5 text-emerald-200/70 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <Building className="w-4 h-4 text-[#D9AA45]" />
+              <span>Planilha de Tios Maçons</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/40 text-emerald-200 font-mono">
+                {stats.qtdMacom} • R$ {priceMacom},00
+              </span>
+            </button>
           </div>
 
-          {/* Busca por Nome, ID ou Loja */}
-          <div className="relative w-full lg:w-80">
+          {/* Busca em Tempo Real */}
+          <div className="relative w-full sm:w-80">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por irmão, ID ou Loja..."
+              placeholder={`Buscar em ${activeSheet === "demolay" ? "DeMolays" : "Maçons"} por nome, ID ou Loja...`}
               className="w-full pl-9 pr-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs placeholder:text-emerald-200/40 focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
             />
           </div>
         </div>
 
-        {/* Linha 2 de Filtros: Status de Pagamento */}
-        <div className="flex items-center gap-2 pt-1 border-t border-white/5">
-          <span className="text-xs font-semibold text-gray-400 mr-1">Situação:</span>
+        {/* Linha de Filtros: Status de Pagamento */}
+        <div className="flex items-center gap-2 pt-1">
+          <span className="text-xs font-semibold text-gray-400 mr-1">Filtrar Situação:</span>
           {[
-            { id: "todos", label: "Todos os Status", count: filteredCharges.length },
-            { id: "pendente", label: "Pendentes (Em Aberto)", count: charges.filter((c) => c.status !== "confirmado").length },
-            { id: "confirmado", label: "Pagos (Baixados)", count: charges.filter((c) => c.status === "confirmado").length },
+            { id: "todos", label: "Todos os Registros", count: filteredCharges.length },
+            { id: "pendente", label: "Pendentes (Em Aberto)", count: charges.filter((c) => (activeSheet === "demolay" ? c.payer_type === "demolay" : c.payer_type === "macom") && c.status !== "confirmado").length },
+            { id: "confirmado", label: "Quitados (Baixados)", count: charges.filter((c) => (activeSheet === "demolay" ? c.payer_type === "demolay" : c.payer_type === "macom") && c.status === "confirmado").length },
           ].map((f) => (
             <button
               key={f.id}
@@ -602,15 +690,15 @@ export default function TesourariaPage() {
           ))}
         </div>
 
-        {/* TABELA DE MENSALIDADES */}
-        <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md overflow-hidden">
+        {/* TABELA / PLANILHA FINANCEIRA */}
+        <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-white">
-              <thead className="bg-[#04281A]/80 border-b border-white/10 text-emerald-300 uppercase tracking-wider text-[10px] font-bold">
+              <thead className="bg-[#04281A]/90 border-b border-white/10 text-emerald-300 uppercase tracking-wider text-[10px] font-bold">
                 <tr>
-                  <th className="py-3 px-4">ID</th>
-                  <th className="py-3 px-4">Irmão / Membro</th>
-                  <th className="py-3 px-4">Vínculo</th>
+                  <th className="py-3 px-4">{activeSheet === "demolay" ? "ID SISDM" : "CIM / ID"}</th>
+                  <th className="py-3 px-4">{activeSheet === "demolay" ? "Nome do DeMolay" : "Nome do Tio Maçom"}</th>
+                  {activeSheet === "macom" && <th className="py-3 px-4">Loja Patrocinadora</th>}
                   <th className="py-3 px-4">Vencimento</th>
                   <th className="py-3 px-4">Valor</th>
                   <th className="py-3 px-4">Status</th>
@@ -620,46 +708,40 @@ export default function TesourariaPage() {
               <tbody className="divide-y divide-white/5">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-emerald-200/50">
-                      Carregando quadro de mensalidades...
+                    <td colSpan={activeSheet === "macom" ? 7 : 6} className="py-8 text-center text-emerald-200/50">
+                      Carregando planilha de mensalidades...
                     </td>
                   </tr>
                 ) : filteredCharges.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-emerald-200/50">
-                      Nenhum registro encontrado com os filtros aplicados.
+                    <td colSpan={activeSheet === "macom" ? 7 : 6} className="py-8 text-center text-emerald-200/50">
+                      Nenhum registro encontrado nesta planilha com os filtros selecionados.
                     </td>
                   </tr>
                 ) : (
                   filteredCharges.map((c) => {
                     const isPago = c.status === "confirmado";
-                    const isDemolay = c.payer_type === "demolay";
 
                     return (
-                      <tr key={c.id} className="hover:bg-white/[0.03] transition-colors">
+                      <tr key={c.id} className="hover:bg-white/[0.04] transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-[#D9AA45]">
                           {c.member?.cid || "—"}
                         </td>
                         <td className="py-3 px-4 font-semibold text-white">
-                          <div className="flex flex-col">
-                            <span>{c.payer_name}</span>
-                            {c.member?.masonic_lodge && (
-                              <span className="text-[10px] text-gray-400">{c.member.masonic_lodge}</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          {isDemolay ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                              DeMolay Ativo
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-[#D9AA45] border border-amber-500/30">
-                              <Building className="w-3 h-3" />
-                              Tio Maçom
-                            </span>
+                          <p>{c.payer_name}</p>
+                          {c.paid_at && (
+                            <p className="text-[10px] text-emerald-300/80">
+                              Baixa em {new Date(c.paid_at).toLocaleDateString("pt-BR")}
+                            </p>
                           )}
                         </td>
+                        {activeSheet === "macom" && (
+                          <td className="py-3 px-4">
+                            <span className="text-[11px] text-[#D9AA45] font-medium">
+                              {c.member?.masonic_lodge || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"}
+                            </span>
+                          </td>
+                        )}
                         <td className="py-3 px-4 text-emerald-100/70 font-mono">
                           {c.due_date ? new Date(c.due_date).toLocaleDateString("pt-BR") : "28/11/2026"}
                         </td>
@@ -675,7 +757,7 @@ export default function TesourariaPage() {
                             }`}
                           >
                             {isPago ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                            <span>{isPago ? "Baixado (Pago)" : "Pendente"}</span>
+                            <span>{isPago ? "Quitado (Pago)" : "Pendente"}</span>
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right">
@@ -786,7 +868,7 @@ export default function TesourariaPage() {
               {/* Informações de Titularidade */}
               <div className="p-3.5 rounded-xl bg-black/20 border border-white/10 text-gray-300 space-y-1">
                 <p><strong>Titular:</strong> Capítulo Professor Carvalho Neves Nº 500</p>
-                <p><strong>Patrocinadora:</strong> A∴R∴L∴S∴ Caridade II nº 135 — GLMPI</p>
+                <p><strong>Patrocinadora:</strong> A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)</p>
                 <p><strong>Adquirente:</strong> InfinitePay / Stone Instituição de Pagamento S.A.</p>
               </div>
             </div>
@@ -867,6 +949,255 @@ export default function TesourariaPage() {
         </div>
       )}
 
+      {/* MODAL: GERAR RELATÓRIO MENSAL CONSOLIDADO (ARRECADADO, ESPERADO, INADIMPLÊNCIA) */}
+      {isReportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-3xl my-8 p-6 sm:p-8 rounded-3xl bg-[#04281A] border-2 border-[#D9AA45] text-white shadow-2xl space-y-6 relative print:border-none print:shadow-none print:p-0 print:my-0">
+            {/* Botão de Fechar */}
+            <button
+              onClick={() => setIsReportModalOpen(false)}
+              className="absolute top-4 right-4 text-white/50 hover:text-white print:hidden cursor-pointer"
+            >
+              ✕
+            </button>
+
+            {/* Cabeçalho do Relatório Timbrado */}
+            <div className="text-center space-y-1.5 border-b border-[#D9AA45]/40 pb-5">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#D9AA45]">
+                Capítulo Professor Carvalho Neves Nº 500 • Ordem DeMolay
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold font-serif tracking-wide text-white">
+                RELATÓRIO FINANCEIRO MENSAL CAPITULAR
+              </h2>
+              <p className="text-xs text-emerald-200/80">
+                Exercício:{" "}
+                <strong>
+                  {selectedPeriod
+                    ? `${new Date(selectedPeriod.year, selectedPeriod.month - 1).toLocaleString("pt-BR", { month: "long" }).toUpperCase()} DE ${selectedPeriod.year}`
+                    : "MÊS CORRENTE"}
+                </strong>{" "}
+                • Vencimento Base: Dia 28
+              </p>
+              <p className="text-[11px] text-gray-400">
+                Sede: A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI) — Teresina/PI
+              </p>
+            </div>
+
+            {/* Quatro Indicadores Chave */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-center">
+                <span className="text-[10px] uppercase font-bold text-gray-300">Total Esperado</span>
+                <p className="text-lg font-black text-white mt-1">
+                  R$ {stats.totalPrevisto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-[10px] text-gray-400">{stats.qtdTotal} mensalidades</p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-center">
+                <span className="text-[10px] uppercase font-bold text-emerald-300">Total Arrecadado</span>
+                <p className="text-lg font-black text-emerald-300 mt-1">
+                  R$ {stats.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-[10px] text-emerald-400">{stats.qtdPago} quitadas</p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-amber-950/60 border border-amber-500/40 text-center">
+                <span className="text-[10px] uppercase font-bold text-[#D9AA45]">Pendente / Em Aberto</span>
+                <p className="text-lg font-black text-[#D9AA45] mt-1">
+                  R$ {stats.totalPendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-[10px] text-amber-300">{stats.qtdTotal - stats.qtdPago} pendentes</p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-center">
+                <span className="text-[10px] uppercase font-bold text-gray-300">Taxa de Adimplência</span>
+                <p className="text-lg font-black text-white mt-1">{stats.percent}%</p>
+                <p className="text-[10px] text-red-300">{100 - stats.percent}% inadimplência</p>
+              </div>
+            </div>
+
+            {/* Detalhamento por Categoria */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              {/* DeMolays */}
+              <div className="p-4 rounded-xl bg-black/30 border border-emerald-500/30 space-y-2">
+                <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                  <span className="font-bold text-emerald-300">DeMolays Ativos (R$ {priceDemolay},00)</span>
+                  <span className="font-mono text-[11px] text-[#D9AA45]">
+                    {stats.pagoDemolay} / {stats.qtdDemolay} pagos
+                  </span>
+                </div>
+                <div className="space-y-1 text-gray-300">
+                  <p className="flex justify-between">
+                    <span>Arrecadado:</span>
+                    <strong className="text-white">
+                      R$ {(stats.pagoDemolay * priceDemolay).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </strong>
+                  </p>
+                  <p className="flex justify-between">
+                    <span>Esperado Total:</span>
+                    <strong className="text-white">
+                      R$ {(stats.qtdDemolay * priceDemolay).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </strong>
+                  </p>
+                  <p className="flex justify-between">
+                    <span>Pendente:</span>
+                    <strong className="text-amber-300">
+                      R$ {((stats.qtdDemolay - stats.pagoDemolay) * priceDemolay).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </strong>
+                  </p>
+                </div>
+              </div>
+
+              {/* Tios Maçons */}
+              <div className="p-4 rounded-xl bg-black/30 border border-amber-500/30 space-y-2">
+                <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                  <span className="font-bold text-[#D9AA45]">Tios Maçons / Conselho (R$ {priceMacom},00)</span>
+                  <span className="font-mono text-[11px] text-[#D9AA45]">
+                    {stats.pagoMacom} / {stats.qtdMacom} pagos
+                  </span>
+                </div>
+                <div className="space-y-1 text-gray-300">
+                  <p className="flex justify-between">
+                    <span>Arrecadado:</span>
+                    <strong className="text-white">
+                      R$ {(stats.pagoMacom * priceMacom).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </strong>
+                  </p>
+                  <p className="flex justify-between">
+                    <span>Esperado Total:</span>
+                    <strong className="text-white">
+                      R$ {(stats.qtdMacom * priceMacom).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </strong>
+                  </p>
+                  <p className="flex justify-between">
+                    <span>Pendente:</span>
+                    <strong className="text-amber-300">
+                      R$ {((stats.qtdMacom - stats.pagoMacom) * priceMacom).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Observações da Tesouraria */}
+            <div className="p-3.5 rounded-xl bg-black/20 border border-white/10 text-xs text-emerald-100/80 leading-relaxed">
+              <p>
+                O presente relatório consolida os lançamentos contábeis e as baixas de pagamentos efetuadas via PIX, InfinitePay ou dinheiro em mãos, atestando a regularidade financeira e a transparência perante o Conselho Consultivo e o Capítulo.
+              </p>
+            </div>
+
+            {/* Assinatura Oficial do Tesoureiro */}
+            <div className="pt-6 border-t border-[#D9AA45]/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+              <div className="text-center sm:text-left">
+                <p className="font-bold text-white">Aloísio Oliveira Neto</p>
+                <p className="text-[11px] text-[#D9AA45]">ID Nº 134104</p>
+                <p className="text-[11px] text-emerald-200/70">
+                  Tesoureiro do Capítulo Professor Carvalho Neves Nº 500
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 print:hidden">
+                <button
+                  type="button"
+                  onClick={() => setIsReportModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium"
+                >
+                  Fechar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-2 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold flex items-center gap-2 cursor-pointer shadow-md"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Imprimir / Salvar PDF</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ALTERAR VALOR DA MENSALIDADE */}
+      {isPriceModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md p-6 rounded-2xl bg-[#064D32] border border-[#D9AA45] shadow-2xl space-y-4 text-white">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-6 h-6 text-[#D9AA45]" />
+              <h3 className="text-lg font-bold">Alterar Valor das Mensalidades</h3>
+            </div>
+            <p className="text-xs text-emerald-200/80 leading-relaxed">
+              Defina os novos valores praticados pela Tesouraria para DeMolays e Maçons. As alterações serão aplicadas às mensalidades em aberto do período selecionado.
+            </p>
+
+            <form onSubmit={handleUpdatePrices} className="space-y-4 text-xs">
+              <div className="space-y-3">
+                <div>
+                  <label className="block font-semibold mb-1 text-emerald-200">
+                    Mensalidade DeMolay Ativo (R$) *
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-400">R$</span>
+                    <input
+                      type="number"
+                      step="0.50"
+                      min="0"
+                      required
+                      value={priceDemolay}
+                      onChange={(e) => setPriceDemolay(Number(e.target.value))}
+                      className="w-full pl-10 pr-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                    />
+                  </div>
+                  <span className="text-[10px] text-emerald-300/70 mt-1 block">Valor padrão vigente: R$ 22,00</span>
+                </div>
+
+                <div>
+                  <label className="block font-semibold mb-1 text-emerald-200">
+                    Mensalidade Tio Maçom / Consultor (R$) *
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-400">R$</span>
+                    <input
+                      type="number"
+                      step="0.50"
+                      min="0"
+                      required
+                      value={priceMacom}
+                      onChange={(e) => setPriceMacom(Number(e.target.value))}
+                      className="w-full pl-10 pr-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                    />
+                  </div>
+                  <span className="text-[10px] text-emerald-300/70 mt-1 block">Valor padrão vigente: R$ 25,00</span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-black/20 border border-white/10 text-[11px] text-gray-300">
+                <p>
+                  <strong>Vencimento:</strong> Todo dia 28 do mês. A atualização recalculará os saldos previstos e pendentes.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setIsPriceModalOpen(false)}
+                  className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold cursor-pointer disabled:opacity-50"
+                >
+                  {isUpdating ? "Salvando..." : "Salvar Novos Valores"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL: DECLARAÇÃO DE QUITAÇÃO OFICIAL */}
       {quitacaoMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
@@ -888,7 +1219,7 @@ export default function TesourariaPage() {
                 DECLARAÇÃO OFICIAL DE QUITAÇÃO FINANCEIRA
               </h2>
               <p className="text-xs text-emerald-200/70">
-                Patrocinadora: A∴R∴L∴S∴ Caridade II nº 135 — Teresina/PI
+                Patrocinadora: A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI) — Teresina/PI
               </p>
             </div>
 

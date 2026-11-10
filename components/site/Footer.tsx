@@ -48,6 +48,17 @@ export function Footer() {
                 <Mail className="w-4 h-4 text-[#D9AA45] shrink-0" />
                 <span className="truncate">capitulo500@demolaybrasil.org.br</span>
               </li>
+              <li className="flex items-center gap-2">
+                <span className="text-[#D9AA45] text-xs font-bold">@</span>
+                <a
+                  href="https://instagram.com/cap.carvalhoneves500"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition-colors underline decoration-white/20"
+                >
+                  cap.carvalhoneves500
+                </a>
+              </li>
             </ul>
           </div>
         </div>

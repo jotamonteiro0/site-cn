@@ -97,10 +97,10 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
     { name: "Visão Geral", href: "/dashboard", icon: LayoutDashboard },
     { name: "Meu Autoatendimento", href: "/dashboard/membro", icon: UserCheck },
     { name: "Gestões & Nominata", href: "/dashboard/nominata", icon: Crown },
-    { name: "Calendário & Chamada", href: "/dashboard/chamada", icon: ClipboardCheck },
+    { name: "Atas & Chamada da Reunião", href: "/dashboard/chamada", icon: ClipboardCheck },
     { name: "Quadro de Membros", href: "/dashboard/membros", icon: Users },
     { name: "Conselho Consultivo", href: "/dashboard/conselho", icon: Shield },
-    { name: "Documentos & Atas", href: "/dashboard/documentos", icon: FileText },
+    { name: "Documentos", href: "/dashboard/documentos", icon: FileText },
     { name: "Tesouraria", href: "/dashboard/tesouraria", icon: Wallet },
   ];
 
@@ -131,14 +131,19 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
   // Filtro estrito de permissões RBAC para navegação
   const allowedNavigation = useMemo(() => {
     return navigation.filter((item) => {
-      if (item.href === "/dashboard" || item.href === "/dashboard/membro" || item.href === "/dashboard/nominata") {
+      if (
+        item.href === "/dashboard" ||
+        item.href === "/dashboard/membro" ||
+        item.href === "/dashboard/nominata" ||
+        item.href === "/dashboard/documentos"
+      ) {
         return true;
       }
       if (effectiveRole === "master") {
         return true;
       }
       if (effectiveRole === "escrivao") {
-        return ["/dashboard/chamada", "/dashboard/membros", "/dashboard/documentos"].includes(item.href);
+        return ["/dashboard/chamada", "/dashboard/membros"].includes(item.href);
       }
       if (effectiveRole === "tesoureiro") {
         return ["/dashboard/tesouraria", "/dashboard/membros"].includes(item.href);

@@ -171,7 +171,7 @@ export default function DocumentosPublicosPage() {
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
-              Documentos & Publicações Oficiais
+              Documentos Capitulares & SCDB
             </h1>
 
             <p className="text-emerald-100 text-sm sm:text-base max-w-2xl mx-auto font-light leading-relaxed">

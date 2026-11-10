@@ -69,7 +69,7 @@ const encontros = [
     tag: "Sessão Magna",
     title: "Instalação e Posse da Gestão Capitular",
     date: "Aos Domingos, às 09:00",
-    local: "A∴R∴L∴S∴ Caridade II nº 135",
+    local: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
     descricao: "Cerimônia solene de posse da diretoria capitular com a presença dos tios do Conselho Consultivo, tias e familiares, celebrando a renovação e liderança dos jovens.",
   },
   {
@@ -77,7 +77,7 @@ const encontros = [
     tag: "Instrução & Ritualística",
     title: "Sessão Ordinária do Grau Iniciático",
     date: "Aos Domingos, às 09:00",
-    local: "A∴R∴L∴S∴ Caridade II nº 135",
+    local: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
     descricao: "Estudo ritualístico e apresentação de trabalhos filosóficos pelos novos irmãos, aprofundando o simbolismo das Sete Virtudes Cardeais sob a mentoria dos consultores.",
   },
   {
@@ -93,8 +93,8 @@ const encontros = [
     tag: "Conselho Consultivo",
     title: "Encontro com as 4 Lojas Patrocinadoras",
     date: "Alinhamento Capitular",
-    local: "A∴R∴L∴S∴ Caridade II nº 135",
-    descricao: "Reunião de alinhamento com as lojas mantenedoras (Abolição nº 4199, Adonhiran nº 2782, Caridade II nº 135 e Mansur nº 4591) para fortalecimento das metas do Capítulo.",
+    local: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+    descricao: "Reunião de alinhamento com as lojas mantenedoras (Abolição nº 4199, Adonhiran nº 2782, Caridade II nº 135 - GOB-PI e Mansur nº 4591) para fortalecimento das metas do Capítulo.",
   },
 ];
 
@@ -249,28 +249,22 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* GESTÃO XXIV — Past MC */}
             <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col group">
-              <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex flex-col items-center justify-center p-4">
+              <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex flex-col items-center justify-center overflow-hidden">
                 <Image
                   src="/gestoes/jose-keltton.2026.1.jpg"
                   alt="Foto oficial de José Keltton Cardoso da Silva Viana"
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover"
+                  className="object-cover z-0"
                   onError={(event) => {
                     event.currentTarget.style.display = "none";
                   }}
                 />
-                <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded text-[10px] font-bold bg-white/20 text-white backdrop-blur-md">
+                <span className="absolute top-3 left-3 z-10 px-2.5 py-0.5 rounded text-[10px] font-bold bg-white/20 text-white backdrop-blur-md">
                   XXIV
                 </span>
-                <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/40 text-emerald-200 border border-white/10">
+                <span className="absolute top-3 right-3 z-10 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/40 text-emerald-200 border border-white/10">
                   2026.1
-                </span>
-                <div className="w-16 h-16 rounded-full bg-[#087443] border-2 border-[#D9AA45] flex items-center justify-center text-[#D9AA45] shadow-lg group-hover:scale-105 transition-transform">
-                  <ShieldCheck className="w-8 h-8 text-[#D9AA45]" />
-                </div>
-                <span className="text-[10px] uppercase tracking-wider text-[#D9AA45] font-semibold mt-2">
-                  Espaço para Foto Oficial
                 </span>
               </div>
               <div className="p-5 flex-1 flex flex-col justify-between">
@@ -286,28 +280,22 @@ export default function Home() {
 
             {/* GESTÃO XXV — Past MC */}
             <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col group">
-              <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex flex-col items-center justify-center p-4">
+              <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex flex-col items-center justify-center overflow-hidden">
                 <Image
                   src="/gestoes/rafael-inacio.2026.2.jpg"
                   alt="Foto oficial de Rafael Inácio do Nascimento de Morais"
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover"
+                  className="object-cover z-0"
                   onError={(event) => {
                     event.currentTarget.style.display = "none";
                   }}
                 />
-                <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded text-[10px] font-bold bg-white/20 text-white backdrop-blur-md">
+                <span className="absolute top-3 left-3 z-10 px-2.5 py-0.5 rounded text-[10px] font-bold bg-white/20 text-white backdrop-blur-md">
                   XXV
                 </span>
-                <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/40 text-emerald-200 border border-white/10">
+                <span className="absolute top-3 right-3 z-10 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/40 text-emerald-200 border border-white/10">
                   2026.2
-                </span>
-                <div className="w-16 h-16 rounded-full bg-[#087443] border-2 border-[#D9AA45] flex items-center justify-center text-[#D9AA45] shadow-lg group-hover:scale-105 transition-transform">
-                  <ShieldCheck className="w-8 h-8 text-[#D9AA45]" />
-                </div>
-                <span className="text-[10px] uppercase tracking-wider text-[#D9AA45] font-semibold mt-2">
-                  Espaço para Foto Oficial
                 </span>
               </div>
               <div className="p-5 flex-1 flex flex-col justify-between">
@@ -323,29 +311,23 @@ export default function Home() {
 
             {/* GESTÃO XXVI — MC ATUAL (DESTAQUE) */}
             <div className="bg-white rounded-2xl overflow-hidden border-2 border-[#D9AA45] shadow-md hover:shadow-lg transition-all flex flex-col group">
-              <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex flex-col items-center justify-center p-4">
+              <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex flex-col items-center justify-center overflow-hidden">
                 <Image
                   src="/gestoes/joao-guilherme.2027.1.jpg"
                   alt="Foto oficial de João Guilherme Martins Lopes Monteiro"
                   fill
                   preload
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover"
+                  className="object-cover z-0"
                   onError={(event) => {
                     event.currentTarget.style.display = "none";
                   }}
                 />
-                <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded text-[10px] font-bold bg-[#D9AA45] text-[#04281A]">
+                <span className="absolute top-3 left-3 z-10 px-2.5 py-0.5 rounded text-[10px] font-bold bg-[#D9AA45] text-[#04281A]">
                   XXVI
                 </span>
-                <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D9AA45] text-[#04281A] flex items-center gap-1">
+                <span className="absolute top-3 right-3 z-10 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D9AA45] text-[#04281A] flex items-center gap-1">
                   ★ MC Atual • 2027.1
-                </span>
-                <div className="w-16 h-16 rounded-full bg-[#087443] border-2 border-[#D9AA45] flex items-center justify-center text-[#D9AA45] shadow-lg group-hover:scale-105 transition-transform">
-                  <Crown className="w-8 h-8 text-[#D9AA45]" />
-                </div>
-                <span className="text-[10px] uppercase tracking-wider text-[#D9AA45] font-semibold mt-2">
-                  Espaço para Foto Oficial
                 </span>
               </div>
               <div className="p-5 flex-1 flex flex-col justify-between">
@@ -434,7 +416,7 @@ export default function Home() {
             {/* INSTAGRAM DISCRETO EMBAIXO (CONFORME SOLICITADO) */}
             <div className="pt-4 text-center">
               <a
-                href="https://instagram.com/capitulo500"
+                href="https://instagram.com/cap.carvalhoneves500"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 hover:bg-gray-100 border border-gray-200 text-xs text-gray-600 hover:text-gray-900 transition-colors shadow-sm"
@@ -443,7 +425,7 @@ export default function Home() {
                   <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                 </svg>
                 <span>Acompanhe nossos encontros e novidades no Instagram</span>
-                <span className="font-bold text-[#087443]">@capitulo500</span>
+                <span className="font-bold text-[#087443]">@cap.carvalhoneves500</span>
               </a>
             </div>
           </div>
@@ -475,7 +457,7 @@ export default function Home() {
                 <div>
                   <h4 className="font-bold text-sm text-gray-900">Local das Sessões</h4>
                   <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                    A∴R∴L∴S∴ Caridade II nº 135, Teresina/PI — Brasil
+                    A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI), Teresina/PI — Brasil
                   </p>
                   <p className="text-[11px] text-[#087443] font-semibold mt-1">Aos Domingos, às 09:00</p>
                 </div>

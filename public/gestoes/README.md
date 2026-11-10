@@ -2,7 +2,7 @@
 
 Este diretório armazena as fotos oficiais dos Mestres Conselheiros do **Capítulo Professor Carvalho Neves Nº 500**.
 
-> 📊 **Status da Galeria:** 11 de 25 fotos cadastradas (44% concluído) • 14 pendentes
+> 📊 **Status da Galeria:** 12 de 25 fotos cadastradas (48% concluído) • 13 pendentes
 
 ## 📌 Padrão de Nomenclatura dos Arquivos
 
@@ -20,7 +20,7 @@ Basta salvar a imagem na pasta `public/gestoes/` com o nome indicado abaixo. O s
 
 |   Gestão   |     Período     | Mestre Conselheiro                    | Nome Exato do Arquivo           |  Status Atual  |
 | :--------: | :-------------: | :------------------------------------ | :------------------------------ | :------------: |
-| **XXVI** | 2027.1 | João Guilherme Martins Lopes Monteiro | `joao-guilherme.2027.1.jpg` | ⏳ Pendente |
+| **XXVI** | 2027.1 | João Guilherme Martins Lopes Monteiro | `joao-guilherme.2027.1.jpg` | ✅ **Presente** |
 | **XXV** | 2026.2 | Rafael Inácio do Nascimento de Morais | `rafael-inacio.2026.2.jpg` | ✅ **Presente** |
 | **XXIV** | 2026.1 | José Keltton Cardoso da Silva Viana | `jose-keltton.2026.1.jpg` | ✅ **Presente** |
 | **XXIII** | 2025.2 | João Guilherme Martins Lopes Monteiro | `joao-guilherme.2025.2.jpg` | ✅ **Presente** |

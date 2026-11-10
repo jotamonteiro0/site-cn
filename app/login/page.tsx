@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Shield, Lock, Mail, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Shield, Lock, Mail, ArrowLeft, Eye, EyeOff, Sparkles, CheckCircle2 } from "lucide-react";
 
 declare global {
   interface Window {
@@ -33,6 +33,16 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Estado do Primeiro Acesso (Ativação por ID)
+  const [isFirstAccessOpen, setIsFirstAccessOpen] = useState(false);
+  const [firstAccessCid, setFirstAccessCid] = useState("");
+  const [firstAccessInitialPassword, setFirstAccessInitialPassword] = useState("");
+  const [firstAccessEmail, setFirstAccessEmail] = useState("");
+  const [firstAccessNewPassword, setFirstAccessNewPassword] = useState("");
+  const [isSubmittingFirstAccess, setIsSubmittingFirstAccess] = useState(false);
+  const [firstAccessError, setFirstAccessError] = useState("");
+  const [firstAccessSuccess, setFirstAccessSuccess] = useState("");
 
   // Estado do reCAPTCHA
   const [captchaToken, setCaptchaToken] = useState("");
@@ -150,7 +160,18 @@ export default function LoginPage() {
         return;
       }
 
-      // 3. Autenticação no Supabase
+      // 3. Detecção de Primeiro Acesso (Senha inicial é a própria ID)
+      if (!email.trim().includes("@") && email.trim() === password.trim()) {
+        setIsFirstAccessOpen(true);
+        setFirstAccessCid(email.trim());
+        setFirstAccessInitialPassword(password.trim());
+        setFirstAccessError("");
+        setFirstAccessSuccess("");
+        setIsLoading(false);
+        return;
+      }
+
+      // 4. Autenticação no Supabase
       const supabase = createClient();
       let targetEmail = email.trim();
 
@@ -193,6 +214,46 @@ export default function LoginPage() {
       setError("Erro no processo de login. Contate a administração do sistema.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleFirstAccessSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingFirstAccess(true);
+    setFirstAccessError("");
+    setFirstAccessSuccess("");
+
+    try {
+      const res = await fetch("/api/auth/first-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cid: firstAccessCid.trim(),
+          initialPassword: firstAccessInitialPassword.trim(),
+          email: firstAccessEmail.trim(),
+          newPassword: firstAccessNewPassword.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setFirstAccessError(data.error || "Erro ao processar ativação.");
+        return;
+      }
+
+      setFirstAccessSuccess(
+        data.message ||
+          "Conta ativada com sucesso! Você já pode entrar com seu e-mail e nova senha."
+      );
+      setEmail(firstAccessEmail.trim());
+      if (firstAccessNewPassword.trim()) {
+        setPassword(firstAccessNewPassword.trim());
+      }
+    } catch (err: any) {
+      console.error("Erro no primeiro acesso:", err);
+      setFirstAccessError("Falha de conexão com o servidor capitular.");
+    } finally {
+      setIsSubmittingFirstAccess(false);
     }
   };
 
@@ -329,8 +390,161 @@ export default function LoginPage() {
               {error}
             </p>
           )}
+
+          {/* PRIMEIRO ACESSO DO DEMOLAY */}
+          <div className="pt-4 border-t border-white/10 text-center space-y-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setIsFirstAccessOpen(true);
+                setFirstAccessCid(!email.includes("@") ? email.trim() : "");
+                setFirstAccessInitialPassword(password || (!email.includes("@") ? email.trim() : ""));
+                setFirstAccessError("");
+                setFirstAccessSuccess("");
+              }}
+              className="text-xs text-[#D9AA45] hover:underline font-bold flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Primeiro acesso? Ative sua conta capitular</span>
+            </button>
+            <p className="text-[11px] text-emerald-200/70">
+              Sua primeira senha é sua própria ID. Cadastre seu e-mail para ativar seus acessos e receber a redefinição de senha.
+            </p>
+          </div>
         </form>
       </div>
+
+      {/* MODAL DE PRIMEIRO ACESSO / ATIVAÇÃO COM A PRÓPRIA ID */}
+      {isFirstAccessOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#04281A] border border-[#D9AA45] rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-white space-y-4">
+            <button
+              onClick={() => setIsFirstAccessOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white text-xs cursor-pointer"
+            >
+              ✕
+            </button>
+
+            <div className="text-center space-y-1 pb-2 border-b border-white/10">
+              <div className="inline-flex w-12 h-12 rounded-xl bg-[#087443] border border-[#D9AA45] items-center justify-center text-[#D9AA45] shadow mb-1">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Primeiro Acesso Capitular</h3>
+              <p className="text-xs text-emerald-200/80">
+                Sua senha inicial é sua própria ID. Cadastre seu e-mail para vincular seu perfil e alterar sua senha.
+              </p>
+            </div>
+
+            {firstAccessSuccess ? (
+              <div className="p-4 rounded-xl bg-emerald-900/60 border border-emerald-500 text-emerald-200 text-xs space-y-3 text-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+                <p className="font-semibold leading-relaxed">{firstAccessSuccess}</p>
+                <button
+                  type="button"
+                  onClick={() => setIsFirstAccessOpen(false)}
+                  className="w-full py-2.5 rounded-lg bg-[#D9AA45] text-[#04281A] font-bold text-xs hover:bg-amber-400 transition-all cursor-pointer"
+                >
+                  Ir para a tela de Login
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleFirstAccessSubmit} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="block text-emerald-200 font-semibold mb-1">
+                    Sua ID DeMolay Oficial (CID) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={firstAccessCid}
+                    onChange={(e) => {
+                      setFirstAccessCid(e.target.value);
+                      if (!firstAccessInitialPassword) {
+                        setFirstAccessInitialPassword(e.target.value);
+                      }
+                    }}
+                    placeholder="Ex: 148194 ou 127738"
+                    className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-emerald-200 font-semibold mb-1">
+                    Senha Inicial (Sua Própria ID) *
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={firstAccessInitialPassword}
+                    onChange={(e) => setFirstAccessInitialPassword(e.target.value)}
+                    placeholder="Digite sua própria ID"
+                    className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  />
+                  <span className="text-[10px] text-gray-400 block mt-0.5">
+                    A primeira senha provisória padrão é o mesmo número da sua ID.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-emerald-200 font-semibold mb-1">
+                    Seu E-mail Pessoal / Institucional *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={firstAccessEmail}
+                    onChange={(e) => setFirstAccessEmail(e.target.value)}
+                    placeholder="seu.email@exemplo.com"
+                    className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  />
+                  <span className="text-[10px] text-gray-400 block mt-0.5">
+                    Você receberá o link para alterar sua senha neste e-mail.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-emerald-200 font-semibold mb-1">
+                    Nova Senha Definitiva (Opcional)
+                  </label>
+                  <input
+                    type="password"
+                    value={firstAccessNewPassword}
+                    onChange={(e) => setFirstAccessNewPassword(e.target.value)}
+                    placeholder="Crie sua nova senha pessoal"
+                    className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  />
+                  <span className="text-[10px] text-gray-400 block mt-0.5">
+                    Se deixar em branco, o link de alteração de senha será enviado ao seu e-mail.
+                  </span>
+                </div>
+
+                {firstAccessError && (
+                  <p className="p-2.5 rounded-lg bg-red-950/50 border border-red-500/40 text-red-200 text-[11px] text-center">
+                    {firstAccessError}
+                  </p>
+                )}
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setIsFirstAccessOpen(false)}
+                    className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingFirstAccess}
+                    className="px-5 py-2.5 rounded-lg bg-[#D9AA45] hover:bg-amber-400 text-black font-bold cursor-pointer disabled:opacity-50 transition-all shadow"
+                  >
+                    {isSubmittingFirstAccess ? "Ativando..." : "Cadastrar E-mail e Ativar"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

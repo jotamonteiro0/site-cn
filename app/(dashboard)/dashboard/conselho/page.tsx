@@ -37,7 +37,7 @@ const OFFICIAL_LODGES = [
   {
     name: "A∴R∴L∴S∴ Caridade II nº 135",
     tagline: "Loja Maçônica Patrocinadora • Sede Capitular",
-    potency: "GLMPI",
+    potency: "GOB-PI",
   },
   {
     name: "A∴R∴L∴S∴ Grande Mestre Alberto Mansur nº 4591",

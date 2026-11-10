@@ -20,11 +20,11 @@ interface MemberRecord {
   id: string;
   cid: string;
   full_name: string;
+  email?: string;
+  birth_date?: string;
   category: "demolay_ativo" | "senior_demolay" | "macom" | "irregular";
   regularity?: string;
   masonic_lodge?: string;
-  initiation_date?: string;
-  demolay_degree_date?: string;
   created_at?: string;
 }
 
@@ -49,12 +49,33 @@ export default function MembrosPage() {
   const [newMember, setNewMember] = useState({
     cid: "",
     full_name: "",
-    initiation_date: "",
-    demolay_degree_date: "",
+    birth_date: "",
+    email: "",
     category: "demolay_ativo" as "demolay_ativo" | "senior_demolay" | "macom" | "irregular",
     regularity: "Regular",
     masonic_lodge: "",
   });
+
+  // Helper para cálculo de idade e maioridade (aos 21 anos)
+  const calculateAgeInfo = (birthDateStr?: string) => {
+    if (!birthDateStr) return null;
+    const birth = new Date(birthDateStr);
+    if (isNaN(birth.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    const maioridadeYear = birth.getFullYear() + 21;
+    const isMaioridade = age >= 21;
+    return {
+      age,
+      isMaioridade,
+      maioridadeYear,
+      birthFormatted: birth.toLocaleDateString("pt-BR", { timeZone: "UTC" }),
+    };
+  };
 
   // Carregar Membros do Supabase
   const loadMembers = async () => {
@@ -62,7 +83,7 @@ export default function MembrosPage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("members")
-        .select("id, cid, full_name, category, regularity, masonic_lodge, initiation_date, demolay_degree_date, created_at")
+        .select("id, cid, full_name, email, birth_date, category, regularity, masonic_lodge, created_at")
         .order("full_name", { ascending: true });
 
       if (error) throw error;
@@ -84,7 +105,7 @@ export default function MembrosPage() {
   const handleCreateMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMember.cid.trim() || !newMember.full_name.trim()) {
-      alert("Por favor, preencha pelo menos a ID e o Nome Completo.");
+      alert("Por favor, preencha a ID e o Nome Completo.");
       return;
     }
 
@@ -102,8 +123,8 @@ export default function MembrosPage() {
           chapter_id: "00000000-0000-0000-0000-000000000500",
           cid: newMember.cid.trim(),
           full_name: newMember.full_name.trim(),
-          initiation_date: newMember.initiation_date || null,
-          demolay_degree_date: newMember.demolay_degree_date || null,
+          birth_date: newMember.birth_date || null,
+          email: newMember.email.trim().toLowerCase() || null,
           category: newMember.category,
           regularity: newMember.regularity || (newMember.category === "macom" ? "Consultor" : "Regular"),
           member_type: memberType,
@@ -116,13 +137,15 @@ export default function MembrosPage() {
 
       if (error) throw error;
 
-      setSaveSuccessMsg(`Membro ${newMember.full_name} habilitado com sucesso!`);
+      setSaveSuccessMsg(
+        `Membro ${newMember.full_name} habilitado com sucesso! Acesso liberado (senha inicial: ${newMember.cid.trim()}).`
+      );
       setIsAddModalOpen(false);
       setNewMember({
         cid: "",
         full_name: "",
-        initiation_date: "",
-        demolay_degree_date: "",
+        birth_date: "",
+        email: "",
         category: "demolay_ativo",
         regularity: "Regular",
         masonic_lodge: "",
@@ -130,7 +153,7 @@ export default function MembrosPage() {
 
       // Recarrega listagem
       await loadMembers();
-      setTimeout(() => setSaveSuccessMsg(""), 4000);
+      setTimeout(() => setSaveSuccessMsg(""), 6000);
     } catch (err: unknown) {
       console.error("Erro ao habilitar novo membro:", err);
       const msg = err instanceof Error ? err.message : "Erro desconhecido";
@@ -259,8 +282,8 @@ export default function MembrosPage() {
                 <th className="py-3 px-4">ID</th>
                 <th className="py-3 px-4">Nome Completo</th>
                 <th className="py-3 px-4">Categoria</th>
-                <th className="py-3 px-4">Iniciação</th>
-                <th className="py-3 px-4">Grau DeMolay</th>
+                <th className="py-3 px-4">Aniversário / Maioridade (21 anos)</th>
+                <th className="py-3 px-4">E-mail de Acesso</th>
                 <th className="py-3 px-4">Regularidade / Loja</th>
               </tr>
             </thead>
@@ -272,65 +295,92 @@ export default function MembrosPage() {
                   </td>
                 </tr>
               ) : (
-                filteredMembers.map((m) => (
-                  <tr key={m.id} className="hover:bg-white/[0.03] transition-colors">
-                    {/* ID SEM '#' */}
-                    <td className="py-3 px-4 font-mono font-bold text-[#D9AA45]">
-                      {m.cid}
-                    </td>
+                filteredMembers.map((m) => {
+                  const ageInfo = calculateAgeInfo(m.birth_date);
+                  return (
+                    <tr key={m.id} className="hover:bg-white/[0.03] transition-colors">
+                      {/* ID SEM '#' */}
+                      <td className="py-3 px-4 font-mono font-bold text-[#D9AA45]">
+                        {m.cid}
+                      </td>
 
-                    {/* Nome Completo */}
-                    <td className="py-3 px-4 font-semibold text-white">
-                      {m.full_name}
-                    </td>
+                      {/* Nome Completo */}
+                      <td className="py-3 px-4 font-semibold text-white">
+                        {m.full_name}
+                      </td>
 
-                    {/* Categoria */}
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          m.category === "demolay_ativo"
-                            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                            : m.category === "macom"
-                            ? "bg-amber-500/20 text-[#D9AA45] border border-amber-500/40"
-                            : m.category === "senior_demolay"
-                            ? "bg-blue-500/20 text-blue-300 border border-blue-500/40"
-                            : "bg-red-500/20 text-red-300 border border-red-500/40"
-                        }`}
-                      >
-                        {m.category === "demolay_ativo" && "DeMolay Ativo"}
-                        {m.category === "macom" && "Tio Maçom"}
-                        {m.category === "senior_demolay" && "Sênior DeMolay"}
-                        {m.category === "irregular" && "Irregular"}
-                      </span>
-                    </td>
+                      {/* Categoria */}
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            m.category === "demolay_ativo"
+                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                              : m.category === "macom"
+                              ? "bg-amber-500/20 text-[#D9AA45] border border-amber-500/40"
+                              : m.category === "senior_demolay"
+                              ? "bg-blue-500/20 text-blue-300 border border-blue-500/40"
+                              : "bg-red-500/20 text-red-300 border border-red-500/40"
+                          }`}
+                        >
+                          {m.category === "demolay_ativo" && "DeMolay Ativo"}
+                          {m.category === "macom" && "Tio Maçom"}
+                          {m.category === "senior_demolay" && "Sênior DeMolay"}
+                          {m.category === "irregular" && "Irregular"}
+                        </span>
+                      </td>
 
-                    {/* Data de Iniciação */}
-                    <td className="py-3 px-4 text-emerald-100/70">
-                      {m.initiation_date
-                        ? new Date(m.initiation_date).toLocaleDateString("pt-BR")
-                        : "—"}
-                    </td>
+                      {/* Aniversário e Controle de Maioridade */}
+                      <td className="py-3 px-4">
+                        {ageInfo ? (
+                          <div>
+                            <p className="text-white font-medium">
+                              {ageInfo.birthFormatted} •{" "}
+                              <span className="text-[#D9AA45] font-bold">{ageInfo.age} anos</span>
+                            </p>
+                            {m.category === "demolay_ativo" && (
+                              <p className="text-[10px] text-emerald-300 mt-0.5">
+                                {ageInfo.isMaioridade ? (
+                                  <span className="text-amber-300 font-semibold">
+                                    ⚠️ Maioridade atingida ({ageInfo.maioridadeYear})
+                                  </span>
+                                ) : (
+                                  <span>
+                                    Maioridade aos 21 em {ageInfo.maioridadeYear} (faltam {21 - ageInfo.age} anos)
+                                  </span>
+                                )}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-emerald-200/40 italic">Data não cadastrada</span>
+                        )}
+                      </td>
 
-                    {/* Data do Grau DeMolay */}
-                    <td className="py-3 px-4 text-emerald-100/70">
-                      {m.demolay_degree_date
-                        ? new Date(m.demolay_degree_date).toLocaleDateString("pt-BR")
-                        : "—"}
-                    </td>
+                      {/* E-mail para acesso */}
+                      <td className="py-3 px-4">
+                        {m.email ? (
+                          <span className="text-emerald-200 font-mono text-[11px] truncate block max-w-xs">
+                            {m.email}
+                          </span>
+                        ) : (
+                          <span className="text-emerald-200/40 italic">E-mail pendente</span>
+                        )}
+                      </td>
 
-                    {/* Regularidade ou Loja Maçônica */}
-                    <td className="py-3 px-4">
-                      <p className="text-white font-medium">
-                        {m.regularity || "Regular"}
-                      </p>
-                      {m.masonic_lodge && (
-                        <p className="text-[10px] text-[#D9AA45] truncate max-w-xs">
-                          {m.masonic_lodge}
+                      {/* Regularidade ou Loja Maçônica */}
+                      <td className="py-3 px-4">
+                        <p className="text-white font-medium">
+                          {m.regularity || "Regular"}
                         </p>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                        {m.masonic_lodge && (
+                          <p className="text-[10px] text-[#D9AA45] truncate max-w-xs">
+                            {m.masonic_lodge}
+                          </p>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -346,14 +396,14 @@ export default function MembrosPage() {
               <h3 className="text-lg font-bold">Habilitar Novo Membro no Capítulo</h3>
             </div>
             <p className="text-xs text-emerald-200/70">
-              Cadastre o irmão ou tio no banco de dados do Capítulo Professor Carvalho Neves Nº 500.
+              Cadastre o irmão ou tio no Capítulo 500 com e-mail para acesso imediato e controle de maioridade.
             </p>
 
             <form onSubmit={handleCreateMember} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold mb-1 text-emerald-200">
-                    ID (SISDM / DeMolay Brasil) *
+                    ID SISDM / DeMolay Brasil *
                   </label>
                   <input
                     type="text"
@@ -363,6 +413,9 @@ export default function MembrosPage() {
                     className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white font-mono focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
                     placeholder="Ex: 159237"
                   />
+                  <p className="text-[10px] text-emerald-300/70 mt-0.5">
+                    Sua ID será sua senha inicial de acesso.
+                  </p>
                 </div>
 
                 <div>
@@ -379,8 +432,8 @@ export default function MembrosPage() {
                     }
                     className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
                   >
-                    <option value="demolay_ativo">DeMolay Ativo</option>
-                    <option value="senior_demolay">Sênior DeMolay</option>
+                    <option value="demolay_ativo">DeMolay Ativo (12 a 20 anos)</option>
+                    <option value="senior_demolay">Sênior DeMolay (21+ anos)</option>
                     <option value="macom">Tio Maçom / Consultor</option>
                     <option value="irregular">Irregular / Inativo</option>
                   </select>
@@ -397,44 +450,61 @@ export default function MembrosPage() {
                   value={newMember.full_name}
                   onChange={(e) => setNewMember({ ...newMember, full_name: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
-                  placeholder="Ex: Lucas de Carvalho Silva"
+                  placeholder="Ex: Ryan Lima Cavalcante Maia"
                 />
               </div>
 
+              {/* Data de Nascimento / Aniversário para controle de maioridade */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold mb-1 text-emerald-200">
-                    Data de Iniciação
+                    Data de Nascimento / Aniversário *
                   </label>
                   <input
                     type="date"
-                    value={newMember.initiation_date}
+                    required={newMember.category === "demolay_ativo"}
+                    value={newMember.birth_date}
                     onChange={(e) =>
-                      setNewMember({ ...newMember, initiation_date: e.target.value })
+                      setNewMember({ ...newMember, birth_date: e.target.value })
                     }
                     className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
                   />
+                  {newMember.birth_date && (
+                    <p className="text-[10px] text-[#D9AA45] mt-1">
+                      {(() => {
+                        const info = calculateAgeInfo(newMember.birth_date);
+                        return info
+                          ? `${info.age} anos • Maioridade aos 21 anos em ${info.maioridadeYear}`
+                          : "";
+                      })()}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block font-semibold mb-1 text-emerald-200">
-                    Data do Grau DeMolay
+                    E-mail para Acesso ao Sistema *
                   </label>
                   <input
-                    type="date"
-                    value={newMember.demolay_degree_date}
+                    type="email"
+                    required
+                    value={newMember.email}
                     onChange={(e) =>
-                      setNewMember({ ...newMember, demolay_degree_date: e.target.value })
+                      setNewMember({ ...newMember, email: e.target.value })
                     }
                     className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                    placeholder="email@demolay.org.br"
                   />
+                  <p className="text-[10px] text-emerald-300/70 mt-0.5">
+                    O membro usará este e-mail para autenticação no portal.
+                  </p>
                 </div>
               </div>
 
               {newMember.category === "macom" && (
                 <div>
                   <label className="block font-semibold mb-1 text-emerald-200">
-                    Loja Maçônica Representada
+                    Loja Maçônica Patrocinadora / Filiação
                   </label>
                   <input
                     type="text"
@@ -443,10 +513,17 @@ export default function MembrosPage() {
                       setNewMember({ ...newMember, masonic_lodge: e.target.value })
                     }
                     className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
-                    placeholder="Ex: A∴R∴L∴S∴ Caridade II nº 135"
+                    placeholder="Ex: A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"
                   />
                 </div>
               )}
+
+              <div className="p-3 rounded-xl bg-black/20 border border-emerald-500/30 text-[11px] text-emerald-200/90 space-y-1">
+                <p className="font-bold text-[#D9AA45]">🔑 Configuração Automática de Acesso:</p>
+                <p>
+                  Ao cadastrar, o membro receberá permissão correspondente ao seu perfil. No primeiro acesso, ele informará sua ID como senha e definirá sua credencial definitiva.
+                </p>
+              </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
                 <button
@@ -461,7 +538,7 @@ export default function MembrosPage() {
                   disabled={isSaving}
                   className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold cursor-pointer disabled:opacity-50"
                 >
-                  {isSaving ? "Habilitando..." : "Habilitar Membro"}
+                  {isSaving ? "Habilitando..." : "Habilitar Membro & Acesso"}
                 </button>
               </div>
             </form>

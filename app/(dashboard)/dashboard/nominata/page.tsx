@@ -226,6 +226,7 @@ export default function NominataPage() {
   }, [managements, selectedManagementId]);
 
   const canEdit = userRole === "master" || userRole === "escrivao";
+  const canCreateMgmt = userRole === "master";
 
   // 4. Salvar / Atribuir Oficial à Posição (Dispara Transferência Automática de Acesso)
   const handleAssignMember = async (positionName: string, memberId: string) => {
@@ -395,11 +396,12 @@ export default function NominataPage() {
             <span>Gestões & Nominata Capitular</span>
           </h1>
           <p className="text-sm text-emerald-200/70 mt-1">
-            Configuração do corpo de oficiais e transferência automática de permissões e acessos do sistema
+            Corpo de Oficiais e Nominata da Gestão Capitular
           </p>
         </div>
 
-        {canEdit && (
+        {/* Membro não cadastra nova gestão; apenas Master */}
+        {canCreateMgmt && (
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setIsNewManagementModalOpen(true)}
@@ -420,12 +422,12 @@ export default function NominataPage() {
         </div>
       )}
 
-      {/* SELETOR DE GESTÃO & STATUS DE ATIVAÇÃO */}
+      {/* SELETOR DE GESTÃO (ATUAL E GESTÕES ANTERIORES) */}
       <div className="p-5 sm:p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#D9AA45]">
-              Gestão em Visualização / Edição
+              Gestão em Visualização (Atual e Anteriores)
             </span>
             <div className="flex items-center gap-3 mt-1.5">
               <Calendar className="w-5 h-5 text-emerald-300" />
@@ -457,15 +459,15 @@ export default function NominataPage() {
                 {selectedManagement.status === "ativa" ? (
                   <>
                     <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Gestão Ativa no Sistema</span>
+                    <span>Gestão Ativa Vigente</span>
                   </>
                 ) : selectedManagement.status === "planejada" ? (
                   <>
                     <Calendar className="w-3.5 h-3.5 text-blue-400" />
-                    <span>Gestão Planejada (Nominata Futura)</span>
+                    <span>Gestão Planejada</span>
                   </>
                 ) : (
-                  <span>Gestão Histórica Encerrada</span>
+                  <span>Gestão Histórica Anterior</span>
                 )}
               </span>
             </div>
@@ -473,39 +475,32 @@ export default function NominataPage() {
         </div>
 
         {/* Botão de Ativação / Posse Oficial */}
-        {canEdit && selectedManagement && selectedManagement.status !== "ativa" && (
+        {canCreateMgmt && selectedManagement && selectedManagement.status !== "ativa" && (
           <button
             onClick={handleActivateManagement}
             disabled={isSaving}
             className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <KeyRound className="w-4 h-4 text-[#D9AA45]" />
-            <span>Ativar Esta Gestão & Sincronizar Acessos</span>
+            <span>Ativar Esta Gestão Oficialmente</span>
           </button>
         )}
       </div>
 
-      {/* EXPLICATIVO DA TRANSFERÊNCIA DE PODER & ACESSOS */}
-      <div className="p-4 rounded-xl bg-[#04281A]/80 border border-[#D9AA45]/30 text-xs text-gray-300 space-y-2 backdrop-blur-md">
-        <div className="flex items-center gap-2 text-[#D9AA45] font-bold">
-          <KeyRound className="w-4 h-4" />
-          <span>Como funciona a transmissão automática de acessos e permissões:</span>
-        </div>
-        <p className="leading-relaxed">
-          Ao indicar um irmão para um cargo administrativo na <strong>Gestão Ativa</strong>, o sistema atualiza em tempo real a tabela de permissões (RBAC). O novo <strong>Mestre Conselheiro</strong> e <strong>PCC</strong> recebem permissão Master; o <strong>Escrivão</strong> recebe acesso à secretaria e atas; e o <strong>Tesoureiro</strong> recebe acesso ao livro caixa e baixas. Os oficiais anteriores retornam automaticamente ao perfil de Membro regular.
-        </p>
-      </div>
-
-      {/* SEÇÃO 1: DIRETORIA EXECUTIVA & CONSELHO CONSULTIVO (CARGOS ADMINISTRATIVOS COM SISTEMA) */}
+      {/* SEÇÃO 1: DIRETORIA EXECUTIVA & CONSELHO CONSULTIVO */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Shield className="w-5 h-5 text-[#D9AA45]" />
-          <h2 className="text-lg font-bold text-white">Liderança Executiva & Permissões Vinculadas</h2>
+          <h2 className="text-lg font-bold text-white">Diretoria Executiva & Conselho Consultivo</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {executivePositions.map((pos) => {
-            const badge = roleBadges[pos.name];
+            const isPcc = pos.name.includes("Conselho Consultivo") || pos.name === "PCC";
+            // Somente DeMolays Ativos (12-20 anos) podem ocupar cargos no capítulo (exceto Conselho Consultivo / Maçons)
+            const eligibleMembers = isPcc
+              ? members.filter((m) => m.category === "macom")
+              : members.filter((m) => m.category === "demolay_ativo");
 
             return (
               <div
@@ -517,18 +512,6 @@ export default function NominataPage() {
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
                       <span>{pos.name}</span>
                     </h3>
-                    {badge ? (
-                      <span
-                        className={`inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${badge.bg} ${badge.text} border ${badge.border}`}
-                      >
-                        <KeyRound className="w-3 h-3" />
-                        <span>{badge.label}</span>
-                      </span>
-                    ) : (
-                      <span className="inline-block mt-1 text-[10px] text-gray-400">
-                        Liderança Executiva
-                      </span>
-                    )}
                   </div>
 
                   {pos.assigned_member_id && (
@@ -540,11 +523,7 @@ export default function NominataPage() {
 
                 {/* Seleção do Membro */}
                 <div className="space-y-1.5 pt-1">
-                  <label className="text-[11px] text-gray-400 font-medium block">
-                    Oficial Designado:
-                  </label>
-
-                  {canEdit ? (
+                  {canEdit && selectedManagement?.status === "ativa" ? (
                     <select
                       value={pos.assigned_member_id || ""}
                       onChange={(e) => handleAssignMember(pos.name, e.target.value)}
@@ -552,16 +531,23 @@ export default function NominataPage() {
                       className="w-full bg-[#064D32] border border-white/20 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer disabled:opacity-50"
                     >
                       <option value="">-- Cargo Vago / Não Designado --</option>
-                      {members.map((m) => (
+                      {eligibleMembers.map((m) => (
                         <option key={m.id} value={m.id}>
-                          {m.full_name} ({m.category === "macom" ? "Tio Maçom" : "DeMolay"} • ID {m.cid})
+                          {m.full_name}
                         </option>
                       ))}
                     </select>
                   ) : (
-                    <p className="text-sm font-semibold text-white">
-                      {pos.assigned_member_name || "Cargo Vago"}
-                    </p>
+                    <div>
+                      <p className="text-sm font-bold text-white">
+                        {pos.assigned_member_name || "Cargo Vago"}
+                      </p>
+                      {pos.assigned_member_cid && (
+                        <p className="text-[11px] font-mono text-[#D9AA45] mt-0.5">
+                          {pos.assigned_member_cid} • {pos.name} Regular
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -570,48 +556,62 @@ export default function NominataPage() {
         </div>
       </div>
 
-      {/* SEÇÃO 2: DEMAIS OFICIAIS CAPITULARES (RITUALÍSTICA & COLUNA DA HARMONIA) */}
+      {/* SEÇÃO 2: OFICIAIS CAPITULARES & RITUALÍSTICOS */}
       <div className="space-y-4 pt-4 border-t border-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-emerald-400" />
             <h2 className="text-lg font-bold text-white">Oficiais Ritualísticos & Coluna da Harmonia</h2>
           </div>
-          <span className="text-xs text-gray-400">{ritualPositions.length} cargos ritualísticos</span>
+          <span className="text-xs text-gray-400">{ritualPositions.length} oficiais</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {ritualPositions.map((pos) => (
-            <div
-              key={pos.id}
-              className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2 backdrop-blur-md"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white">{pos.name}</span>
-                <span className="text-[10px] text-gray-400">Acesso Membro</span>
-              </div>
+          {ritualPositions.map((pos) => {
+            // Apenas DeMolays Ativos (12 a 20 anos) podem ocupar cargos capitulares
+            const isConsultor = pos.name.includes("Consultor");
+            const eligibleMembers = isConsultor
+              ? members.filter((m) => m.category === "macom")
+              : members.filter((m) => m.category === "demolay_ativo");
 
-              {canEdit ? (
-                <select
-                  value={pos.assigned_member_id || ""}
-                  onChange={(e) => handleAssignMember(pos.name, e.target.value)}
-                  disabled={isSaving}
-                  className="w-full bg-[#04281A] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#D9AA45] cursor-pointer"
-                >
-                  <option value="">-- Vago --</option>
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.full_name} (ID {m.cid})
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <p className="text-xs font-semibold text-emerald-200">
-                  {pos.assigned_member_name || "Vago"}
-                </p>
-              )}
-            </div>
-          ))}
+            return (
+              <div
+                key={pos.id}
+                className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2 backdrop-blur-md"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-300">{pos.name}</span>
+                </div>
+
+                {canEdit && selectedManagement?.status === "ativa" ? (
+                  <select
+                    value={pos.assigned_member_id || ""}
+                    onChange={(e) => handleAssignMember(pos.name, e.target.value)}
+                    disabled={isSaving}
+                    className="w-full bg-[#04281A] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#D9AA45] cursor-pointer"
+                  >
+                    <option value="">-- Vago --</option>
+                    {eligibleMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.full_name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div>
+                    <p className="text-xs font-bold text-white">
+                      {pos.assigned_member_name || "Vago"}
+                    </p>
+                    {pos.assigned_member_cid && (
+                      <p className="text-[10px] font-mono text-[#D9AA45] mt-0.5">
+                        {pos.assigned_member_cid} {pos.name} Regular
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

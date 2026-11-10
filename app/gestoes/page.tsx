@@ -349,17 +349,9 @@ export default function GestoesPage() {
                     />
                   )}
 
-                  {/* Exibido até que a foto oficial seja adicionada à pasta public/gestoes. */}
-                  <div className="relative z-0 flex flex-col items-center justify-center p-8 text-center">
-                    <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-[#087443] to-[#0a9456] border-4 border-[#D9AA45] flex items-center justify-center text-[#D9AA45] shadow-2xl group-hover:scale-105 transition-transform duration-300 relative">
-                      <Crown className="w-14 h-14 text-[#D9AA45]" />
-                      <div className="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-full bg-[#D9AA45] border-2 border-white flex items-center justify-center text-[10px] font-black text-[#04281A]">
-                        MC
-                      </div>
-                    </div>
-                    <span className="text-[11px] uppercase tracking-widest text-[#D9AA45]/80 font-semibold mt-4">
-                      Espaço para Foto Oficial
-                    </span>
+                  {/* Fundo elegante caso a foto ainda esteja sendo carregada */}
+                  <div className="relative z-0 flex flex-col items-center justify-center p-8 text-center text-emerald-200/40 text-xs">
+                    <span>Foto Oficial Capitular</span>
                   </div>
 
                   {/* Detalhe dourado na borda */}
@@ -452,17 +444,9 @@ export default function GestoesPage() {
                       />
                     )}
 
-                    {/* Exibido até que a foto oficial seja adicionada à pasta public/gestoes. */}
-                    <div className="relative z-0 flex flex-col items-center justify-center p-6 text-center">
-                      <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#087443] to-[#0a9456] border-2 border-[#D9AA45] flex items-center justify-center text-[#D9AA45] shadow-xl group-hover:scale-110 transition-transform duration-300 relative">
-                        <Crown className="w-10 h-10 text-[#D9AA45]" />
-                        <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#064D32] border border-[#D9AA45] flex items-center justify-center text-[9px] font-black text-white">
-                          MC
-                        </div>
-                      </div>
-                      <span className="text-[10px] uppercase tracking-widest text-[#D9AA45] font-semibold mt-3">
-                        Espaço para Foto Oficial
-                      </span>
+                    {/* Fundo elegante caso a foto ainda esteja sendo carregada */}
+                    <div className="relative z-0 flex flex-col items-center justify-center p-6 text-center text-emerald-200/40 text-[10px]">
+                      <span>Foto Oficial</span>
                     </div>
 
                     {/* Detalhe Dourado na Divisória */}

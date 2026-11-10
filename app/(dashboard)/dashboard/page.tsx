@@ -94,7 +94,7 @@ export default function DashboardOverviewPage() {
     const details = encodeURIComponent(
       `Sessão Oficial do Capítulo Professor Carvalho Neves Nº 500.\nPor favor, confirme sua presença pelo portal do capítulo.`
     );
-    const location = encodeURIComponent(m.location || "A∴R∴L∴S∴ Caridade II nº 135");
+    const location = encodeURIComponent(m.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)");
 
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${datesStr}&details=${details}&location=${location}`;
   };
@@ -213,10 +213,10 @@ export default function DashboardOverviewPage() {
               <Wallet className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-3xl font-extrabold text-white">R$ 50,00</p>
-          <p className="text-[11px] text-emerald-300 mt-1 flex items-center gap-1">
-            <span>Acessar caixa</span>
-            <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+          <p className="text-2xl font-extrabold text-white">R$ 22 / R$ 25</p>
+          <p className="text-[11px] text-emerald-300 mt-1 flex items-center justify-between">
+            <span>DM R$ 22 • Maçom R$ 25 (Dia 28)</span>
+            <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform shrink-0" />
           </p>
         </Link>
       </div>
@@ -277,7 +277,7 @@ export default function DashboardOverviewPage() {
             </div>
             <div className="flex items-center gap-2.5">
               <MapPin className="w-4 h-4 text-emerald-400" />
-              <span>{nextMeeting.location || "A∴R∴L∴S∴ Caridade II nº 135"}</span>
+              <span>{nextMeeting.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"}</span>
             </div>
           </div>
         </div>
@@ -290,24 +290,24 @@ export default function DashboardOverviewPage() {
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Módulo 1: Calendário & Chamada */}
+          {/* Módulo 1: Reuniões, Atas & Chamada */}
           <Link
             href="/dashboard/chamada"
             className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:border-emerald-500/40 hover:bg-white/[0.07] transition-all flex flex-col justify-between group"
           >
             <div>
               <div className="w-10 h-10 rounded-xl bg-[#087443]/20 border border-[#087443]/40 text-emerald-300 flex items-center justify-center mb-4">
-                <Calendar className="w-5 h-5 text-[#D9AA45]" />
+                <ClipboardCheck className="w-5 h-5 text-[#D9AA45]" />
               </div>
               <h4 className="text-base font-bold text-white group-hover:text-emerald-300 transition-colors">
-                Calendário & Frequência
+                Atas & Chamada da Sessão
               </h4>
               <p className="text-xs text-emerald-200/70 mt-2 leading-relaxed">
-                Chamada DeMolay, registro de Tios Maçons, cadastro de maçons visitantes e convocatória para o Google Agenda.
+                Ata e chamada integradas da reunião, DeMolays ativos, Tios Maçons e visitantes (DeMolays e Maçons).
               </p>
             </div>
             <div className="mt-5 flex items-center gap-2 text-xs font-bold text-[#D9AA45]">
-              <span>Acessar Chamada</span>
+              <span>Acessar Atas & Chamada</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
