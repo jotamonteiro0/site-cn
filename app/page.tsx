@@ -16,49 +16,129 @@ import {
   BookOpen,
   Lock,
   Mail,
-  MapPin
+  MapPin,
+  FileText
 } from "lucide-react";
 import Link from "next/link";
 
+function DivisorHeraldico() {
+  return (
+    <div className="divisor-heraldico" aria-hidden="true">
+      <div className="divisor-heraldico-icone">
+        <svg className="w-4 h-4 text-[#D9AA45]" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 const virtues = [
   {
+    numeral: "I",
     name: "Amor Filial",
     description: "Amor e respeito profundo aos pais que nos deram a vida e nos ensinaram os primeiros passos.",
     icon: Heart,
   },
   {
+    numeral: "II",
     name: "Reverência pelas Coisas Sagradas",
     description: "Respeito sincero pela fé alheia e crença inabalável no Pai Celestial.",
     icon: Sparkles,
   },
   {
+    numeral: "III",
     name: "Cortesia",
     description: "A nobreza em palavras e ações, tratando todos com respeito, paciência e dignidade.",
     icon: Smile,
   },
   {
+    numeral: "IV",
     name: "Companheirismo",
     description: "A verdadeira fraternidade que une os irmãos em todos os momentos da caminhada.",
     icon: Users,
   },
   {
+    numeral: "V",
     name: "Fidelidade",
     description: "Lealdade inegociável aos princípios, às promessas assumidas e aos irmãos.",
     icon: ShieldCheck,
   },
   {
+    numeral: "VI",
     name: "Pureza",
     description: "Integridade de pensamentos, pureza de coração e conduta exemplar na sociedade.",
     icon: Sun,
   },
   {
+    numeral: "VII",
     name: "Patriotismo",
     description: "Amor ativo à pátria, respeito às leis e dedicação ao bem comum e à cidadania.",
     icon: Flag,
   },
 ];
 
-// Encontros e Atividades Capitulares (Scroll horizontal estilo Priorado 156)
+// Marcos Históricos (Adaptação dos marcos e linha do tempo do Priorado 156)
+const marcosHistoricos = [
+  {
+    ano: "2012",
+    titulo: "Fundação e Instalação do Capítulo",
+    descricao: "Instalação solene em Teresina - PI, instituindo os ideais de Jacques DeMolay e a formação de lideranças juvenis no Estado do Piauí.",
+    tipo: "Marco Fundacional"
+  },
+  {
+    ano: "2014",
+    titulo: "Aliança das 4 Lojas Patrocinadoras",
+    descricao: "Consolidação do apoio maçônico integrado pelas respeitáveis lojas Abolição nº 4199, Adonhiran nº 2782, Caridade II nº 135 (GOB-PI) e Mansur nº 4591.",
+    tipo: "Aliança Maçônica"
+  },
+  {
+    ano: "2018–2024",
+    titulo: "Maturidade & Mais de 20 Gestões",
+    descricao: "Mais de duas décadas de liderança jovem ininterrupta, formando cidadãos exemplares, filantropos e expoentes na comunidade teresinense.",
+    tipo: "Tradição Ininterrupta"
+  },
+  {
+    ano: "2026/2027",
+    titulo: "Gestão XXVI & Era Digital do CN",
+    descricao: "Implantação do Sistema Integrado de Gestão Capitular, com transparência financeira, acervo digital e modernização institucional.",
+    tipo: "Modernização & Futuro"
+  }
+];
+
+// Vitrine Gráfica de Documentos Oficiais (Inspirada no Acervo do Priorado 156)
+const vitrineDocumentos = [
+  {
+    titulo: "Regimento Interno do Capítulo 500",
+    descricao: "Estatuto normativo local chancelado pelo Conselho Consultivo e Lojas Patrocinadoras.",
+    categoria: "Regimento Local",
+    formato: "PDF",
+    tamanho: "1.2 MB",
+  },
+  {
+    titulo: "Regulamento Geral DeMolay (RGD)",
+    descricao: "Diretrizes e normas nacionais promulgadas pelo Supremo Conselho DeMolay Brasil.",
+    categoria: "Legislação SCDB",
+    formato: "PDF",
+    tamanho: "2.4 MB",
+  },
+  {
+    titulo: "Código de Ética & Conduta Juvenil",
+    descricao: "Preceitos de honra, companheirismo e integridade aplicados a todos os membros.",
+    categoria: "Diretriz Moral",
+    formato: "PDF",
+    tamanho: "980 KB",
+  },
+  {
+    titulo: "Manual de Cerimonial & Ritualística",
+    descricao: "Instruções oficiais sobre a liturgia sagrada, paramentos e trabalhos capitulares.",
+    categoria: "Ritualística",
+    formato: "PDF",
+    tamanho: "3.1 MB",
+  },
+];
+
+// Encontros e Atividades Capitulares (Scroll horizontal fluido)
 const encontros = [
   {
     id: 1,
@@ -103,25 +183,32 @@ export default function Home() {
         {/* ======================================================== */}
         {/* HERO SECTION COM BRASÃO DO CN (ESTILO PRIORADO 156) */}
         {/* ======================================================== */}
-        <section className="relative bg-gradient-to-b from-[#064D32] to-[#087443] text-white py-20 sm:py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <section className="relative bg-gradient-to-b from-[#064D32] via-[#053d28] to-[#04281A] text-white py-20 sm:py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#D9AA45_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
 
-          <div className="relative z-10 mx-auto max-w-4xl rounded-3xl border border-white/10 bg-white/[0.03] px-5 py-10 text-center shadow-2xl backdrop-blur-sm sm:px-10 sm:py-14">
-            {/* BRASÃO OFICIAL HERÁLDICO DO CN */}
+          <div className="relative z-10 mx-auto max-w-4xl rounded-3xl border border-white/10 bg-white/[0.04] px-5 py-10 text-center shadow-2xl backdrop-blur-md sm:px-10 sm:py-14">
+            {/* BRASÃO OFICIAL HERÁLDICO DO CN COM SHIMMER DINÂMICO */}
             <div className="flex flex-col items-center mb-6">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-b from-[#D9AA45]/30 to-[#04281A] p-1 border-2 border-[#D9AA45] shadow-xl backdrop-blur-md flex items-center justify-center">
-                <div className="w-full h-full rounded-xl bg-[#04281A] border border-[#D9AA45]/50 flex flex-col items-center justify-center text-center p-2">
-                  <ShieldCheck className="w-10 h-10 sm:w-12 sm:h-12 text-[#D9AA45] drop-shadow-[0_0_8px_rgba(217,170,69,0.5)]" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-[#D9AA45] mt-1 font-mono">
+              <div className="brasao-shimmer-container w-28 h-28 sm:w-32 sm:h-32 rounded-3xl p-1 bg-gradient-to-b from-[#D9AA45] via-[#D9AA45]/40 to-[#04281A] shadow-[0_0_35px_rgba(217,170,69,0.35)] flex items-center justify-center">
+                <div className="w-full h-full rounded-[22px] bg-[#04281A] border border-[#D9AA45]/60 flex flex-col items-center justify-center text-center p-2 relative shadow-inner">
+                  <ShieldCheck className="w-12 h-12 sm:w-14 sm:h-14 text-[#D9AA45] drop-shadow-[0_0_12px_rgba(217,170,69,0.6)]" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#D9AA45] mt-1 font-mono">
                     CN Nº 500
+                  </span>
+                  <span className="text-[8px] uppercase tracking-wider text-emerald-200/80 font-medium">
+                    Teresina • PI
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-[#D9AA45]/40 text-xs font-semibold text-[#D9AA45] uppercase tracking-wider mb-6">
+            {/* SELO DE VIDRO HERÁLDICO */}
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full selo-vidro-cn text-xs font-semibold text-[#D9AA45] uppercase tracking-wider mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D9AA45] animate-pulse" />
               <span>Fundado em 2012</span>
-              <span>•</span>
+              <span className="text-white/40">•</span>
+              <span>Ordem DeMolay</span>
+              <span className="text-white/40">•</span>
               <span>Teresina - PI</span>
             </div>
 
@@ -154,7 +241,7 @@ export default function Home() {
         </section>
 
         {/* ======================================================== */}
-        {/* SETE VIRTUDES CARDEAIS (ORDEM DEMOLAY ORGANIZADA E FLUIDA) */}
+        {/* SETE VIRTUDES CARDEAIS (CARDS HERÁLDICOS ESTILO PRIORADO 156) */}
         {/* ======================================================== */}
         <section id="virtudes" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -164,8 +251,8 @@ export default function Home() {
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 mt-2 sm:text-4xl">
               As Sete Virtudes Cardeais
             </h2>
-            <div className="w-16 h-1 bg-[#D9AA45] mx-auto mt-4 rounded-full" />
-            <p className="mt-4 text-base text-gray-600 leading-relaxed">
+            <DivisorHeraldico />
+            <p className="mt-2 text-base text-gray-600 leading-relaxed">
               Os preceitos que norteiam a conduta diária e o crescimento pessoal de cada jovem DeMolay no Capítulo 500.
             </p>
           </div>
@@ -176,11 +263,16 @@ export default function Home() {
               return (
                 <div
                   key={i}
-                  className="bg-white rounded-xl p-6 border border-gray-200/80 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
+                  className="card-heraldico rounded-2xl p-6 shadow-sm flex flex-col justify-between"
                 >
                   <div>
-                    <div className="w-12 h-12 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#087443] mb-4">
-                      <Icon className="w-6 h-6" />
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-[#087443]">
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-black tracking-wider badge-heraldico-dourado font-mono">
+                        {v.numeral}
+                      </span>
                     </div>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">
                       {v.name}
@@ -189,8 +281,9 @@ export default function Home() {
                       {v.description}
                     </p>
                   </div>
-                  <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-1 text-xs font-semibold text-[#087443]">
-                    <span>Virtude {i + 1} de 7</span>
+                  <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-[#087443]">
+                    <span>Virtude Cardeal {v.numeral}</span>
+                    <span className="text-gray-400 font-mono">#{i + 1} de 7</span>
                   </div>
                 </div>
               );
@@ -209,18 +302,83 @@ export default function Home() {
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 mt-2 sm:text-4xl">
               O Patrono Professor Carvalho Neves
             </h2>
-            <div className="w-16 h-1 bg-[#D9AA45] mx-auto mt-4 rounded-full" />
-            <p className="mt-6 text-base text-gray-700 leading-relaxed text-left sm:text-justify">
+            <DivisorHeraldico />
+            <p className="mt-4 text-base text-gray-700 leading-relaxed text-left sm:text-justify">
               O <strong>Capítulo Professor Carvalho Neves Nº 500</strong> honra a memória e o legado educacional, cívico e moral de seu patrono. Atuando na cidade de <strong>Teresina</strong>, Piauí, desde sua fundação em 2012, o Capítulo tem sido um polo vivo de aperfeiçoamento da juventude e de serviço à sociedade local.
             </p>
             <div className="mt-8 flex justify-center">
               <a
-                href="#gestoes"
+                href="#marcos"
                 className="inline-flex items-center gap-2 text-sm font-semibold text-[#087443] hover:text-[#064D32] transition-colors cursor-pointer"
               >
-                <span>Conheça a galeria de gestões que construíram essa história</span>
+                <span>Conheça a linha de tradição e marcos históricos</span>
                 <ArrowRight className="w-4 h-4" />
               </a>
+            </div>
+          </div>
+        </section>
+
+        {/* ======================================================== */}
+        {/* LINHA DO TEMPO CAPITULAR (MARCOS HISTÓRICOS - ESTILO PRIORADO 156) */}
+        {/* ======================================================== */}
+        <section id="marcos" className="py-20 bg-gradient-to-b from-white via-[#F2F5F1] to-white border-b border-gray-200/80 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-16">
+              <span className="text-xs uppercase tracking-widest text-[#087443] font-bold">
+                Evolução & Legado
+              </span>
+              <h2 className="text-3xl font-bold tracking-tight text-gray-900 mt-2 sm:text-4xl">
+                Linha de Tradição e Marcos Históricos
+              </h2>
+              <DivisorHeraldico />
+              <p className="mt-2 text-base text-gray-600 leading-relaxed max-w-2xl mx-auto">
+                A trajetória do Capítulo Professor Carvalho Neves Nº 500 desde sua sagração em solo piauiense até a era da consolidação institucional.
+              </p>
+            </div>
+
+            {/* TIMELINE CONTAINER */}
+            <div className="relative pl-10 md:pl-0">
+              {/* LINHA CENTRAL / LATERAL */}
+              <div className="timeline-linha-cn" />
+
+              <div className="space-y-10">
+                {marcosHistoricos.map((m, idx) => {
+                  const isEven = idx % 2 === 0;
+                  return (
+                    <div
+                      key={idx}
+                      className={`relative flex flex-col md:flex-row items-start md:items-center ${
+                        isEven ? "md:flex-row-reverse" : ""
+                      }`}
+                    >
+                      {/* PONTO CENTRAL */}
+                      <div className="absolute -left-10 md:left-1/2 md:-translate-x-1/2 top-4 md:top-auto flex items-center justify-center">
+                        <div className="timeline-ponto-cn" />
+                      </div>
+
+                      {/* CARD DO MARCO */}
+                      <div className="w-full md:w-[calc(50%-2rem)]">
+                        <div className="card-heraldico rounded-2xl p-6 shadow-sm">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black tracking-wider badge-heraldico-dourado font-mono">
+                              {m.ano}
+                            </span>
+                            <span className="text-[11px] font-semibold text-[#087443] uppercase tracking-wider">
+                              {m.tipo}
+                            </span>
+                          </div>
+                          <h3 className="text-base font-bold text-gray-900 mt-1 mb-2">
+                            {m.titulo}
+                          </h3>
+                          <p className="text-sm text-gray-600 leading-relaxed">
+                            {m.descricao}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>
@@ -236,8 +394,8 @@ export default function Home() {
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 mt-2 sm:text-4xl">
               Galeria de Gestões
             </h2>
-            <div className="w-16 h-1 bg-[#D9AA45] mx-auto mt-4 rounded-full" />
-            <p className="mt-4 text-base text-gray-600 leading-relaxed">
+            <DivisorHeraldico />
+            <p className="mt-2 text-base text-gray-600 leading-relaxed">
               Mais de 25 gestões dedicadas ao crescimento contínuo do Capítulo Nº 500.
             </p>
           </div>
@@ -352,10 +510,78 @@ export default function Home() {
         </section>
 
         {/* ======================================================== */}
+        {/* VITRINE GRÁFICA DE DOCUMENTOS OFICIAIS (ESTILO PRIORADO 156) */}
+        {/* ======================================================== */}
+        <section id="documentos-oficiais" className="py-20 bg-white border-y border-gray-200/80 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center max-w-2xl mx-auto mb-16">
+              <span className="text-xs uppercase tracking-widest text-[#087443] font-bold">
+                Transparência & Governança
+              </span>
+              <h2 className="text-3xl font-bold tracking-tight text-gray-900 mt-2 sm:text-4xl">
+                Acervo & Documentos Oficiais
+              </h2>
+              <DivisorHeraldico />
+              <p className="mt-2 text-base text-gray-600 leading-relaxed">
+                Acesso público aos atos constitutivos, regulamentos e diretrizes que garantem a regularidade e tradição capitular.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {vitrineDocumentos.map((doc, idx) => (
+                <div
+                  key={idx}
+                  className="card-heraldico rounded-2xl p-5 shadow-sm flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-[#087443]/10 text-[#087443] border border-[#087443]/20">
+                        {doc.categoria}
+                      </span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-amber-50 text-amber-700 border border-amber-200">
+                        {doc.formato}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-gray-900 text-sm mb-2 leading-snug">
+                      {doc.titulo}
+                    </h3>
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      {doc.descricao}
+                    </p>
+                  </div>
+
+                  <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
+                    <span className="text-gray-400 font-mono">{doc.tamanho}</span>
+                    <Link
+                      href="/documentos"
+                      className="inline-flex items-center gap-1 font-semibold text-[#087443] hover:text-[#064D32] transition-colors"
+                    >
+                      <span>Consultar</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-10 text-center">
+              <Link
+                href="/documentos"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#F2F5F1] hover:bg-emerald-50 text-[#087443] font-semibold text-sm shadow-sm hover:shadow-md transition-all border border-[#087443]/20 group cursor-pointer"
+              >
+                <FileText className="w-4 h-4 text-[#D9AA45]" />
+                <span>Acessar Acervo Documental Completo do Capítulo</span>
+                <ArrowRight className="w-4 h-4 text-[#087443] group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ======================================================== */}
         {/* NOSSOS ENCONTROS E ATIVIDADES (SCROLL LATERAL ESTILO PRIORADO 156) */}
         {/* ======================================================== */}
-        <section id="encontros" className="py-20 bg-white border-y border-gray-200/80 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto space-y-8">
+        <section id="encontros" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <div className="space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
               <div>
                 <span className="text-xs uppercase tracking-widest text-[#087443] font-bold">
@@ -377,12 +603,12 @@ export default function Home() {
               </div>
             </div>
 
-            {/* SCROLL HORIZONTAL (SNAP CAROUSEL) */}
+            {/* SCROLL HORIZONTAL (SNAP CAROUSEL) COM CARDS HERÁLDICOS */}
             <div className="flex gap-5 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-[#087443]/30">
               {encontros.map((item) => (
                 <div
                   key={item.id}
-                  className="min-w-[280px] sm:min-w-[340px] max-w-[340px] snap-start bg-[#F2F5F1] rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md hover:border-emerald-500/40 transition-all flex flex-col justify-between shrink-0"
+                  className="min-w-[280px] sm:min-w-[340px] max-w-[340px] snap-start card-heraldico rounded-2xl p-6 shadow-sm flex flex-col justify-between shrink-0"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -403,7 +629,7 @@ export default function Home() {
                     </p>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-gray-200/60 flex items-center gap-1.5 text-[11px] text-gray-500">
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-1.5 text-[11px] text-gray-500">
                     <MapPin className="w-3.5 h-3.5 text-[#087443] shrink-0" />
                     <span className="truncate">{item.local}</span>
                   </div>
@@ -411,13 +637,13 @@ export default function Home() {
               ))}
             </div>
 
-            {/* INSTAGRAM DISCRETO EMBAIXO (CONFORME SOLICITADO) */}
+            {/* INSTAGRAM DISCRETO EMBAIXO */}
             <div className="pt-4 text-center">
               <a
                 href="https://instagram.com/cap.carvalhoneves500"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 hover:bg-gray-100 border border-gray-200 text-xs text-gray-600 hover:text-gray-900 transition-colors shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-gray-100 border border-gray-200 text-xs text-gray-600 hover:text-gray-900 transition-colors shadow-sm"
               >
                 <svg className="w-4 h-4 text-pink-600" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
@@ -432,54 +658,56 @@ export default function Home() {
         {/* ======================================================== */}
         {/* CONTATO (PRESERVADO ORIGINAL) */}
         {/* ======================================================== */}
-        <section id="contato" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-xs uppercase tracking-widest text-[#087443] font-bold">
-              Fale Conosco
-            </span>
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 mt-2 sm:text-4xl">
-              Canais de Contato
-            </h2>
-            <div className="w-16 h-1 bg-[#D9AA45] mx-auto mt-4 rounded-full" />
-            <p className="mt-4 text-base text-gray-600 leading-relaxed">
-              Dúvidas sobre ingresso, parcerias institucionais ou mensagens à diretoria do Capítulo.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="space-y-4">
-              <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-[#087443]/10 text-[#087443] flex items-center justify-center shrink-0">
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm text-gray-900">Local das Sessões</h4>
-                  <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                    A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI), Teresina/PI — Brasil
-                  </p>
-                  <p className="text-[11px] text-[#087443] font-semibold mt-1">Aos Domingos, às 09:00</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-[#087443]/10 text-[#087443] flex items-center justify-center shrink-0">
-                  <Mail className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm text-gray-900">E-mail Institucional</h4>
-                  <p className="text-xs text-gray-600 mt-1">
-                    capitulo500@demolaybrasil.org.br
-                  </p>
-                  <p className="text-[11px] text-gray-400 mt-1">Retorno em até 48 horas úteis</p>
-                </div>
-              </div>
+        <section id="contato" className="py-20 bg-white border-t border-gray-200/80 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center max-w-2xl mx-auto mb-16">
+              <span className="text-xs uppercase tracking-widest text-[#087443] font-bold">
+                Fale Conosco
+              </span>
+              <h2 className="text-3xl font-bold tracking-tight text-gray-900 mt-2 sm:text-4xl">
+                Canais de Contato
+              </h2>
+              <DivisorHeraldico />
+              <p className="mt-2 text-base text-gray-600 leading-relaxed">
+                Dúvidas sobre ingresso, parcerias institucionais ou mensagens à diretoria do Capítulo.
+              </p>
             </div>
 
-            <div className="lg:col-span-2 bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-900 mb-6">
-                Envie uma mensagem ao Mestre Conselheiro
-              </h3>
-              <ContactForm />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="space-y-4">
+                <div className="bg-[#F2F5F1] p-6 rounded-2xl border border-gray-200 shadow-sm flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-[#087443]/10 text-[#087443] flex items-center justify-center shrink-0">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-gray-900">Local das Sessões</h4>
+                    <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                      A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI), Teresina/PI — Brasil
+                    </p>
+                    <p className="text-[11px] text-[#087443] font-semibold mt-1">Aos Domingos, às 09:00</p>
+                  </div>
+                </div>
+
+                <div className="bg-[#F2F5F1] p-6 rounded-2xl border border-gray-200 shadow-sm flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-[#087443]/10 text-[#087443] flex items-center justify-center shrink-0">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-gray-900">E-mail Institucional</h4>
+                    <p className="text-xs text-gray-600 mt-1">
+                      capitulo500@demolaybrasil.org.br
+                    </p>
+                    <p className="text-[11px] text-gray-400 mt-1">Retorno em até 48 horas úteis</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-2 bg-[#F2F5F1] p-8 rounded-2xl border border-gray-200 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-6">
+                  Envie uma mensagem ao Mestre Conselheiro
+                </h3>
+                <ContactForm />
+              </div>
             </div>
           </div>
         </section>
