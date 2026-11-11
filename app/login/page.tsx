@@ -199,9 +199,9 @@ export default function LoginPage() {
       // Suporte a login por ID oficial ou e-mail
       if (!targetEmail.includes("@")) {
         const { data: resolvedEmail } = await supabase.rpc(
-          "get_email_by_cid",
+          "get_email_by_id",
           {
-            lookup_cid: targetEmail,
+            lookup_id: targetEmail,
           }
         );
 
