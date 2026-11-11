@@ -209,6 +209,11 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
         .update({ avatar_path: finalUrl })
         .eq("id", currentUser.id);
 
+      await supabase
+        .from("members")
+        .update({ photo_url: finalUrl })
+        .eq("profile_id", currentUser.id);
+
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("cn_avatar_updated"));
       }

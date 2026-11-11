@@ -189,7 +189,7 @@ export default function MemberSelfServicePage() {
           supabase.auth.getUser(),
           supabase
             .from("members")
-            .select("id, cid, full_name, category, regularity, masonic_lodge, initiation_date, demolay_degree_date, birth_date, email, phone")
+            .select("id, cid, photo_url, full_name, category, regularity, masonic_lodge, initiation_date, demolay_degree_date, birth_date, email, phone")
             .order("full_name", { ascending: true }),
           supabase
             .from("meetings")
@@ -216,9 +216,9 @@ export default function MemberSelfServicePage() {
             userMember = typedMembers.find((m) => m.category === "demolay_ativo") || typedMembers[0];
           }
 
-          // Busca foto de perfil salva no Supabase profiles ou no cache local
-          let profilePhoto: string | undefined = undefined;
-          if (user) {
+          // Busca foto de perfil salva no Supabase (members.photo_url ou profiles.avatar_path) ou no cache local
+          let profilePhoto: string | undefined = userMember.photo_url;
+          if (!profilePhoto && user) {
             const { data: prof } = await supabase
               .from("profiles")
               .select("avatar_path")
@@ -644,24 +644,22 @@ export default function MemberSelfServicePage() {
             upsert: true,
           });
 
-        if (!uploadError) {
-          const { data: publicUrlData } = supabase.storage
-            .from("membros")
-            .getPublicUrl(filePath);
+        const finalUrl = !uploadError
+          ? supabase.storage.from("membros").getPublicUrl(filePath).data.publicUrl
+          : croppedDataUrl;
 
-          const finalUrl = publicUrlData?.publicUrl || croppedDataUrl;
-          if (user) {
-            await supabase
-              .from("profiles")
-              .update({ avatar_path: finalUrl })
-              .eq("id", user.id);
-          }
-        } else if (user) {
+        // Persiste a foto no banco de dados tanto na tabela profiles quanto members
+        if (user) {
           await supabase
             .from("profiles")
-            .update({ avatar_path: croppedDataUrl })
+            .update({ avatar_path: finalUrl })
             .eq("id", user.id);
         }
+
+        await supabase
+          .from("members")
+          .update({ photo_url: finalUrl })
+          .eq("id", currentMember.id);
       } catch (storageErr) {
         console.warn("Storage upload fallback para perfil:", storageErr);
       }
@@ -748,16 +746,16 @@ export default function MemberSelfServicePage() {
         
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-            {/* Foto de Perfil com Suporte a Upload e Efeito Glassmorphism */}
+            {/* Foto de Perfil com Suporte a Upload e Efeito Glassmorphism Circular */}
             <div className="relative group shrink-0">
-              <div className="brasao-shimmer-container w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-tr from-[#D9AA45] via-amber-200 to-[#087443] p-0.5 shadow-2xl overflow-hidden">
-                <div className="w-full h-full rounded-2xl bg-[#04281A] flex items-center justify-center text-2xl font-bold text-[#D9AA45] overflow-hidden relative">
+              <div className="brasao-shimmer-container w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-[#D9AA45] via-amber-200 to-[#087443] p-0.5 shadow-2xl overflow-hidden">
+                <div className="w-full h-full rounded-full bg-[#04281A] flex items-center justify-center text-2xl font-bold text-[#D9AA45] overflow-hidden relative">
                   {currentMember?.photo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={currentMember.photo_url}
                       alt={currentMember.full_name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover rounded-full"
                     />
                   ) : (
                     <span>
@@ -765,7 +763,7 @@ export default function MemberSelfServicePage() {
                     </span>
                   )}
                   {isUploadingPhoto && (
-                    <div className="absolute inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center text-xs text-white font-semibold">
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center text-xs text-white font-semibold rounded-full">
                       Enviando...
                     </div>
                   )}
@@ -775,7 +773,7 @@ export default function MemberSelfServicePage() {
               {/* Botão de Câmera Sobreposto */}
               <label
                 htmlFor="profile-photo-input"
-                className="absolute -bottom-1 -right-1 p-2 rounded-xl bg-[#087443] hover:bg-[#D9AA45] text-white hover:text-[#04281A] border border-[#D9AA45]/50 shadow-lg cursor-pointer transition-all transform hover:scale-110 flex items-center justify-center backdrop-blur-md"
+                className="absolute -bottom-1 -right-1 p-2 rounded-full bg-[#087443] hover:bg-[#D9AA45] text-white hover:text-[#04281A] border border-[#D9AA45]/50 shadow-lg cursor-pointer transition-all transform hover:scale-110 flex items-center justify-center backdrop-blur-md"
                 title="Alterar Foto de Perfil"
               >
                 <Camera className="w-3.5 h-3.5" />
