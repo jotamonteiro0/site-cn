@@ -7,11 +7,11 @@ alter table public.members add column if not exists demolay_degree_date date;
 -- 2. Atualizar Lojas Maçônicas oficiais informadas
 update public.members
 set masonic_lodge = 'A∴R∴L∴S∴ Abolição nº 4199'
-where cid = '122848';
+where id_demolay = '122848' or cid = '122848';
 
 update public.members
 set masonic_lodge = 'A∴R∴L∴S∴ Grande Mestre Alberto Mansur nº 4591'
-where cid in ('100967', '129705');
+where id_demolay in ('100967', '129705') or cid in ('100967', '129705');
 
 -- 3. Padronizar local padrão das reuniões para A∴R∴L∴S∴ Caridade II nº 135
 update public.meetings

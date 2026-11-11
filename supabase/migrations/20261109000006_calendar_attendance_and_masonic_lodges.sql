@@ -7,17 +7,18 @@ alter table public.members
   add column if not exists masonic_lodge text;
 
 -- 2. Cadastro / Atualização das Lojas Maçônicas dos Tios Consultores
-update public.members set masonic_lodge = 'A∴R∴L∴S∴ Abolição nº 4199' where cid in ('122850', '92189', '91553', '153893');
-update public.members set masonic_lodge = 'A∴R∴L∴S∴ Adonhiran nº 2782' where cid in ('91709', '89059', '62127', '153897', '153896');
-update public.members set masonic_lodge = 'A∴R∴L∴S∴ Caridade II nº 135' where cid in ('153894', '91291');
-update public.members set masonic_lodge = 'A∴R∴L∴S∴ Grande Mestre Alberto Mansur nº 4591' where cid in ('132662', '134106', '153895');
+update public.members set masonic_lodge = 'A∴R∴L∴S∴ Abolição nº 4199' where id_demolay in ('122850', '92189', '91553', '153893') or cid in ('122850', '92189', '91553', '153893');
+update public.members set masonic_lodge = 'A∴R∴L∴S∴ Adonhiran nº 2782' where id_demolay in ('91709', '89059', '62127', '153897', '153896') or cid in ('91709', '89059', '62127', '153897', '153896');
+update public.members set masonic_lodge = 'A∴R∴L∴S∴ Caridade II nº 135' where id_demolay in ('153894', '91291') or cid in ('153894', '91291');
+update public.members set masonic_lodge = 'A∴R∴L∴S∴ Grande Mestre Alberto Mansur nº 4591' where id_demolay in ('132662', '134106', '153895') or cid in ('132662', '134106', '153895');
 
 -- Leonardo Rodrigues (Caridade II)
-insert into public.members (chapter_id, cid, full_name, category, regularity, member_type, status, is_active, masonic_lodge)
-values ('00000000-0000-0000-0000-000000000500', 'LEO-CARIDADE2', 'Leonardo Rodrigues', 'macom', 'Consultor', 'macom', 'ativo', true, 'A∴R∴L∴S∴ Caridade II nº 135')
+insert into public.members (chapter_id, id_demolay, cid, full_name, category, regularity, member_type, status, is_active, masonic_lodge)
+values ('00000000-0000-0000-0000-000000000500', 'LEO-CARIDADE2', 'LEO-CARIDADE2', 'Leonardo Rodrigues', 'macom', 'Consultor', 'macom', 'ativo', true, 'A∴R∴L∴S∴ Caridade II nº 135')
 on conflict (chapter_id, cid) do update set
   full_name = excluded.full_name,
-  masonic_lodge = excluded.masonic_lodge;
+  masonic_lodge = excluded.masonic_lodge,
+  id_demolay = excluded.id_demolay;
 
 -- 3. Tipos padrão de reuniões capitulares
 insert into public.meeting_types (chapter_id, name)
