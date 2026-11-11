@@ -56,6 +56,12 @@ export default function MembrosPage() {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          const isPermanentMaster =
+            user.user_metadata?.cid === "127738" ||
+            user.user_metadata?.cid === "102836" ||
+            user.email === "joaomonteiro0@icloud.com" ||
+            user.email === "airton@carvalhoneves500.org.br";
+
           const { data: membership } = await supabase
             .from("chapter_memberships")
             .select("role_code")
@@ -63,7 +69,9 @@ export default function MembrosPage() {
             .eq("is_active", true)
             .maybeSingle();
 
-          if (membership?.role_code) {
+          if (isPermanentMaster || membership?.role_code === "master") {
+            setUserRole("master");
+          } else if (membership?.role_code) {
             setUserRole(membership.role_code);
           }
         }

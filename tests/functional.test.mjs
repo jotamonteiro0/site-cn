@@ -62,25 +62,27 @@ describe("Capítulo Carvalho Neves Nº 500 — Suíte Completa de Testes Institu
 
   // 2. SEGURANÇA, RBAC E CONTROLE DE ACESSO
   describe("B. Segurança, Perfis e RBAC", () => {
-    test("João Guilherme (CID 127738) possui perfil Master ativo", async () => {
-      const { data: member, error: mErr } = await adminClient
+    test("João Guilherme (CID 127738) e Airton (CID 102836) possuem perfil Master ativo", async () => {
+      const { data: members, error: mErr } = await adminClient
         .from("members")
         .select("id, cid, full_name")
-        .eq("cid", "127738")
-        .single();
+        .in("cid", ["127738", "102836"]);
 
       assert.ifError(mErr);
-      assert.ok(member, "Membro deve existir");
+      assert.strictEqual(members.length, 2, "Ambos os mantenedores devem existir");
 
       const { data: membership, error: mbErr } = await adminClient
         .from("chapter_memberships")
-        .select("role_code, is_active")
+        .select("role_code, is_active, member_id")
         .eq("chapter_id", CHAPTER_ID)
         .eq("role_code", "master")
         .eq("is_active", true);
 
       assert.ifError(mbErr);
-      assert.ok(membership.length > 0, "Deve haver administradores com papel master ativo");
+      const masterMemberIds = membership.map((m) => m.member_id);
+      members.forEach((m) => {
+        assert.ok(masterMemberIds.includes(m.id), `Membro ${m.full_name} (${m.cid}) deve possuir papel Master ativo`);
+      });
     });
 
     test("Membro sem autenticação é bloqueado por RLS para dados privados de membros", async () => {

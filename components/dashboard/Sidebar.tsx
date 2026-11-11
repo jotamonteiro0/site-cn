@@ -111,11 +111,20 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
 
           const cachedAvatar = typeof window !== "undefined" ? localStorage.getItem(`cn_member_avatar_${user.id}`) : null;
 
+          const isPermanentMaster =
+            user.user_metadata?.cid === "127738" ||
+            user.user_metadata?.cid === "102836" ||
+            user.email === "joaomonteiro0@icloud.com" ||
+            user.email === "airton@carvalhoneves500.org.br" ||
+            membership?.role_code === "master";
+
+          const roleCode = isPermanentMaster ? "master" : (membership?.role_code || "membro");
+
           setCurrentUser({
             id: user.id,
             email: user.email,
             fullName: profile?.full_name || (user.user_metadata?.full_name as string) || user.email?.split("@")[0] || "Membro",
-            roleCode: membership?.role_code || "membro",
+            roleCode,
             avatarPath: profile?.avatar_path || cachedAvatar,
           });
         }

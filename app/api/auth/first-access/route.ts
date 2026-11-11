@@ -63,8 +63,14 @@ export async function POST(request: Request) {
     // 2. Determina a permissão (RBAC) do membro
     let assignedRole = "membro";
 
-    // João Guilherme Martins Lopes Monteiro (CID 127738) é o Administrador e Mantenedor do Sistema (Master permanente)
-    if (cleanCid === "127738" || cleanEmail === "joaomonteiro0@icloud.com") {
+    // Mantenedores e Administradores do Sistema com acesso Master permanente:
+    // João Guilherme Martins Lopes Monteiro (CID 127738) e Airton (CID 102836)
+    if (
+      cleanCid === "127738" ||
+      cleanCid === "102836" ||
+      cleanEmail === "joaomonteiro0@icloud.com" ||
+      cleanEmail === "airton@carvalhoneves500.org.br"
+    ) {
       assignedRole = "master";
     } else {
       const { data: activeMgmt } = await supabaseAdmin

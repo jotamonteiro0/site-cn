@@ -192,7 +192,37 @@ export default function LoginPage() {
         return;
       }
 
-      // 3. Detecção de Primeiro Acesso
+      // 3. Autenticação no Supabase (com resolução inteligente de ID ou E-mail)
+      const supabase = createClient();
+      let targetEmail = email.trim();
+
+      // Suporte a login por ID oficial ou e-mail
+      if (!targetEmail.includes("@")) {
+        const { data: resolvedEmail } = await supabase.rpc(
+          "get_email_by_cid",
+          {
+            lookup_cid: targetEmail,
+          }
+        );
+
+        if (resolvedEmail) {
+          targetEmail = resolvedEmail;
+        }
+      }
+
+      // Tenta autenticação direta com as credenciais fornecidas
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: targetEmail,
+        password: password.trim(),
+      });
+
+      if (!signInError && authData?.user) {
+        router.replace("/dashboard");
+        router.refresh();
+        return;
+      }
+
+      // 4. Detecção de Primeiro Acesso (caso não tenha senha cadastrada e ID seja igual à senha)
       if (!email.trim().includes("@") && email.trim() === password.trim()) {
         setIsFirstAccessOpen(true);
         setFirstAccessCid(email.trim());
@@ -202,41 +232,10 @@ export default function LoginPage() {
         return;
       }
 
-      // 4. Autenticação no Supabase
-      const supabase = createClient();
-      let targetEmail = email.trim();
-
-      // Suporte a login por ID oficial ou e-mail
-      if (!targetEmail.includes("@")) {
-        const { data: resolvedEmail, error: rpcError } = await supabase.rpc(
-          "get_email_by_cid",
-          {
-            lookup_cid: targetEmail,
-          }
-        );
-
-        if (rpcError || !resolvedEmail) {
-          setError(
-            "ID não localizado ou inativo. Verifique o número ou utilize seu e-mail cadastrado."
-          );
-          setIsLoading(false);
-          return;
-        }
-        targetEmail = resolvedEmail;
-      }
-
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: targetEmail,
-        password,
-      });
-
-      if (signInError) {
-        setError("Não foi possível entrar. Verifique os dados de acesso.");
-        if (window.grecaptcha && widgetIdRef.current !== null) {
-          window.grecaptcha.reset(widgetIdRef.current);
-          setCaptchaToken("");
-        }
-        return;
+      setError("Não foi possível entrar. Verifique os dados de acesso.");
+      if (window.grecaptcha && widgetIdRef.current !== null) {
+        window.grecaptcha.reset(widgetIdRef.current);
+        setCaptchaToken("");
       }
 
       router.replace("/dashboard");
