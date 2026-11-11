@@ -9,7 +9,7 @@ declare
 begin
   select email into found_email
   from public.members
-  where cid = trim(lookup_id)
+  where (id_demolay = trim(lookup_id) or cid = trim(lookup_id))
     and is_active = true
     and email is not null
   limit 1;

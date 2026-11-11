@@ -52,4 +52,4 @@ on conflict (chapter_id, cid) do update set
 -- Assegura o e-mail oficial do Master no registro de membro correspondente
 update public.members
 set email = 'joaomonteiro0@icloud.com'
-where chapter_id = '00000000-0000-0000-0000-000000000500' and cid = '127738';
+where chapter_id = '00000000-0000-0000-0000-000000000500' and (id_demolay = '127738' or cid = '127738');

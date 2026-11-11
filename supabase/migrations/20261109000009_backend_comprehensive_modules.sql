@@ -167,7 +167,8 @@ create policy "Staff emite declaracoes"
 create or replace view public.view_member_majority_status as
 select
   m.id as member_id,
-  m.cid,
+  coalesce(m.id_demolay, m.cid) as id_demolay,
+  coalesce(m.id_demolay, m.cid) as cid,
   m.full_name,
   m.category,
   m.birth_date,
@@ -197,7 +198,8 @@ where m.is_active = true;
 create or replace view public.view_member_birthdays as
 select
   m.id as member_id,
-  m.cid,
+  coalesce(m.id_demolay, m.cid) as id_demolay,
+  coalesce(m.id_demolay, m.cid) as cid,
   m.full_name,
   m.category,
   m.birth_date,

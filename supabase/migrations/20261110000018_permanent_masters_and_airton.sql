@@ -1,12 +1,13 @@
 -- ==============================================================================
 -- Migração 18: Garantia Permanente de Acesso Master para Mantenedores
--- João Guilherme Martins Lopes Monteiro (CID 127738) e Airton (CID 102836)
+-- João Guilherme Martins Lopes Monteiro (ID 127738) e Airton (ID 102836)
 -- ==============================================================================
 
--- 1. Garante que Airton (CID 102836) possui registro como membro ativo no Capítulo 500
+-- 1. Garante que Airton (ID 102836) possui registro como membro ativo no Capítulo 500
 insert into public.members (
   id,
   chapter_id,
+  id_demolay,
   cid,
   full_name,
   email,
@@ -20,6 +21,7 @@ values (
   'f9893a64-cf27-43c2-bd0f-617091c00ee5',
   '00000000-0000-0000-0000-000000000500',
   '102836',
+  '102836',
   'Airton',
   'airton@carvalhoneves500.org.br',
   'demolay_ativo',
@@ -28,7 +30,7 @@ values (
   'ativo',
   true
 )
-on conflict (chapter_id, cid)
+on conflict (chapter_id, id_demolay)
 do update set
   full_name = 'Airton',
   email = 'airton@carvalhoneves500.org.br',
@@ -39,7 +41,7 @@ do update set
 update public.members m
 set profile_id = u.id
 from auth.users u
-where m.cid = '102836'
+where (m.id_demolay = '102836' or m.cid = '102836')
   and (u.email = 'airton@carvalhoneves500.org.br' or u.raw_user_meta_data->>'cid' = '102836');
 
 -- 3. Garante chapter_memberships como 'master' para Airton e João
@@ -57,14 +59,14 @@ select
   'master',
   true
 from public.members m
-where m.cid in ('127738', '102836') and m.profile_id is not null
+where (m.id_demolay in ('127738', '102836') or m.cid in ('127738', '102836')) and m.profile_id is not null
 on conflict (chapter_id, user_id)
 do update set
   role_code = 'master',
   is_active = true,
   updated_at = now();
 
--- 4. Protege os CIDs de Mantenedor contra rebaixamento involuntário em set_nominata_officer
+-- 4. Protege os IDs de Mantenedor contra rebaixamento involuntário em set_nominata_officer
 create or replace function public.set_nominata_officer(
   p_management_id uuid,
   p_position_name text,
@@ -170,7 +172,7 @@ begin
           where chapter_id = v_chapter_id
             and user_id = v_prev_profile_id
             and role_code = v_target_role
-            and member_id not in (select id from public.members where cid in ('127738', '102836'));
+            and member_id not in (select id from public.members where id_demolay in ('127738', '102836') or cid in ('127738', '102836'));
         end if;
       end if;
     end if;

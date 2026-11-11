@@ -26,6 +26,7 @@ $$;
 create index if not exists idx_chapter_memberships_user_id on public.chapter_memberships (user_id);
 create index if not exists idx_chapter_memberships_chapter_role on public.chapter_memberships (chapter_id, role_code, is_active);
 
+create index if not exists idx_members_chapter_id_demolay on public.members (chapter_id, id_demolay);
 create index if not exists idx_members_chapter_cid on public.members (chapter_id, cid);
 create index if not exists idx_members_profile_id on public.members (profile_id);
 create index if not exists idx_members_category_active on public.members (category, is_active);
