@@ -169,7 +169,7 @@ async function run() {
       })
       .eq("id", memberId);
   }
-  console.log(`✓ Registro de membro confirmado (ID: ${memberId}, CID: ${cid}).`);
+  console.log(`✓ Registro de membro confirmado (UUID: ${memberId}, ID: ${cid}).`);
 
   // Vincula em chapter_memberships como 'master'
   const { error: membershipError } = await supabase
@@ -194,7 +194,7 @@ async function run() {
   console.log(`✓ Vínculo como Master/Admin confirmado no Capítulo Carvalho Neves Nº 500!`);
   console.log("================================================================================");
   console.log(`SUCESSO! O usuário ${fullName} (${email}) foi configurado como Master/Admin.`);
-  console.log(`Login disponível por e-mail (${email}) ou por CID (${cid}).`);
+  console.log(`Login disponível por e-mail (${email}) ou por ID (${cid}).`);
   console.log("================================================================================");
 }
 

@@ -15,8 +15,8 @@
 * **Detalhamento das Suítes:**
   1. **Capítulo Carvalho Neves Nº 500 — Suíte Institucional (`tests/functional.test.mjs`):**
      * Multi-Tenancy: Capítulo 500 ativo, isolamento de membros e agenda (3/3 aprovados).
-     * RBAC: Validação do perfil Master de João Guilherme (CID 127738), bloqueio de anônimos para dados privados via identificador neutro, funções auxiliares RLS operacionais (3/3 aprovados).
-     * Censo Capitular: 109 membros íntegros sem duplicidade de CID, conformidade com categorias canônicas da Ordem DeMolay (2/2 aprovados).
+     * RBAC: Validação do perfil Master de João Guilherme (ID 127738), bloqueio de anônimos para dados privados via identificador neutro, funções auxiliares RLS operacionais (3/3 aprovados).
+     * Censo Capitular: 109 membros íntegros sem duplicidade de ID, conformidade com categorias canônicas da Ordem DeMolay (2/2 aprovados).
      * Secretaria e Atas: Gestões XXIII a XXV ordenadas cronologicamente, integridade de chamada e presenças (2/2 aprovados).
      * Tesouraria: Unicidade de ano/mês dos períodos contábeis, integridade referencial das taxas mensais (2/2 aprovados).
      * Declarações Oficiais: Geração e validação de código hash único SHA-256 (1/1 aprovado).
@@ -125,7 +125,7 @@
 ## 5. Correções Realizadas Durante a Auditoria
 
 1. **Blindagem dos Testes Automatizados contra Poluição da Produção:**
-   * Removidas tentativas de `update` que utilizavam o CID real de membro institucional (`127738`). Substituído por identificador neutro fictício (`000000000`).
+   * Removidas tentativas de `update` que utilizavam a ID real de membro institucional (`127738`). Substituído por identificador neutro fictício (`000000000`).
    * Eliminada a inserção e exclusão de cobranças temporárias na base de produção em `tests/infinitepay-webhook.test.mjs`; o teste agora roda com cliente mockado em memória.
    * Migrada a suíte `tests/multi-chapter-isolation.test.mjs` para modo estritamente Read-Only quando executada contra a base institucional.
 2. **Correção de Tipagens e Constraints em Migrações e Schemas:**

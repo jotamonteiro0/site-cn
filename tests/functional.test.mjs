@@ -62,7 +62,7 @@ describe("Capítulo Carvalho Neves Nº 500 — Suíte Completa de Testes Institu
 
   // 2. SEGURANÇA, RBAC E CONTROLE DE ACESSO
   describe("B. Segurança, Perfis e RBAC", () => {
-    test("João Guilherme (CID 127738) e Airton (CID 102836) possuem perfil Master ativo", async () => {
+    test("João Guilherme (ID 127738) e Airton (ID 102836) possuem perfil Master ativo", async () => {
       const { data: members, error: mErr } = await adminClient
         .from("members")
         .select("id, cid, full_name")
@@ -86,7 +86,7 @@ describe("Capítulo Carvalho Neves Nº 500 — Suíte Completa de Testes Institu
     });
 
     test("Membro sem autenticação é bloqueado por RLS para dados privados de membros", async () => {
-      // Cliente anônimo tentando atualizar membro sem sessão - utiliza CID fictício para não expor membros reais
+      // Cliente anônimo tentando atualizar membro sem sessão - utiliza ID fictícia para não expor membros reais
       const { error } = await publicClient
         .from("members")
         .update({ full_name: "Tentativa Não Autorizada" })
@@ -107,7 +107,7 @@ describe("Capítulo Carvalho Neves Nº 500 — Suíte Completa de Testes Institu
 
   // 3. CENSO E CADASTRO DE MEMBROS
   describe("C. Censo e Integridade de Membros", () => {
-    test("Quadro de membros possui contagem íntegra e sem CIDs duplicados", async () => {
+    test("Quadro de membros possui contagem íntegra e sem IDs duplicadas", async () => {
       const { data: members, error } = await adminClient
         .from("members")
         .select("id, cid, full_name, category, regularity")
@@ -116,10 +116,10 @@ describe("Capítulo Carvalho Neves Nº 500 — Suíte Completa de Testes Institu
       assert.ifError(error);
       assert.ok(members.length >= 100, "Deve haver mais de 100 membros no censo capitular");
 
-      const cids = new Set();
+      const memberIds = new Set();
       for (const m of members) {
-        assert.ok(!cids.has(m.cid), `CID duplicado detectado: ${m.cid}`);
-        cids.add(m.cid);
+        assert.ok(!memberIds.has(m.cid), `ID duplicada detectada: ${m.cid}`);
+        memberIds.add(m.cid);
       }
     });
 

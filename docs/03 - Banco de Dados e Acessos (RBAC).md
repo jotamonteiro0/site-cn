@@ -46,7 +46,7 @@ erDiagram
 
     profiles {
         uuid id PK "ID do usuário"
-        varchar cid UK "Número CID DeMolay"
+        varchar id_demolay UK "Número ID DeMolay Oficial"
         text full_name "Nome completo"
         varchar role "master | tesoureiro | escrivao | membro"
         varchar member_type "demolay | macom"

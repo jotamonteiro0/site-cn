@@ -59,6 +59,6 @@ npm test
 ---
 
 ### 4. Responsáveis e Contatos de Emergência
-- **Administrador & Mantenedor Técnico**: João Guilherme Martins Lopes Monteiro (CID 127738)
+- **Administrador & Mantenedor Técnico**: João Guilherme Martins Lopes Monteiro (ID 127738)
 - **Mestre Conselheiro Vigente**: Gestão XXV / XXVI
 - **Presidente do Conselho Consultivo (PCC)**: Conselho Consultivo das 4 Lojas Patrocinadoras
