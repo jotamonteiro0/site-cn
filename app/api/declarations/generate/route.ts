@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     // 1. Busca membro
     const { data: member, error: memberErr } = await supabaseAdmin
       .from("members")
-      .select("id, cid, full_name, category")
+      .select("id, id_demolay, full_name, category")
       .eq("id", member_id)
       .single();
 
@@ -48,33 +48,33 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     let tesoureiroName = "Aloísio Oliveira Neto";
-    let tesoureiroCid = "134104";
+    let tesoureiroIdDemolay = "134104";
     let escrivaoName = "Waldecy Goncalves de Araujo Neto";
-    let escrivaoCid = "148200";
+    let escrivaoIdDemolay = "148200";
 
     if (activeMgmt) {
       const { data: officers } = await supabaseAdmin
         .from("member_management_positions")
         .select(`
           management_positions (name),
-          members (full_name, cid)
+          members (full_name, id_demolay)
         `)
         .eq("management_positions.management_id", activeMgmt.id);
 
       if (officers) {
         interface OfficerRecord {
           management_positions?: { name?: string } | null;
-          members?: { full_name?: string; cid?: string } | null;
+          members?: { full_name?: string; id_demolay?: string } | null;
         }
         for (const o of officers as unknown as OfficerRecord[]) {
           const pos = o.management_positions?.name;
           if (pos === "Tesoureiro" && o.members) {
             tesoureiroName = o.members.full_name || tesoureiroName;
-            tesoureiroCid = o.members.cid || tesoureiroCid;
+            tesoureiroIdDemolay = o.members.id_demolay || tesoureiroIdDemolay;
           }
           if (pos === "Escrivão" && o.members) {
             escrivaoName = o.members.full_name || escrivaoName;
-            escrivaoCid = o.members.cid || escrivaoCid;
+            escrivaoIdDemolay = o.members.id_demolay || escrivaoIdDemolay;
           }
         }
       }
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
     const contentData = {
       tipo: declaration_type,
       solicitante_nome: member.full_name,
-      solicitante_cid: member.cid,
+      solicitante_id_demolay: member.id_demolay,
       periodo_inicio: formattedPStart,
       periodo_fim: formattedPEnd,
       data_emissao: formattedToday,
@@ -134,12 +134,12 @@ export async function POST(request: Request) {
           ? {
               cargo: "Tesoureiro",
               nome: tesoureiroName,
-              cid: tesoureiroCid,
+              id_demolay: tesoureiroIdDemolay,
             }
           : {
               cargo: "Escrivão",
               nome: escrivaoName,
-              cid: escrivaoCid,
+              id_demolay: escrivaoIdDemolay,
             },
     };
 

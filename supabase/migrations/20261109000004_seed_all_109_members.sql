@@ -6,7 +6,7 @@ alter table public.members
   add column if not exists category text not null default 'demolay_ativo',
   add column if not exists regularity text;
 
-insert into public.members (chapter_id, cid, full_name, category, regularity, member_type, status, is_active)
+insert into public.members (chapter_id, id_demolay, full_name, category, regularity, member_type, status, is_active)
 values
   ('00000000-0000-0000-0000-000000000500', '122850', 'Adomar Feitosa dos Santos', 'macom', 'Consultor', 'macom', 'ativo', true),
   ('00000000-0000-0000-0000-000000000500', '100216', 'Alrandy Cleston Silva Cruz', 'macom', 'Consultor', 'macom', 'ativo', true),
@@ -117,7 +117,7 @@ values
   ('00000000-0000-0000-0000-000000000500', '100209', 'Tiago Moreira Gonçalves', 'irregular', 'Irregular', 'demolay', 'inativo', false),
   ('00000000-0000-0000-0000-000000000500', '92812', 'Vinícius Linhares Olinda', 'irregular', 'Irregular', 'demolay', 'inativo', false),
   ('00000000-0000-0000-0000-000000000500', '136597', 'Vitor Emanoel Noronha Cordeiro', 'irregular', 'Irregular', 'demolay', 'inativo', false)
-on conflict (chapter_id, cid) do update set
+on conflict (chapter_id, id_demolay) do update set
   full_name = excluded.full_name,
   category = excluded.category,
   regularity = excluded.regularity,
@@ -128,4 +128,4 @@ on conflict (chapter_id, cid) do update set
 -- Assegura o e-mail oficial do Master no registro correspondente
 update public.members
 set email = 'joaomonteiro0@icloud.com'
-where chapter_id = '00000000-0000-0000-0000-000000000500' and (id_demolay = '127738' or cid = '127738');
+where chapter_id = '00000000-0000-0000-0000-000000000500' and id_demolay = '127738';

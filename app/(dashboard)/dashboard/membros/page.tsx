@@ -12,7 +12,7 @@ import {
 
 interface MemberRecord {
   id: string;
-  cid: string;
+  id_demolay: string;
   full_name: string;
   email?: string;
   category: "demolay_ativo" | "senior_demolay" | "macom" | "irregular";
@@ -41,7 +41,7 @@ export default function MembrosPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState("");
   const [newMember, setNewMember] = useState({
-    cid: "",
+    id_demolay: "",
     full_name: "",
     initiation_date: "",
     email: "",
@@ -57,8 +57,8 @@ export default function MembrosPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const isPermanentMaster =
-            user.user_metadata?.cid === "127738" ||
-            user.user_metadata?.cid === "102836" ||
+            user.user_metadata?.id_demolay === "127738" ||
+            user.user_metadata?.id_demolay === "102836" ||
             user.email === "joaomonteiro0@icloud.com" ||
             user.email === "airton@carvalhoneves500.org.br";
 
@@ -111,7 +111,7 @@ export default function MembrosPage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("members")
-        .select("id, cid, full_name, email, category, regularity, created_at")
+        .select("id, id_demolay, full_name, email, category, regularity, created_at")
         .order("full_name", { ascending: true });
 
       if (error) throw error;
@@ -132,7 +132,7 @@ export default function MembrosPage() {
         const supabase = createClient();
         const { data, error } = await supabase
           .from("members")
-          .select("id, cid, full_name, email, category, regularity, created_at")
+          .select("id, id_demolay, full_name, email, category, regularity, created_at")
           .order("full_name", { ascending: true });
 
         if (error) throw error;
@@ -158,7 +158,7 @@ export default function MembrosPage() {
       alert("Apenas o Mestre Conselheiro ou Escrivão podem habilitar novos membros.");
       return;
     }
-    if (!newMember.cid.trim() || !newMember.full_name.trim() || !newMember.initiation_date) {
+    if (!newMember.id_demolay.trim() || !newMember.full_name.trim() || !newMember.initiation_date) {
       alert("Por favor, preencha todos os campos obrigatórios: ID SISDM, Nome Completo e Data de Iniciação.");
       return;
     }
@@ -174,7 +174,7 @@ export default function MembrosPage() {
         .from("members")
         .insert({
           chapter_id: "00000000-0000-0000-0000-000000000500",
-          cid: newMember.cid.trim(),
+          id_demolay: newMember.id_demolay.trim(),
           full_name: newMember.full_name.trim(),
           initiation_date: newMember.initiation_date,
           email: newMember.email.trim().toLowerCase() || null,
@@ -190,11 +190,11 @@ export default function MembrosPage() {
       if (error) throw error;
 
       setSaveSuccessMsg(
-        `Membro ${newMember.full_name} habilitado com sucesso no Capítulo! Acesso liberado (senha inicial: ${newMember.cid.trim()}).`
+        `Membro ${newMember.full_name} habilitado com sucesso no Capítulo! Acesso liberado (senha inicial: ${newMember.id_demolay.trim()}).`
       );
       setIsAddModalOpen(false);
       setNewMember({
-        cid: "",
+        id_demolay: "",
         full_name: "",
         initiation_date: "",
         email: "",
@@ -237,7 +237,7 @@ export default function MembrosPage() {
       const matchesSearch =
         term === "" ||
         m.full_name.toLowerCase().includes(term) ||
-        (m.cid && m.cid.includes(term)) ||
+        (m.id_demolay && m.id_demolay.includes(term)) ||
         (m.regularity && m.regularity.toLowerCase().includes(term));
 
       return matchesCat && matchesSearch;
@@ -357,7 +357,7 @@ export default function MembrosPage() {
                     <tr key={m.id} className="hover:bg-white/[0.03] transition-colors">
                       {/* ID SEM '#' */}
                       <td className="py-3 px-4 font-mono font-bold text-[#D9AA45]">
-                        {m.cid}
+                        {m.id_demolay}
                       </td>
 
                       {/* Nome Completo */}
@@ -436,8 +436,8 @@ export default function MembrosPage() {
                   <input
                     type="text"
                     required
-                    value={newMember.cid}
-                    onChange={(e) => setNewMember({ ...newMember, cid: e.target.value })}
+                    value={newMember.id_demolay}
+                    onChange={(e) => setNewMember({ ...newMember, id_demolay: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white font-mono focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
                     placeholder="Ex: 159237"
                   />

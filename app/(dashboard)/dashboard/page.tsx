@@ -20,7 +20,7 @@ import {
 
 interface MemberRecord {
   id: string;
-  cid: string;
+  id_demolay: string;
   full_name: string;
   category: "demolay_ativo" | "senior_demolay" | "macom" | "irregular";
   masonic_lodge?: string;
@@ -52,7 +52,7 @@ export default function DashboardOverviewPage() {
             .order("starts_at", { ascending: true }),
           supabase
             .from("members")
-            .select("id, cid, full_name, category, masonic_lodge"),
+            .select("id, id_demolay, full_name, category, masonic_lodge"),
         ]);
 
         if (mRes.data) setMeetings(mRes.data);

@@ -224,8 +224,8 @@ export default function DashboardDocumentosPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const isPermanentMaster =
-            user.user_metadata?.cid === "127738" ||
-            user.user_metadata?.cid === "102836" ||
+            user.user_metadata?.id_demolay === "127738" ||
+            user.user_metadata?.id_demolay === "102836" ||
             user.email === "joaomonteiro0@icloud.com" ||
             user.email === "airton@carvalhoneves500.org.br";
 

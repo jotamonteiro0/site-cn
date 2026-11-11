@@ -11,7 +11,7 @@ import {
 
 interface MemberRecord {
   id: string;
-  cid: string;
+  id_demolay: string;
   full_name: string;
   category: string;
   regularity?: string;
@@ -51,7 +51,7 @@ export default function ConselhoPage() {
         const supabase = createClient();
         const { data } = await supabase
           .from("members")
-          .select("id, cid, full_name, category, regularity, masonic_lodge")
+          .select("id, id_demolay, full_name, category, regularity, masonic_lodge")
           .eq("category", "macom")
           .order("full_name", { ascending: true });
 
@@ -172,7 +172,7 @@ export default function ConselhoPage() {
                         <div>
                           <p className="text-xs font-bold text-white">{m.full_name}</p>
                           <p className="text-[11px] text-emerald-200/60 font-mono">
-                            ID: {m.cid}
+                            ID: {m.id_demolay}
                           </p>
                         </div>
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">

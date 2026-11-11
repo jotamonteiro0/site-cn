@@ -310,7 +310,7 @@ erDiagram
     profiles ||--o{ monthly_payments : possui
     profiles {
         uuid id PK
-        varchar cid UK
+        varchar id_demolay UK
         text full_name
         varchar member_type
         varchar role
@@ -338,7 +338,7 @@ erDiagram
 ```sql
 CREATE TABLE profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id),
-  cid VARCHAR(20) UNIQUE NOT NULL,
+  id_demolay VARCHAR(20) UNIQUE NOT NULL,
   full_name TEXT NOT NULL,
 
   member_type VARCHAR(20)

@@ -265,7 +265,7 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cid: firstAccessId.trim(),
+          id_demolay: firstAccessId.trim(),
           email: firstAccessEmail.trim(),
           password: firstAccessPassword.trim(),
         }),

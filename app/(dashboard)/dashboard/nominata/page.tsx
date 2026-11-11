@@ -31,13 +31,13 @@ interface Position {
   sort_order: number;
   assigned_member_id?: string;
   assigned_member_name?: string;
-  assigned_member_cid?: string;
+  assigned_member_id_demolay?: string;
   assigned_member_category?: string;
 }
 
 interface MemberOption {
   id: string;
-  cid: string;
+  id_demolay: string;
   full_name: string;
   category: string;
 }
@@ -103,8 +103,8 @@ export default function NominataPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const isPermanentMaster =
-            user.user_metadata?.cid === "127738" ||
-            user.user_metadata?.cid === "102836" ||
+            user.user_metadata?.id_demolay === "127738" ||
+            user.user_metadata?.id_demolay === "102836" ||
             user.email === "joaomonteiro0@icloud.com" ||
             user.email === "airton@carvalhoneves500.org.br";
 
@@ -144,7 +144,7 @@ export default function NominataPage() {
             .order("code", { ascending: false }),
           supabase
             .from("members")
-            .select("id, cid, full_name, category")
+            .select("id, id_demolay, full_name, category")
             .eq("is_active", true)
             .order("full_name", { ascending: true }),
         ]);
@@ -177,7 +177,7 @@ export default function NominataPage() {
       member?: {
         id?: string;
         full_name?: string;
-        cid?: string;
+        id_demolay?: string;
         category?: string;
       } | null;
     }>;
@@ -201,7 +201,7 @@ export default function NominataPage() {
             member:members (
               id,
               full_name,
-              cid,
+              id_demolay,
               category
             )
           )
@@ -219,7 +219,7 @@ export default function NominataPage() {
             sort_order: p.sort_order,
             assigned_member_id: assignment?.member_id || "",
             assigned_member_name: assignment?.member?.full_name || "",
-            assigned_member_cid: assignment?.member?.cid || "",
+            assigned_member_id_demolay: assignment?.member?.id_demolay || "",
             assigned_member_category: assignment?.member?.category || "",
           };
         });
@@ -248,7 +248,7 @@ export default function NominataPage() {
               member:members (
                 id,
                 full_name,
-                cid,
+                id_demolay,
                 category
               )
             )
@@ -266,7 +266,7 @@ export default function NominataPage() {
               sort_order: p.sort_order,
               assigned_member_id: assignment?.member_id || "",
               assigned_member_name: assignment?.member?.full_name || "",
-              assigned_member_cid: assignment?.member?.cid || "",
+              assigned_member_id_demolay: assignment?.member?.id_demolay || "",
               assigned_member_category: assignment?.member?.category || "",
             };
           });
@@ -610,7 +610,7 @@ export default function NominataPage() {
 
                   {pos.assigned_member_id && (
                     <span className="text-[10px] font-mono text-[#D9AA45] bg-black/30 px-2 py-0.5 rounded border border-white/10">
-                      ID {pos.assigned_member_cid || "—"}
+                      ID {pos.assigned_member_id_demolay || "—"}
                     </span>
                   )}
                 </div>
@@ -636,9 +636,9 @@ export default function NominataPage() {
                       <p className="text-sm font-bold text-white">
                         {pos.assigned_member_name || "Cargo Vago"}
                       </p>
-                      {pos.assigned_member_cid && (
+                      {pos.assigned_member_id_demolay && (
                         <p className="text-[11px] font-mono text-[#D9AA45] mt-0.5">
-                          {pos.assigned_member_cid} • {pos.name} Regular
+                          {pos.assigned_member_id_demolay} • {pos.name} Regular
                         </p>
                       )}
                     </div>
@@ -696,9 +696,9 @@ export default function NominataPage() {
                     <p className="text-xs font-bold text-white">
                       {pos.assigned_member_name || "Vago"}
                     </p>
-                    {pos.assigned_member_cid && (
+                    {pos.assigned_member_id_demolay && (
                       <p className="text-[10px] font-mono text-[#D9AA45] mt-0.5">
-                        {pos.assigned_member_cid} {pos.name} Regular
+                        {pos.assigned_member_id_demolay} {pos.name} Regular
                       </p>
                     )}
                   </div>

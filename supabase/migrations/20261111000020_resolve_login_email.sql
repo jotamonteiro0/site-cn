@@ -24,7 +24,7 @@ begin
     -- Busca por ID no quadro de membros ativo
     select email into found_email
     from public.members
-    where (id_demolay = clean_input or cid = clean_input)
+    where id_demolay = clean_input
       and is_active = true
       and email is not null
     limit 1;

@@ -112,8 +112,8 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
           const cachedAvatar = typeof window !== "undefined" ? localStorage.getItem(`cn_member_avatar_${user.id}`) : null;
 
           const isPermanentMaster =
-            user.user_metadata?.cid === "127738" ||
-            user.user_metadata?.cid === "102836" ||
+            user.user_metadata?.id_demolay === "127738" ||
+            user.user_metadata?.id_demolay === "102836" ||
             user.email === "joaomonteiro0@icloud.com" ||
             user.email === "airton@carvalhoneves500.org.br" ||
             membership?.role_code === "master";

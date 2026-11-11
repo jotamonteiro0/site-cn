@@ -65,8 +65,8 @@ describe("Capítulo Carvalho Neves Nº 500 — Suíte Completa de Testes Institu
     test("João Guilherme (ID 127738) e Airton (ID 102836) possuem perfil Master ativo", async () => {
       const { data: members, error: mErr } = await adminClient
         .from("members")
-        .select("id, cid, full_name")
-        .in("cid", ["127738", "102836"]);
+        .select("id, id_demolay, full_name")
+        .in("id_demolay", ["127738", "102836"]);
 
       assert.ifError(mErr);
       assert.strictEqual(members.length, 2, "Ambos os mantenedores devem existir");
@@ -81,7 +81,7 @@ describe("Capítulo Carvalho Neves Nº 500 — Suíte Completa de Testes Institu
       assert.ifError(mbErr);
       const masterMemberIds = membership.map((m) => m.member_id);
       members.forEach((m) => {
-        assert.ok(masterMemberIds.includes(m.id), `Membro ${m.full_name} (${m.cid}) deve possuir papel Master ativo`);
+        assert.ok(masterMemberIds.includes(m.id), `Membro ${m.full_name} (${m.id_demolay}) deve possuir papel Master ativo`);
       });
     });
 
@@ -90,7 +90,7 @@ describe("Capítulo Carvalho Neves Nº 500 — Suíte Completa de Testes Institu
       const { error } = await publicClient
         .from("members")
         .update({ full_name: "Tentativa Não Autorizada" })
-        .eq("cid", "000000000");
+        .eq("id_demolay", "000000000");
 
       assert.ok(error || true, "Operação deve ser negada por RLS para anônimos");
     });
@@ -110,16 +110,16 @@ describe("Capítulo Carvalho Neves Nº 500 — Suíte Completa de Testes Institu
     test("Quadro de membros possui contagem íntegra e sem IDs duplicadas", async () => {
       const { data: members, error } = await adminClient
         .from("members")
-        .select("id, cid, full_name, category, regularity")
-        .order("cid", { ascending: true });
+        .select("id, id_demolay, full_name, category, regularity")
+        .order("id_demolay", { ascending: true });
 
       assert.ifError(error);
       assert.ok(members.length >= 100, "Deve haver mais de 100 membros no censo capitular");
 
       const memberIds = new Set();
       for (const m of members) {
-        assert.ok(!memberIds.has(m.cid), `ID duplicada detectada: ${m.cid}`);
-        memberIds.add(m.cid);
+        assert.ok(!memberIds.has(m.id_demolay), `ID duplicada detectada: ${m.id_demolay}`);
+        memberIds.add(m.id_demolay);
       }
     });
 

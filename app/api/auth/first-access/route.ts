@@ -9,13 +9,15 @@ const SERVICE_ROLE_KEY =
 
 export async function POST(request: Request) {
   try {
-    const { cid, email, password } = await request.json();
+    const body = await request.json();
+    const idInput = body?.id_demolay || body?.id;
+    const { email, password } = body;
 
-    const cleanCid = cid?.toString().trim();
+    const cleanId = idInput?.toString().trim();
     const cleanEmail = email?.toString().trim().toLowerCase();
     const cleanPassword = password?.toString().trim();
 
-    if (!cleanCid) {
+    if (!cleanId) {
       return NextResponse.json(
         { error: "Informe o número da sua ID DeMolay oficial." },
         { status: 400 }
@@ -45,12 +47,12 @@ export async function POST(request: Request) {
 
     const CHAPTER_ID = "00000000-0000-0000-0000-000000000500";
 
-    // 1. Localiza o membro na tabela do capítulo pelo ID
+    // 1. Localiza o membro na tabela do capítulo pela ID DeMolay
     const { data: member, error: memberErr } = await supabaseAdmin
       .from("members")
-      .select("id, cid, full_name, category, email, profile_id")
+      .select("id, id_demolay, full_name, category, email, profile_id")
       .eq("chapter_id", CHAPTER_ID)
-      .eq("cid", cleanCid)
+      .eq("id_demolay", cleanId)
       .maybeSingle();
 
     if (memberErr || !member) {
@@ -66,8 +68,8 @@ export async function POST(request: Request) {
     // Mantenedores e Administradores do Sistema com acesso Master permanente:
     // João Guilherme Martins Lopes Monteiro (ID 127738) e Airton (ID 102836)
     if (
-      cleanCid === "127738" ||
-      cleanCid === "102836" ||
+      cleanId === "127738" ||
+      cleanId === "102836" ||
       cleanEmail === "joaomonteiro0@icloud.com" ||
       cleanEmail === "airton@carvalhoneves500.org.br"
     ) {
@@ -123,7 +125,7 @@ export async function POST(request: Request) {
         email_confirm: true,
         user_metadata: {
           full_name: member.full_name,
-          cid: member.cid,
+          id_demolay: member.id_demolay,
         },
       });
 
@@ -141,7 +143,7 @@ export async function POST(request: Request) {
         email_confirm: true,
         user_metadata: {
           full_name: member.full_name,
-          cid: member.cid,
+          id_demolay: member.id_demolay,
         },
       });
 

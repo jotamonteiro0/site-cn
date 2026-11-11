@@ -30,7 +30,7 @@ import { HISTORICAL_MEETINGS } from "@/lib/data/historicalMeetings";
 
 interface MemberRecord {
   id: string;
-  cid: string;
+  id_demolay: string;
   full_name: string;
   category: "demolay_ativo" | "senior_demolay" | "macom" | "irregular";
   regularity?: string;
@@ -65,7 +65,7 @@ interface VisitingMasonRecord {
 interface VisitingDemolayRecord {
   id: string;
   meeting_id: string;
-  cid: string;
+  id_demolay: string;
   name: string;
   chapter: string;
   created_at?: string;
@@ -228,7 +228,7 @@ export default function ChamadaPage() {
   // Modal DeMolay Visitante (ID, Nome Completo, Capítulo)
   const [isDemolayVisitorModalOpen, setIsDemolayVisitorModalOpen] = useState(false);
   const [newDemolayVisitor, setNewDemolayVisitor] = useState({
-    cid: "",
+    id_demolay: "",
     name: "",
     chapter: "",
   });
@@ -250,7 +250,7 @@ export default function ChamadaPage() {
             .order("starts_at", { ascending: true }),
           supabase
             .from("members")
-            .select("id, cid, full_name, category, regularity, masonic_lodge")
+            .select("id, id_demolay, full_name, category, regularity, masonic_lodge")
             .order("full_name", { ascending: true }),
         ]);
 
@@ -305,7 +305,7 @@ export default function ChamadaPage() {
             .order("created_at", { ascending: true }),
           supabase
             .from("meeting_visiting_demolays")
-            .select("id, meeting_id, cid, name, chapter, created_at")
+            .select("id, meeting_id, id_demolay, name, chapter, created_at")
             .eq("meeting_id", selectedMeetingId)
             .order("created_at", { ascending: true }),
           supabase
@@ -618,12 +618,12 @@ export default function ChamadaPage() {
   // Adicionar DeMolay Visitante (ID, Nome Completo, Capítulo)
   const handleAddDemolayVisitor = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedMeetingId || !newDemolayVisitor.name.trim() || !newDemolayVisitor.cid.trim()) return;
+    if (!selectedMeetingId || !newDemolayVisitor.name.trim() || !newDemolayVisitor.id_demolay.trim()) return;
 
     const newRecord: VisitingDemolayRecord = {
       id: "vis_dm_" + Date.now(),
       meeting_id: selectedMeetingId,
-      cid: newDemolayVisitor.cid.trim(),
+      id_demolay: newDemolayVisitor.id_demolay.trim(),
       name: newDemolayVisitor.name.trim(),
       chapter: newDemolayVisitor.chapter.trim() || "Capítulo Visitante",
       created_at: new Date().toISOString(),
@@ -635,7 +635,7 @@ export default function ChamadaPage() {
         .from("meeting_visiting_demolays")
         .insert({
           meeting_id: selectedMeetingId,
-          cid: newRecord.cid,
+          id_demolay: newRecord.id_demolay,
           name: newRecord.name,
           chapter: newRecord.chapter,
         })
@@ -656,7 +656,7 @@ export default function ChamadaPage() {
       localStorage.setItem(`cn_visiting_dm_${selectedMeetingId}`, JSON.stringify(updated));
     }
 
-    setNewDemolayVisitor({ cid: "", name: "", chapter: "" });
+    setNewDemolayVisitor({ id_demolay: "", name: "", chapter: "" });
     setIsDemolayVisitorModalOpen(false);
   };
 
@@ -1097,7 +1097,7 @@ export default function ChamadaPage() {
                     >
                       <div className="flex items-center gap-3">
                         <span className="font-mono text-xs font-bold text-[#D9AA45] w-16">
-                          {m.cid}
+                          {m.id_demolay}
                         </span>
                         <div>
                           <p className="text-sm font-semibold text-white">{m.full_name}</p>
@@ -1168,7 +1168,7 @@ export default function ChamadaPage() {
                     >
                       <div className="flex items-center gap-3">
                         <span className="font-mono text-xs font-bold text-[#D9AA45] w-16">
-                          {m.cid}
+                          {m.id_demolay}
                         </span>
                         <div>
                           <p className="text-sm font-semibold text-white">{m.full_name}</p>
@@ -1239,7 +1239,7 @@ export default function ChamadaPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-xs font-bold text-blue-300">
-                              ID: {v.cid}
+                              ID: {v.id_demolay}
                             </span>
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-900/40 border border-blue-500/40 text-blue-200">
                               DeMolay Visitante
@@ -1661,9 +1661,9 @@ export default function ChamadaPage() {
                 <input
                   type="text"
                   required
-                  value={newDemolayVisitor.cid}
+                  value={newDemolayVisitor.id_demolay}
                   onChange={(e) =>
-                    setNewDemolayVisitor({ ...newDemolayVisitor, cid: e.target.value })
+                    setNewDemolayVisitor({ ...newDemolayVisitor, id_demolay: e.target.value })
                   }
                   className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white font-mono focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
                   placeholder="Ex: 148194"

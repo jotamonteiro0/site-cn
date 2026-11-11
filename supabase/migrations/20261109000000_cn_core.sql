@@ -35,9 +35,9 @@ create table if not exists public.chapter_memberships (
 );
 create table if not exists public.members (
   id uuid primary key default gen_random_uuid(), chapter_id uuid not null references public.chapters(id), profile_id uuid references public.profiles(id),
-  id_demolay text, cid text, full_name text not null, email text, phone text, birth_date date, initiation_date date, member_type text not null default 'demolay' check(member_type in ('demolay','macom','consultor')),
+  id_demolay text, full_name text not null, email text, phone text, birth_date date, initiation_date date, member_type text not null default 'demolay' check(member_type in ('demolay','macom','consultor')),
   status text not null default 'ativo' check(status in ('ativo','inativo','senior','desligado')), is_active boolean not null default true,
-  created_at timestamptz not null default now(), updated_at timestamptz not null default now(), deleted_at timestamptz, unique(chapter_id,id_demolay), unique(chapter_id,cid), unique(chapter_id,profile_id)
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now(), deleted_at timestamptz, unique(chapter_id,id_demolay), unique(chapter_id,profile_id)
 );
 alter table public.chapter_memberships add constraint chapter_memberships_member_id_fkey foreign key (member_id) references public.members(id);
 create table if not exists public.member_status_history (id uuid primary key default gen_random_uuid(), member_id uuid not null references public.members(id), previous_status text, new_status text not null, reason text, changed_by uuid references public.profiles(id), created_at timestamptz not null default now());

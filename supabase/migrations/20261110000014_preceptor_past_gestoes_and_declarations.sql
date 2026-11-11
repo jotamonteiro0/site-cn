@@ -14,7 +14,7 @@ on conflict (management_id, name) do nothing;
 insert into public.member_management_positions (member_id, management_position_id, starts_on)
 select m.id, p.id, '2026-07-01'
 from public.members m, public.management_positions p
-where (m.id_demolay = '148194' or m.cid = '148194')
+where m.id_demolay = '148194'
   and p.management_id = '00000000-0000-0000-0000-000000002026'
   and p.name = '1º Preceptor'
 on conflict (member_id, management_position_id, starts_on) do nothing;

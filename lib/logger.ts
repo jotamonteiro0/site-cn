@@ -83,7 +83,7 @@ export const logger = {
     }
   },
 
-  audit(scope: string, action: string, actor: { id?: string; email?: string; cid?: string }, details?: Record<string, unknown>) {
+  audit(scope: string, action: string, actor: { id?: string; email?: string; id_demolay?: string }, details?: Record<string, unknown>) {
     const timestamp = new Date().toISOString();
     const safeDetails = details ? sanitize(details) : undefined;
     console.log(
@@ -92,7 +92,7 @@ export const logger = {
         level: "AUDIT",
         scope,
         action,
-        actor: { id: actor.id, email: actor.email, cid: actor.cid },
+        actor: { id: actor.id, email: actor.email, id_demolay: actor.id_demolay },
         details: safeDetails,
       })
     );

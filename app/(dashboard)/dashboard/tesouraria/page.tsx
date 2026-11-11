@@ -42,7 +42,7 @@ interface MemberCharge {
   paid_at?: string;
   financial_period_id: string;
   member?: {
-    cid: string;
+    id_demolay: string;
     category: string;
     masonic_lodge?: string;
   };
@@ -107,7 +107,7 @@ export default function TesourariaPage() {
   // Modal Declaração de Quitação
   const [quitacaoMember, setQuitacaoMember] = useState<{
     name: string;
-    cid: string;
+    id_demolay: string;
     type: "demolay" | "macom";
     lodge?: string;
     code: string;
@@ -123,8 +123,8 @@ export default function TesourariaPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const isPermanentMaster =
-            user.user_metadata?.cid === "127738" ||
-            user.user_metadata?.cid === "102836" ||
+            user.user_metadata?.id_demolay === "127738" ||
+            user.user_metadata?.id_demolay === "102836" ||
             user.email === "joaomonteiro0@icloud.com" ||
             user.email === "airton@carvalhoneves500.org.br";
 
@@ -194,7 +194,7 @@ export default function TesourariaPage() {
           paid_at,
           financial_period_id,
           member:members (
-            cid,
+            id_demolay,
             category,
             masonic_lodge
           )
@@ -233,7 +233,7 @@ export default function TesourariaPage() {
             payment_method,
             infinitepay_checkout_url,
             member:members (
-              cid,
+              id_demolay,
               category,
               masonic_lodge
             )
@@ -399,7 +399,7 @@ export default function TesourariaPage() {
 
     setQuitacaoMember({
       name: c.payer_name,
-      cid: c.member?.cid || "000000",
+      id_demolay: c.member?.id_demolay || "000000",
       type: c.payer_type,
       lodge: c.member?.masonic_lodge,
       code,
@@ -494,7 +494,7 @@ export default function TesourariaPage() {
       const matchesSearch =
         !search ||
         c.payer_name.toLowerCase().includes(search) ||
-        (c.member?.cid && c.member.cid.includes(search)) ||
+        (c.member?.id_demolay && c.member.id_demolay.includes(search)) ||
         (c.member?.masonic_lodge && c.member.masonic_lodge.toLowerCase().includes(search));
 
       return matchesStatus && matchesSearch;
@@ -791,7 +791,7 @@ export default function TesourariaPage() {
                     return (
                       <tr key={c.id} className="hover:bg-white/[0.04] transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-[#D9AA45]">
-                          {c.member?.cid || "—"}
+                          {c.member?.id_demolay || "—"}
                         </td>
                         <td className="py-3 px-4 font-semibold text-white">
                           <p>{c.payer_name}</p>
@@ -1300,7 +1300,7 @@ export default function TesourariaPage() {
                 <p className="text-xs text-gray-300">
                   {quitacaoMember.type === "macom"
                     ? `Filiação Maçônica: ${quitacaoMember.lodge || "A∴R∴L∴S∴ Caridade II nº 135"}`
-                    : `ID DeMolay: ${quitacaoMember.cid}`}
+                    : `ID DeMolay: ${quitacaoMember.id_demolay}`}
                 </p>
               </div>
 

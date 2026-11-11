@@ -35,7 +35,7 @@ import { HISTORICAL_MEETINGS } from "@/lib/data/historicalMeetings";
 
 interface MemberData {
   id: string;
-  cid: string;
+  id_demolay: string;
   full_name: string;
   category: "demolay_ativo" | "senior_demolay" | "macom" | "irregular";
   regularity?: string;
@@ -96,14 +96,14 @@ interface RequestItem {
 
 interface DeclarationContentData {
   solicitante_nome?: string;
-  solicitante_cid?: string;
+  solicitante_id_demolay?: string;
   periodo_inicio?: string;
   periodo_fim?: string;
   data_emissao?: string;
   frequencia_porcentagem?: number | string;
   oficial_responsavel?: {
     nome?: string;
-    cid?: string;
+    id_demolay?: string;
     cargo?: string;
   };
 }
@@ -122,7 +122,7 @@ interface IssuedDeclarationItem {
 interface BirthdayItem {
   member_id: string;
   full_name: string;
-  cid: string;
+  id_demolay: string;
   birthday_formatted: string;
   birth_day: number;
   birth_month: number;
@@ -189,7 +189,7 @@ export default function MemberSelfServicePage() {
           supabase.auth.getUser(),
           supabase
             .from("members")
-            .select("id, cid, photo_url, full_name, category, regularity, masonic_lodge, initiation_date, demolay_degree_date, birth_date, email, phone")
+            .select("id, id_demolay, photo_url, full_name, category, regularity, masonic_lodge, initiation_date, demolay_degree_date, birth_date, email, phone")
             .order("full_name", { ascending: true }),
           supabase
             .from("meetings")
@@ -197,7 +197,7 @@ export default function MemberSelfServicePage() {
             .order("starts_at", { ascending: true }),
           supabase
             .from("view_member_birthdays")
-            .select("member_id, full_name, cid, birthday_formatted, birth_day, birth_month")
+            .select("member_id, full_name, id_demolay, birthday_formatted, birth_day, birth_month")
             .order("birth_month", { ascending: true })
             .order("birth_day", { ascending: true }),
         ]);
@@ -699,7 +699,7 @@ export default function MemberSelfServicePage() {
     if (!nextMeeting || !currentMember) return "#";
     const msg = encodeURIComponent(
       `*Capítulo Professor Carvalho Neves Nº 500*\n` +
-      `Irmão *${currentMember.full_name}* (ID ${currentMember.cid}) confirmou presença na Sessão:\n` +
+      `Irmão *${currentMember.full_name}* (ID ${currentMember.id_demolay}) confirmou presença na Sessão:\n` +
       `📅 *${new Date(nextMeeting.starts_at).toLocaleDateString("pt-BR")}*\n` +
       `🏛️ *${nextMeeting.title}*\n` +
       `📍 ${nextMeeting.location || "A∴R∴L∴S∴ Caridade II nº 135"}\n\n` +
@@ -791,7 +791,7 @@ export default function MemberSelfServicePage() {
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-1.5">
                 <span className="selo-vidro-cn px-3 py-0.5 rounded-full text-xs font-bold text-[#D9AA45] font-mono">
-                  ID {currentMember?.cid || "000000"}
+                  ID {currentMember?.id_demolay || "000000"}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 backdrop-blur-sm">
                   {currentMember?.category === "demolay_ativo" ? "DeMolay Ativo" : currentMember?.category === "macom" ? "Tio Maçom" : "Sênior DeMolay"}
@@ -837,7 +837,7 @@ export default function MemberSelfServicePage() {
               >
                 {allMembers.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.full_name} (ID {m.cid})
+                    {m.full_name} (ID {m.id_demolay})
                   </option>
                 ))}
               </select>
@@ -1827,7 +1827,7 @@ export default function MemberSelfServicePage() {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-white line-clamp-1">{b.full_name}</p>
-                      <p className="text-[10px] text-gray-400">ID {b.cid}</p>
+                      <p className="text-[10px] text-gray-400">ID {b.id_demolay}</p>
                     </div>
                   </div>
                 </div>
@@ -2018,7 +2018,7 @@ export default function MemberSelfServicePage() {
                   </strong>
                   , portador do ID Nº{" "}
                   <strong>
-                    {viewDeclaration.content_data?.oficial_responsavel?.cid || "134104"}
+                    {viewDeclaration.content_data?.oficial_responsavel?.id_demolay || "134104"}
                   </strong>
                   , Tesoureiro do Capítulo Professor Carvalho Neves Nº 500, com sede na cidade de Teresina-PI, localizado na Rua Senador Teodoro Pacheco Nº 882, Centro, Teresina-PI, CEP: 64001-060, venho, por meio desta, declarar para os devidos fins que:
                 </p>
@@ -2030,7 +2030,7 @@ export default function MemberSelfServicePage() {
                   </strong>
                   , portador do ID Nº{" "}
                   <strong className="text-gray-950">
-                    {viewDeclaration.content_data?.solicitante_cid || currentMember?.cid}
+                    {viewDeclaration.content_data?.solicitante_id_demolay || currentMember?.id_demolay}
                   </strong>
                   , encontra-se quite com suas obrigações financeiras junto ao Capítulo Professor Carvalho Neves Nº 500, estando em dia com todas as contribuições e demais responsabilidades financeiras referentes ao período de{" "}
                   <strong>
@@ -2066,7 +2066,7 @@ export default function MemberSelfServicePage() {
                     {viewDeclaration.content_data?.oficial_responsavel?.nome || "Aloísio Oliveira Neto"}
                   </p>
                   <p className="text-xs text-gray-600">
-                    ID Nº {viewDeclaration.content_data?.oficial_responsavel?.cid || "134104"}
+                    ID Nº {viewDeclaration.content_data?.oficial_responsavel?.id_demolay || "134104"}
                   </p>
                   <p className="text-xs font-semibold text-gray-800">
                     Tesoureiro do Capítulo Professor Carvalho Neves Nº 500
@@ -2082,7 +2082,7 @@ export default function MemberSelfServicePage() {
                   </strong>
                   , portador do ID Nº{" "}
                   <strong>
-                    {viewDeclaration.content_data?.oficial_responsavel?.cid || "148200"}
+                    {viewDeclaration.content_data?.oficial_responsavel?.id_demolay || "148200"}
                   </strong>
                   , Escrivão do Capítulo Professor Carvalho Neves Nº 500, com sede na cidade de Teresina-PI, localizado na Rua Senador Teodoro Pacheco Nº 882, Centro, Teresina-PI, CEP: 64001-060, venho, por meio desta, em atenção ao pedido do interessado, declarar para os devidos fins que:
                 </p>
@@ -2094,7 +2094,7 @@ export default function MemberSelfServicePage() {
                   </strong>
                   , portador do ID Nº{" "}
                   <strong className="text-gray-950">
-                    {viewDeclaration.content_data?.solicitante_cid || currentMember?.cid}
+                    {viewDeclaration.content_data?.solicitante_id_demolay || currentMember?.id_demolay}
                   </strong>
                   , participou regularmente das atividades promovidas pelo Capítulo Professor Carvalho Neves Nº 500 durante o período de{" "}
                   <strong>
@@ -2135,7 +2135,7 @@ export default function MemberSelfServicePage() {
                     {viewDeclaration.content_data?.oficial_responsavel?.nome || "Waldecy Goncalves de Araujo Neto"}
                   </p>
                   <p className="text-xs text-gray-600">
-                    ID Nº {viewDeclaration.content_data?.oficial_responsavel?.cid || "148200"}
+                    ID Nº {viewDeclaration.content_data?.oficial_responsavel?.id_demolay || "148200"}
                   </p>
                   <p className="text-xs font-semibold text-gray-800">
                     Escrivão do Capítulo Professor Carvalho Neves Nº 500

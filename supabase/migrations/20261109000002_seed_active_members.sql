@@ -1,7 +1,7 @@
 -- -------------------------------------------------------------
 -- Cadastro Inicial dos DeMolays Ativos do Capítulo Carvalho Neves Nº 500
 -- -------------------------------------------------------------
-insert into public.members (chapter_id, cid, full_name, status, member_type, is_active)
+insert into public.members (chapter_id, id_demolay, full_name, status, member_type, is_active)
 values
   ('00000000-0000-0000-0000-000000000500', '134104', 'Aloísio Oliveira Neto', 'ativo', 'demolay', true),
   ('00000000-0000-0000-0000-000000000500', '154237', 'Aluizio Gonzaga de Carvalho Neto', 'ativo', 'demolay', true),
@@ -44,7 +44,7 @@ values
   ('00000000-0000-0000-0000-000000000500', '148194', 'Ryan Lima Cavalcante Maia', 'ativo', 'demolay', true),
   ('00000000-0000-0000-0000-000000000500', '122801', 'Ryhan Gabriell Marcedo Silva', 'ativo', 'demolay', true),
   ('00000000-0000-0000-0000-000000000500', '122802', 'Wendel de Sousa Pinheiro de Abreu', 'ativo', 'demolay', true)
-on conflict (chapter_id, cid) do update set
+on conflict (chapter_id, id_demolay) do update set
   full_name = excluded.full_name,
   status = excluded.status,
   is_active = excluded.is_active;
@@ -52,4 +52,4 @@ on conflict (chapter_id, cid) do update set
 -- Assegura o e-mail oficial do Master no registro de membro correspondente
 update public.members
 set email = 'joaomonteiro0@icloud.com'
-where chapter_id = '00000000-0000-0000-0000-000000000500' and (id_demolay = '127738' or cid = '127738');
+where chapter_id = '00000000-0000-0000-0000-000000000500' and id_demolay = '127738';

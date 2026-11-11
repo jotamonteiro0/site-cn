@@ -43,7 +43,7 @@ const supabase = createClient(supabaseUrl, serviceKey, {
 });
 
 // Processa argumentos de linha de comando:
-// node scripts/create-master.mjs --email=joaomonteiro0@icloud.com --password=SuaSenha --name="João Guilherme" --cid="12345"
+// node scripts/create-master.mjs --email=joaomonteiro0@icloud.com --password=SuaSenha --name="João Guilherme" --id_demolay="127738"
 const args = process.argv.slice(2);
 const params = {};
 for (const arg of args) {
@@ -56,14 +56,14 @@ for (const arg of args) {
 const email = params.email || "joaomonteiro0@icloud.com";
 const password = params.password;
 const fullName = params.name || "João Guilherme Monteiro";
-const cid = params.cid || "00001";
+const idDemolay = params.id_demolay || params.id || "127738";
 const CHAPTER_ID = "00000000-0000-0000-0000-000000000500";
 
 if (!password) {
   console.log("================================================================================");
-  console.log("Uso: node scripts/create-master.mjs --password=\"SuaSenhaForte\" [--email=\"...\"] [--name=\"...\"] [--cid=\"...\"]");
+  console.log("Uso: node scripts/create-master.mjs --password=\"SuaSenhaForte\" [--email=\"...\"] [--name=\"...\"] [--id_demolay=\"...\"]");
   console.log("Exemplo:");
-  console.log(`node scripts/create-master.mjs --password="minhasenha123" --email="${email}" --name="${fullName}" --cid="${cid}"`);
+  console.log(`node scripts/create-master.mjs --password="minhasenha123" --email="${email}" --name="${fullName}" --id_demolay="${idDemolay}"`);
   console.log("================================================================================");
   process.exit(1);
 }
@@ -143,7 +143,7 @@ async function run() {
       .insert({
         chapter_id: CHAPTER_ID,
         profile_id: user.id,
-        cid: cid,
+        id_demolay: idDemolay,
         full_name: fullName,
         email: email,
         member_type: "demolay",
@@ -162,14 +162,14 @@ async function run() {
     await supabase
       .from("members")
       .update({
-        cid: cid,
+        id_demolay: idDemolay,
         full_name: fullName,
         email: email,
         is_active: true,
       })
       .eq("id", memberId);
   }
-  console.log(`✓ Registro de membro confirmado (UUID: ${memberId}, ID: ${cid}).`);
+  console.log(`✓ Registro de membro confirmado (UUID: ${memberId}, ID: ${idDemolay}).`);
 
   // Vincula em chapter_memberships como 'master'
   const { error: membershipError } = await supabase
@@ -194,7 +194,7 @@ async function run() {
   console.log(`✓ Vínculo como Master/Admin confirmado no Capítulo Carvalho Neves Nº 500!`);
   console.log("================================================================================");
   console.log(`SUCESSO! O usuário ${fullName} (${email}) foi configurado como Master/Admin.`);
-  console.log(`Login disponível por e-mail (${email}) ou por ID (${cid}).`);
+  console.log(`Login disponível por e-mail (${email}) ou por ID (${idDemolay}).`);
   console.log("================================================================================");
 }
 

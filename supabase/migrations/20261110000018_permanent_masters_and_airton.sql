@@ -8,7 +8,6 @@ insert into public.members (
   id,
   chapter_id,
   id_demolay,
-  cid,
   full_name,
   email,
   category,
@@ -20,7 +19,6 @@ insert into public.members (
 values (
   'f9893a64-cf27-43c2-bd0f-617091c00ee5',
   '00000000-0000-0000-0000-000000000500',
-  '102836',
   '102836',
   'Airton',
   'airton@carvalhoneves500.org.br',
@@ -41,8 +39,8 @@ do update set
 update public.members m
 set profile_id = u.id
 from auth.users u
-where (m.id_demolay = '102836' or m.cid = '102836')
-  and (u.email = 'airton@carvalhoneves500.org.br' or u.raw_user_meta_data->>'cid' = '102836');
+where m.id_demolay = '102836'
+  and (u.email = 'airton@carvalhoneves500.org.br' or u.raw_user_meta_data->>'id_demolay' = '102836');
 
 -- 3. Garante chapter_memberships como 'master' para Airton e João
 insert into public.chapter_memberships (
@@ -59,7 +57,7 @@ select
   'master',
   true
 from public.members m
-where (m.id_demolay in ('127738', '102836') or m.cid in ('127738', '102836')) and m.profile_id is not null
+where m.id_demolay in ('127738', '102836') and m.profile_id is not null
 on conflict (chapter_id, user_id)
 do update set
   role_code = 'master',
@@ -172,7 +170,7 @@ begin
           where chapter_id = v_chapter_id
             and user_id = v_prev_profile_id
             and role_code = v_target_role
-            and member_id not in (select id from public.members where id_demolay in ('127738', '102836') or cid in ('127738', '102836'));
+            and member_id not in (select id from public.members where id_demolay in ('127738', '102836'));
         end if;
       end if;
     end if;

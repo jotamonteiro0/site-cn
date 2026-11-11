@@ -5,7 +5,6 @@ create table if not exists public.meeting_visiting_demolays (
   id uuid primary key default gen_random_uuid(),
   meeting_id uuid not null references public.meetings(id) on delete cascade,
   id_demolay text not null,
-  cid text,
   name text not null,
   chapter text not null,
   created_by uuid references public.profiles(id),

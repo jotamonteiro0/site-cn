@@ -83,7 +83,8 @@ export interface InfinitePayWebhookPayload {
     capture_method?: string;
     metadata?: {
       charge_id?: string;
-      member_cid?: string;
+      member_id_demolay?: string;
+      member_id?: string;
     };
   };
   transaction?: {
@@ -99,14 +100,16 @@ export interface InfinitePayWebhookPayload {
     capture_method?: string;
     metadata?: {
       charge_id?: string;
-      member_cid?: string;
+      member_id_demolay?: string;
+      member_id?: string;
     };
   };
   external_reference?: string;
   order_nfe_id?: string;
   metadata?: {
     charge_id?: string;
-    member_cid?: string;
+    member_id_demolay?: string;
+    member_id?: string;
   };
 }
 
@@ -193,7 +196,9 @@ export async function handleInfinitePayWebhook(
       transaction.metadata?.charge_id ||
       transaction.order_nfe_id;
 
-    const payerCid = transaction.metadata?.member_cid;
+    const payerMemberId =
+      transaction.metadata?.member_id_demolay ||
+      transaction.metadata?.member_id;
 
     // 3. CHECAGEM DE IDEMPOTÊNCIA POR ID DA TRANSAÇÃO INFINITEPAY
     if (transactionId) {
@@ -285,11 +290,11 @@ export async function handleInfinitePayWebhook(
           .maybeSingle();
 
         targetCharge = charge;
-      } else if (payerCid) {
+      } else if (payerMemberId) {
         const { data: member } = await supabase
           .from("members")
           .select("id")
-          .eq("cid", payerCid)
+          .eq("id_demolay", payerMemberId)
           .maybeSingle();
 
         if (member) {
