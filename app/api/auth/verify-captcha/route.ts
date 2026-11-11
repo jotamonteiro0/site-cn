@@ -12,12 +12,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Aceita contingência resiliente para domínios Vercel e novos ambientes
-    if (token === "domain-fallback-active" || token.startsWith("bypass-")) {
-      return NextResponse.json({ success: true, mode: "domain-fallback" });
-    }
-
-    // Chave secreta oficial configurada em produção ou fallback de teste do Google
+    // Chave secreta oficial do Google reCAPTCHA v2 (configurada no ambiente de produção)
     const secretKey =
       process.env.RECAPTCHA_SECRET_KEY || "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe";
 
@@ -34,33 +29,20 @@ export async function POST(req: Request) {
     });
 
     const data = await res.json();
-    const isTestKey = secretKey === "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe";
 
     if (!data.success) {
-      console.warn("reCAPTCHA verification response:", data);
-
-      // Se falhar devido a domínio ainda não cadastrado no console do Google ou chave padrão
-      const errorCodes: string[] = data["error-codes"] || [];
-      if (
-        isTestKey ||
-        errorCodes.includes("hostname-mismatch") ||
-        errorCodes.includes("invalid-input-secret") ||
-        errorCodes.includes("bad-request")
-      ) {
-        return NextResponse.json({ success: true, mode: "permissive-domain" });
-      }
-
+      console.warn("reCAPTCHA Google siteverify rejected:", data);
       return NextResponse.json(
         {
           success: false,
-          error: "Falha na verificação de segurança. Tente novamente.",
+          error: "Falha na verificação de segurança do Google reCAPTCHA. Tente novamente.",
           errorCodes: data["error-codes"],
         },
         { status: 400 }
       );
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, hostname: data.hostname });
   } catch (err: unknown) {
     console.error("Erro na rota de verificação do reCAPTCHA:", err);
     return NextResponse.json(

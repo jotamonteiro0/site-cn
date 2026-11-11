@@ -113,9 +113,8 @@ export default function LoginPage() {
                   setCaptchaToken("");
                 },
                 "error-callback": () => {
-                  console.warn("reCAPTCHA widget error: domínio ou chave restrita. Ativando modo resiliente.");
-                  setCaptchaToken("domain-fallback-active");
-                  setIsCaptchaReady(true);
+                  console.warn("reCAPTCHA widget error: domínio ou chave restrita no console do Google.");
+                  setError("reCAPTCHA: Domínio não autorizado no Google Admin Console para esta chave.");
                 },
                 theme: "dark",
               });
@@ -123,21 +122,11 @@ export default function LoginPage() {
               setIsCaptchaReady(true);
             } catch (err) {
               console.warn("reCAPTCHA render error:", err);
-              setCaptchaToken("domain-fallback-active");
-              setIsCaptchaReady(true);
             }
           }
         });
       }
     };
-
-    // Timeout de segurança para conexão resiliente de domínios (Vercel previews e produção)
-    const fallbackTimer = setTimeout(() => {
-      if (isMounted && widgetIdRef.current === null) {
-        setIsCaptchaReady(true);
-        setCaptchaToken((prev) => prev || "domain-fallback-active");
-      }
-    }, 3500);
 
     // Verifica se o script do Google já está presente no DOM
     let scriptElement = document.getElementById(scriptId) as HTMLScriptElement | null;
@@ -169,7 +158,6 @@ export default function LoginPage() {
     return () => {
       isMounted = false;
       clearInterval(timer);
-      clearTimeout(fallbackTimer);
     };
   }, [siteKey]);
 
