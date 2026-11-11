@@ -1300,7 +1300,7 @@ export default function TesourariaPage() {
                 <p className="text-xs text-gray-300">
                   {quitacaoMember.type === "macom"
                     ? `Filiação Maçônica: ${quitacaoMember.lodge || "A∴R∴L∴S∴ Caridade II nº 135"}`
-                    : `ID DeMolay (CID): ${quitacaoMember.cid}`}
+                    : `ID DeMolay: ${quitacaoMember.cid}`}
                 </p>
               </div>
 

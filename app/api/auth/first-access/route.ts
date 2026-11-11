@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
     if (!cleanCid) {
       return NextResponse.json(
-        { error: "Informe o número da sua ID oficial DeMolay (CID)." },
+        { error: "Informe o número da sua ID DeMolay oficial." },
         { status: 400 }
       );
     }
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
 
     const CHAPTER_ID = "00000000-0000-0000-0000-000000000500";
 
-    // 1. Localiza o membro na tabela do capítulo pelo CID
+    // 1. Localiza o membro na tabela do capítulo pelo ID
     const { data: member, error: memberErr } = await supabaseAdmin
       .from("members")
       .select("id, cid, full_name, category, email, profile_id")
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     let assignedRole = "membro";
 
     // Mantenedores e Administradores do Sistema com acesso Master permanente:
-    // João Guilherme Martins Lopes Monteiro (CID 127738) e Airton (CID 102836)
+    // João Guilherme Martins Lopes Monteiro (ID 127738) e Airton (ID 102836)
     if (
       cleanCid === "127738" ||
       cleanCid === "102836" ||

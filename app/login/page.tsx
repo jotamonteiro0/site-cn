@@ -492,7 +492,7 @@ export default function LoginPage() {
               <form onSubmit={handleFirstAccessSubmit} className="space-y-3.5 text-xs">
                 <div>
                   <label className="block text-emerald-200 font-semibold mb-1">
-                    Sua ID DeMolay Oficial (CID) *
+                    Sua ID DeMolay Oficial *
                   </label>
                   <input
                     type="text"
