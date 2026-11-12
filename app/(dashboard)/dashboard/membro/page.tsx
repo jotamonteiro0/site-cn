@@ -32,6 +32,12 @@ import {
   Sparkles
 } from "lucide-react";
 import { HISTORICAL_MEETINGS } from "@/lib/data/historicalMeetings";
+import {
+  generatePixCopiaECola,
+  getPixQrCodeImageUrl,
+  getInfinitePayCheckoutUrl,
+  OFFICIAL_CHAPTER_PIX_KEY,
+} from "@/lib/pix";
 
 interface MemberData {
   id: string;
@@ -164,6 +170,7 @@ export default function MemberSelfServicePage() {
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [selectedCharge, setSelectedCharge] = useState<ChargeItem | null>(null);
   const [pixCopied, setPixCopied] = useState(false);
+  const [pixKeyCopied, setPixKeyCopied] = useState(false);
 
   // Modal Nova Solicitação ao Capítulo
   const [isNewRequestModalOpen, setIsNewRequestModalOpen] = useState(false);
@@ -708,10 +715,15 @@ export default function MemberSelfServicePage() {
     return `https://api.whatsapp.com/send?text=${msg}`;
   };
 
-  // Copiar PIX
+  // Copiar PIX Oficial com valor exato da mensalidade e padrão Banco Central
   const handleCopyPix = () => {
-    const pixPayload = selectedCharge?.pix_qrcode_payload || 
-      "00020126580014br.gov.bcb.pix0136capitulo500teresina@demolaypi.org.br520400005303986540550.005802BR5925CAPITULO PROF CARVALHO NE6008TERESINA62070503***6304E8A2";
+    const pixPayload = selectedCharge
+      ? generatePixCopiaECola({
+          amount: Number(selectedCharge.amount || 22),
+          txid: selectedCharge.id.replace(/-/g, "").substring(0, 20),
+          description: selectedCharge.description,
+        })
+      : "00020126580014br.gov.bcb.pix0136capitulo500teresina@demolaypi.org.br520400005303986540522.005802BR5925CAPITULO CARVALHO NEVES 56008TERESINA62160512CN500M112026630490FE";
     navigator.clipboard.writeText(pixPayload);
     setPixCopied(true);
     setTimeout(() => setPixCopied(false), 3000);
@@ -1879,7 +1891,7 @@ export default function MemberSelfServicePage() {
       {/* MODAL: PAGAR MENSALIDADE PIX / INFINITEPAY */}
       {isPayModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
-          <div className="ios-glass-card rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl animate-in zoom-in-95">
+          <div className="ios-glass-card rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <QrCode className="w-5 h-5 text-[#D9AA45]" />
@@ -1890,42 +1902,119 @@ export default function MemberSelfServicePage() {
               </button>
             </div>
 
-            <div className="mt-4 text-center">
-              <p className="text-xs text-gray-400">{selectedCharge?.description || "Mensalidade Capitular"}</p>
-              <p className="text-3xl font-extrabold text-white mt-1">
+            {/* Seletor de Mês / Mensalidade caso o membro tenha mais de uma pendente */}
+            {charges.filter((c) => c.status !== "confirmado").length > 1 && (
+              <div className="mt-3.5">
+                <label className="text-[11px] text-emerald-200/80 font-semibold block mb-1">
+                  Selecione o mês da mensalidade a quitar:
+                </label>
+                <select
+                  value={selectedCharge?.id || ""}
+                  onChange={(e) => {
+                    const match = charges.find((c) => c.id === e.target.value);
+                    if (match) setSelectedCharge(match);
+                  }}
+                  className="w-full bg-[#064D32] border border-emerald-500/40 rounded-xl px-3 py-2 text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
+                >
+                  {charges
+                    .filter((c) => c.status !== "confirmado")
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.description} • R$ {Number(c.amount).toFixed(2).replace(".", ",")}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
+
+            <div className="mt-3 text-center">
+              <p className="text-xs text-gray-300 font-medium">{selectedCharge?.description || "Mensalidade Capitular"}</p>
+              <p className="text-3xl font-extrabold text-white mt-0.5">
                 R$ {Number(selectedCharge?.amount || (currentMember?.category === "macom" ? 25 : 22)).toFixed(2).replace(".", ",")}
               </p>
+              <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-[#D9AA45] border border-amber-500/40">
+                Vencimento: {selectedCharge?.due_date ? new Date(selectedCharge.due_date).toLocaleDateString("pt-BR") : "Dia 28"}
+              </span>
             </div>
 
-            {/* QR Code Container */}
-            <div className="my-5 p-4 rounded-xl bg-white flex flex-col items-center justify-center mx-auto w-52 h-52 shadow-inner">
-              <div className="w-full h-full flex items-center justify-center text-center p-2">
-                <QrCode className="w-36 h-36 text-black" />
-              </div>
-            </div>
+            {/* QR Code Container com imagem real escaneável */}
+            {(() => {
+              const currentPixPayload = selectedCharge
+                ? generatePixCopiaECola({
+                    amount: Number(selectedCharge.amount || 22),
+                    txid: selectedCharge.id.replace(/-/g, "").substring(0, 20),
+                    description: selectedCharge.description,
+                  })
+                : "00020126580014br.gov.bcb.pix0136capitulo500teresina@demolaypi.org.br520400005303986540522.005802BR5925CAPITULO CARVALHO NEVES 56008TERESINA62160512CN500M112026630490FE";
 
-            <div className="space-y-3">
-              <button
-                onClick={handleCopyPix}
-                className="w-full py-2.5 rounded-xl bg-[#D9AA45] hover:bg-amber-400 text-black text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
-              >
-                {pixCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {pixCopied ? "Código PIX Copiado!" : "Copiar Código PIX Copia e Cola"}
-              </button>
+              const qrUrl = getPixQrCodeImageUrl(currentPixPayload, 220);
 
-              <a
-                href={selectedCharge?.infinitepay_checkout_url || "https://infinitepay.io"}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full py-2.5 rounded-xl bg-black/40 hover:bg-black/60 border border-white/10 text-white text-xs font-semibold transition-all flex items-center justify-center gap-2"
-              >
-                <ExternalLink className="w-4 h-4 text-[#D9AA45]" />
-                Pagar com Cartão via InfinitePay
-              </a>
-            </div>
+              const infinitePayUrl =
+                selectedCharge?.infinitepay_checkout_url ||
+                getInfinitePayCheckoutUrl({
+                  amount: Number(selectedCharge?.amount || 22),
+                  chargeId: selectedCharge?.id,
+                  description: selectedCharge?.description,
+                });
 
-            <p className="text-[11px] text-gray-400 text-center mt-4">
-              Após o pagamento, o sistema e o Tesoureiro realizam a baixa para atualizar seu histórico de quitação.
+              return (
+                <>
+                  <div className="my-3.5 p-3 rounded-2xl bg-white flex flex-col items-center justify-center mx-auto w-44 h-44 shadow-xl">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={qrUrl}
+                      alt="QR Code PIX Mensalidade"
+                      className="w-36 h-36 object-contain rounded-lg"
+                    />
+                  </div>
+
+                  {/* Chave PIX Direta Oficial */}
+                  <div className="p-2.5 rounded-xl bg-black/40 border border-white/10 flex items-center justify-between gap-2 text-xs mb-3">
+                    <div className="truncate">
+                      <span className="text-[10px] text-gray-400 block">Chave PIX Oficial (E-mail):</span>
+                      <span className="font-mono text-emerald-300 text-[11px] truncate block select-all">
+                        {OFFICIAL_CHAPTER_PIX_KEY}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(OFFICIAL_CHAPTER_PIX_KEY);
+                        setPixKeyCopied(true);
+                        setTimeout(() => setPixKeyCopied(false), 2500);
+                      }}
+                      className="shrink-0 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#D9AA45] text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      {pixKeyCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{pixKeyCopied ? "Copiada!" : "Copiar Chave"}</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleCopyPix}
+                      className="w-full py-2.5 rounded-xl bg-[#D9AA45] hover:bg-amber-400 text-black text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+                    >
+                      {pixCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      {pixCopied ? "Código PIX Copiado!" : "Copiar Código PIX Copia e Cola"}
+                    </button>
+
+                    <a
+                      href={infinitePayUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full py-2.5 rounded-xl bg-black/40 hover:bg-black/60 border border-white/10 text-white text-xs font-semibold transition-all flex items-center justify-center gap-2"
+                    >
+                      <ExternalLink className="w-4 h-4 text-[#D9AA45]" />
+                      Pagar via Cartão / Checkout InfinitePay
+                    </a>
+                  </div>
+                </>
+              );
+            })()}
+
+            <p className="text-[10px] text-emerald-200/70 text-center mt-3">
+              Ao pagar pelo PIX ou InfinitePay, a conciliação é automática. O Tesoureiro acompanha todas as quitações no painel.
             </p>
           </div>
         </div>
