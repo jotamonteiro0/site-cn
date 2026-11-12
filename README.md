@@ -8,13 +8,14 @@ Plataforma digital para apresentar a história do Capítulo, aproximar a comunid
 
 <br>
 
-![Status](https://img.shields.io/badge/status-em_desenvolvimento-E5AB38?style=for-the-badge)
-![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Status](https://img.shields.io/badge/status-em_produção-087443?style=for-the-badge)
+![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+![Testes](https://img.shields.io/badge/testes-36%2F36_passando-brightgreen?style=for-the-badge)
 
 <br>
 
@@ -253,18 +254,15 @@ O controle de acesso é organizado em quatro perfis, associados às responsabili
 
 | Camada | Tecnologias |
 |---|---|
-| **Frontend** | Next.js, React, Tailwind CSS e Lucide React |
-| **Animações** | Framer Motion |
-| **Gráficos** | Recharts |
-| **Backend e autenticação** | Supabase e Supabase Auth |
-| **Banco de dados** | PostgreSQL |
-| **Segurança de dados** | Row Level Security (RLS) |
-| **Armazenamento** | Supabase Storage |
-| **Documentos PDF** | jspdf e html2pdf.js |
-| **Hospedagem** | Vercel (frontend) e Supabase Cloud (backend e banco de dados) |
-
-> [!NOTE]
-> Framer Motion e Recharts fazem parte da direção técnica prevista para as animações e visualizações do painel. Devem ser adicionados às dependências do projeto quando esses componentes forem implementados.
+| **Frontend** | Next.js 16 (Turbopack), React 19, Tailwind CSS v4 e Lucide React |
+| **Backend & API** | Next.js Route Handlers, Supabase SSR e Webhooks InfinitePay |
+| **Autenticação & RBAC** | Supabase Auth, RBAC Capitular (Master, Tesoureiro, Escrivão, Membro) e Google reCAPTCHA v2 |
+| **Banco de dados** | PostgreSQL gerenciado via Supabase Cloud |
+| **Segurança de dados** | Row Level Security (RLS) estrito em 53 tabelas e triggers de proteção |
+| **Pagamentos & Finanças** | PIX Padrão Banco Central (EMVCo BR Code com CRC16), Chave Oficial e InfinitePay API |
+| **Armazenamento** | Supabase Storage com buckets privados e políticas RLS |
+| **Documentos & Relatórios** | Emissão nativa de Declarações Oficiais em PDF com código hash de autenticidade |
+| **Hospedagem & CI/CD** | Vercel (Edge & Serverless com Turbopack) e GitHub Actions |
 
 ---
 
@@ -300,95 +298,70 @@ flowchart LR
 
 ## Banco de dados
 
-O banco utiliza **PostgreSQL**, disponibilizado pelo Supabase. O esquema inicial contempla duas estruturas principais:
+O banco utiliza **PostgreSQL** hospedado na infraestrutura Supabase, totalmente protegido por **Row Level Security (RLS)** em todas as suas 53 tabelas e governado por 25 migrações versionadas.
 
-- **`profiles`:** dados cadastrais, identificação e nível de acesso dos usuários.
-- **`monthly_payments`:** registros de mensalidades, com competência, valor, situação e responsável pela última atualização.
+A arquitetura do Capítulo 500 organiza-se em torno de entidades modulares e seguras:
+
+- **`chapters`:** registro central multi-tenant com número oficial (500), cidade e patrocinadora.
+- **`members`:** cadastro de membros (117 irmãos cadastrados) com ID oficial DeMolay Brasil (`id_demolay`), dados litúrgicos, loja maçônica patrocinadora e categoria.
+- **`chapter_memberships` & `profiles`:** permissões RBAC de acesso vinculadas ao Supabase Auth.
+- **`financial_periods` & `member_charges`:** controle contábil e mensalidades capitulares (DeMolays R$ 22, Maçons R$ 25, vencimento todo dia 28), com idempotência e triggers de proteção contra exclusão.
+- **`managements` & `management_positions`:** nominata oficial das gestões capitulares (I a XXV).
+- **`meetings` & `meeting_attendance`:** atas, calendário litúrgico e chamadas digitais de presença.
+- **`issued_declarations`:** declarações timbradas emitidas automaticamente com hash único de autenticidade pública.
 
 ```mermaid
 erDiagram
-    profiles ||--o{ monthly_payments : possui
-    profiles {
+    chapters ||--o{ members : possui
+    chapters ||--o{ financial_periods : define
+    chapters ||--o{ managements : historico
+    members ||--o{ member_charges : lancamento
+    financial_periods ||--o{ member_charges : competencia
+    members ||--o{ meeting_attendance : presenca
+    managements ||--o{ management_positions : cargos
+    members ||--o{ issued_declarations : emite
+
+    members {
         uuid id PK
         varchar id_demolay UK
         text full_name
-        varchar member_type
-        varchar role
-        date birth_date
-        date initiation_date
-        varchar status
+        varchar category
+        varchar regularity
+        text masonic_lodge
+        boolean is_active
     }
-    monthly_payments {
+    member_charges {
         uuid id PK
-        uuid user_id FK
+        uuid member_id FK
+        uuid financial_period_id FK
+        decimal amount
+        date due_date
+        varchar status
+        timestamptz paid_at
+    }
+    financial_periods {
+        uuid id PK
         int year
         int month
         varchar status
-        decimal amount
-        timestamptz updated_at
-        uuid updated_by FK
     }
 ```
-
-<details>
-<summary><b>Esquema SQL inicial</b></summary>
-
-<br>
-
-```sql
-CREATE TABLE profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id),
-  id_demolay VARCHAR(20) UNIQUE NOT NULL,
-  full_name TEXT NOT NULL,
-
-  member_type VARCHAR(20)
-    CHECK (member_type IN ('demolay', 'macom')),
-
-  role VARCHAR(20)
-    CHECK (role IN ('master', 'tesoureiro', 'escrivao', 'membro')),
-
-  birth_date DATE NOT NULL,
-  initiation_date DATE NOT NULL,
-
-  status VARCHAR(20) DEFAULT 'ativo'
-    CHECK (status IN ('ativo', 'desligado', 'senior'))
-);
-
-CREATE TABLE monthly_payments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES profiles(id),
-
-  year INT NOT NULL,
-  month INT CHECK (month BETWEEN 1 AND 12),
-
-  status VARCHAR(20)
-    CHECK (status IN ('pago', 'pendente', 'isento')),
-
-  amount DECIMAL(10,2),
-
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_by UUID REFERENCES profiles(id)
-);
-```
-
-</details>
-
-> [!NOTE]
-> Este é o esquema inicial. As políticas de Row Level Security (RLS), as validações e as demais tabelas serão definidas e implementadas conforme a evolução dos módulos.
 
 ---
 
 ## Status do desenvolvimento
 
-- [x] Esquema SQL inicial (`profiles` e `monthly_payments`)
-- [ ] Políticas de Row Level Security
-- [ ] Demais tabelas e validações
-- [ ] Portal público
-- [ ] Painel Master / Admin
-- [ ] Módulo da Tesouraria
-- [ ] Módulo da Secretaria e frequência
-- [ ] Quadro de membros e perfil do membro
-- [ ] Adaptação para dispositivos móveis (planejada)
+- [x] **Arquitetura & Banco de Dados:** 25 migrações aplicadas, 53 tabelas com RLS e triggers de proteção
+- [x] **Segurança & RBAC:** Controle estrito de papéis (Master, Tesoureiro, Escrivão, Membro) e reCAPTCHA v2
+- [x] **Portal Público:** Home, História, Galeria de Gestões, Ordem DeMolay e Ouvidoria
+- [x] **Painel Master / Admin:** Visão geral, alternador "Ver como Membro", auditoria e censo capitular
+- [x] **Módulo de Tesouraria:** Controle de mensalidades, baixas manuais, relatórios em lote e alteração de taxas
+- [x] **Pagamentos PIX & InfinitePay:** PIX Padrão Banco Central (BR Code EMVCo com CRC16) e Webhook InfinitePay
+- [x] **Secretaria & Frequência:** Chamada digital litúrgica, RSVP de irmãos e atas de reunião
+- [x] **Quadro & Perfil do Membro:** Autoatendimento completo, extrato multimeses e foto de perfil com corte circular
+- [x] **Documentos & Declarações:** Emissão instantânea em PDF com código de verificação pública
+- [x] **Responsividade & Mobile:** Interface 100% responsiva com padrão Apple iOS Glassmorphism
+- [x] **Suíte de Testes Automatizados:** 36 testes institucionais aprovados sem pendências (`npm test`)
 
 ---
 
@@ -454,13 +427,15 @@ O repositório separa o desenvolvimento individual da versão estável. As funci
 
 ```mermaid
 flowchart LR
-    J["dev_joao"] -->|revisão e validação| M["main"]
-    A["dev_airton"] -->|revisão e validação| M
+    J["dev_joao"] -->|sincronização| D["developer"]
+    A["dev_airton"] -->|sincronização| D
+    D -->|revisão, testes e build| M["main"]
 ```
 
 | Branch | Responsável / finalidade |
 |---|---|
-| **`main`** | Versão estável de produção. |
+| **`main`** | Versão estável de produção conectada à Vercel. |
+| **`developer`** | Ambiente integrado de homologação, testes e consolidação técnica. |
 | **`dev_joao`** | Ambiente de desenvolvimento de João Guilherme. |
 | **`dev_airton`** | Ambiente de desenvolvimento de Airton. |
 
