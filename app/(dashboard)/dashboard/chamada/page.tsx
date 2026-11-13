@@ -236,6 +236,73 @@ export default function ChamadaPage() {
   const [isConvocationModalOpen, setIsConvocationModalOpen] = useState(false);
   const [convocationCopied, setConvocationCopied] = useState(false);
 
+  // Permissões e Perfis (RBAC Guard)
+  const [userRole, setUserRole] = useState<string>("membro");
+  const [viewAsMember, setViewAsMember] = useState(false);
+  const [isRoleChecked, setIsRoleChecked] = useState(false);
+
+  // Checa Permissão do Usuário Logado
+  useEffect(() => {
+    async function checkRole() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const isPermanentMaster =
+            user.user_metadata?.id_demolay === "127738" ||
+            user.user_metadata?.id_demolay === "102836" ||
+            user.email === "joaomonteiro0@icloud.com" ||
+            user.email === "airton@carvalhoneves500.org.br";
+
+          const { data: membership } = await supabase
+            .from("chapter_memberships")
+            .select("role_code")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
+            .maybeSingle();
+
+          if (isPermanentMaster || membership?.role_code === "master") {
+            setUserRole("master");
+          } else if (membership?.role_code) {
+            setUserRole(membership.role_code);
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao verificar papel do usuário:", err);
+      } finally {
+        setIsRoleChecked(true);
+      }
+    }
+    checkRole();
+  }, []);
+
+  // Sincroniza o modo "Ver como Membro" com a Sidebar e localStorage
+  useEffect(() => {
+    const checkViewAsMember = () => {
+      try {
+        const stored = localStorage.getItem("cn_view_as_member");
+        setViewAsMember(stored === "true");
+      } catch {
+        // ignore
+      }
+    };
+    const frameId = requestAnimationFrame(checkViewAsMember);
+    window.addEventListener("cn_view_as_member_change", checkViewAsMember);
+    window.addEventListener("storage", checkViewAsMember);
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("cn_view_as_member_change", checkViewAsMember);
+      window.removeEventListener("storage", checkViewAsMember);
+    };
+  }, []);
+
+  const effectiveRole = viewAsMember ? "membro" : userRole;
+  const isMaster = effectiveRole === "master" || effectiveRole === "admin";
+  const canManageAttendance = isMaster || effectiveRole === "escrivao";
+
   // 1. Carregar Reuniões e Membros em Paralelo
   useEffect(() => {
     async function init() {
@@ -448,6 +515,10 @@ export default function ChamadaPage() {
   // Salvar Chamada no Banco
   const handleSaveAttendance = async () => {
     if (!selectedMeetingId) return;
+    if (!canManageAttendance) {
+      alert("Acesso restrito à Diretoria para salvar a chamada.");
+      return;
+    }
     setIsSaving(true);
     setSaveSuccessMsg("");
 
@@ -482,6 +553,10 @@ export default function ChamadaPage() {
   const handleSaveMinute = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedMeetingId) return;
+    if (!canManageAttendance) {
+      alert("Acesso restrito à Diretoria para registrar atas.");
+      return;
+    }
     setIsSavingMinute(true);
 
     try {
@@ -508,6 +583,10 @@ export default function ChamadaPage() {
   const handleSaveMeeting = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingMeeting) return;
+    if (!isMaster) {
+      alert("Acesso restrito ao Mestre Conselheiro/Master para cadastrar ou editar reuniões.");
+      return;
+    }
 
     try {
       const supabase = createClient();
@@ -563,6 +642,10 @@ export default function ChamadaPage() {
   // Adicionar Maçom Visitante
   const handleAddMasonVisitor = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageAttendance) {
+      alert("Acesso restrito à Diretoria para registrar visitantes.");
+      return;
+    }
     if (!selectedMeetingId || !newMasonVisitor.name.trim() || !newMasonVisitor.cim.trim()) return;
 
     try {
@@ -604,6 +687,7 @@ export default function ChamadaPage() {
 
   // Remover Maçom Visitante
   const handleRemoveMasonVisitor = async (visitorId: string) => {
+    if (!canManageAttendance) return;
     if (!confirm("Deseja realmente remover este maçom visitante da chamada?")) return;
     try {
       const supabase = createClient();
@@ -618,6 +702,10 @@ export default function ChamadaPage() {
   // Adicionar DeMolay Visitante (ID, Nome Completo, Capítulo)
   const handleAddDemolayVisitor = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageAttendance) {
+      alert("Acesso restrito à Diretoria para registrar visitantes.");
+      return;
+    }
     if (!selectedMeetingId || !newDemolayVisitor.name.trim() || !newDemolayVisitor.id_demolay.trim()) return;
 
     const newRecord: VisitingDemolayRecord = {
@@ -662,6 +750,7 @@ export default function ChamadaPage() {
 
   // Remover DeMolay Visitante
   const handleRemoveDemolayVisitor = async (visitorId: string) => {
+    if (!canManageAttendance) return;
     if (!confirm("Deseja remover este irmão visitante da reunião?")) return;
     try {
       const supabase = createClient();
@@ -727,40 +816,49 @@ export default function ChamadaPage() {
 
         {/* Ações Rápidas */}
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => {
-              setEditingMeeting({
-                title: "Sessão Ordinária",
-                date: new Date().toISOString().split("T")[0],
-                time: "16:00",
-                location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-              });
-              setIsMeetingModalOpen(true);
-            }}
-            className="btn-heraldico-vidro px-3.5 py-2 rounded-xl text-xs"
-          >
-            <PlusCircle className="w-4 h-4 text-[#D9AA45]" />
-            <span>Nova Reunião</span>
-          </button>
+          {isMaster && (
+            <button
+              onClick={() => {
+                setEditingMeeting({
+                  title: "Sessão Ordinária",
+                  date: new Date().toISOString().split("T")[0],
+                  time: "16:00",
+                  location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+                });
+                setIsMeetingModalOpen(true);
+              }}
+              className="btn-heraldico-vidro px-3.5 py-2 rounded-xl text-xs"
+            >
+              <PlusCircle className="w-4 h-4 text-[#D9AA45]" />
+              <span>Nova Reunião</span>
+            </button>
+          )}
 
-          {sessionSection === "chamada" ? (
-            <button
-              onClick={handleSaveAttendance}
-              disabled={isSaving}
-              className="btn-heraldico-ouro px-4 py-2 rounded-xl text-xs disabled:opacity-50"
-            >
-              <Save className="w-4 h-4" />
-              <span>{isSaving ? "Salvando..." : "Salvar Chamada"}</span>
-            </button>
+          {canManageAttendance ? (
+            sessionSection === "chamada" ? (
+              <button
+                onClick={handleSaveAttendance}
+                disabled={isSaving}
+                className="btn-heraldico-ouro px-4 py-2 rounded-xl text-xs disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                <span>{isSaving ? "Salvando..." : "Salvar Chamada"}</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleSaveMinute}
+                disabled={isSavingMinute}
+                className="btn-heraldico-ouro px-4 py-2 rounded-xl text-xs disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                <span>{isSavingMinute ? "Salvando..." : "Salvar Ata Oficial"}</span>
+              </button>
+            )
           ) : (
-            <button
-              onClick={handleSaveMinute}
-              disabled={isSavingMinute}
-              className="btn-heraldico-ouro px-4 py-2 rounded-xl text-xs disabled:opacity-50"
-            >
-              <Save className="w-4 h-4" />
-              <span>{isSavingMinute ? "Salvando..." : "Salvar Ata Oficial"}</span>
-            </button>
+            <span className="selo-vidro-cn px-3.5 py-2 rounded-xl text-xs text-emerald-300 font-semibold flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Modo Leitura (Membro)</span>
+            </span>
           )}
         </div>
       </div>
@@ -806,29 +904,33 @@ export default function ChamadaPage() {
 
           {selectedMeeting && (
             <div className="flex flex-wrap items-center gap-2">
-              {/* Botão Google Agenda */}
-              <a
-                href={getGoogleCalendarUrl(selectedMeeting)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-heraldico-vidro px-3.5 py-2 rounded-xl text-xs"
-                title="Adicionar ao Google Agenda"
-              >
-                <CalendarCheck className="w-4 h-4 text-[#D9AA45]" />
-                <span>Google Agenda</span>
-                <ExternalLink className="w-3 h-3 opacity-70" />
-              </a>
+              {/* Botão Google Agenda (Apenas Master) */}
+              {isMaster && (
+                <a
+                  href={getGoogleCalendarUrl(selectedMeeting)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-heraldico-vidro px-3.5 py-2 rounded-xl text-xs"
+                  title="Adicionar ao Google Agenda"
+                >
+                  <CalendarCheck className="w-4 h-4 text-[#D9AA45]" />
+                  <span>Google Agenda</span>
+                  <ExternalLink className="w-3 h-3 opacity-70" />
+                </a>
+              )}
 
-              {/* Botão Convocação */}
-              <button
-                onClick={() => setIsConvocationModalOpen(true)}
-                className="btn-heraldico-vidro px-3.5 py-2 rounded-xl text-xs"
-              >
-                <Mail className="w-4 h-4 text-emerald-300" />
-                <span>Convocação Oficial</span>
-              </button>
+              {/* Botão Convocação Oficial (Apenas Master) */}
+              {isMaster && (
+                <button
+                  onClick={() => setIsConvocationModalOpen(true)}
+                  className="btn-heraldico-vidro px-3.5 py-2 rounded-xl text-xs"
+                >
+                  <Mail className="w-4 h-4 text-emerald-300" />
+                  <span>Convocação Oficial</span>
+                </button>
+              )}
 
-              {/* Botão Ver Ata Oficial (se disponível) */}
+              {/* Botão Ver Ata Oficial (se disponível - Visível para todos os irmãos) */}
               {(minuteData.storage_path || selectedMeeting.ata_pdf_url) && (
                 <a
                   href={minuteData.storage_path || selectedMeeting.ata_pdf_url || "#"}
@@ -843,24 +945,26 @@ export default function ChamadaPage() {
                 </a>
               )}
 
-              {/* Botão Editar Dados da Sessão */}
-              <button
-                onClick={() => {
-                  const d = new Date(selectedMeeting.starts_at);
-                  setEditingMeeting({
-                    id: selectedMeeting.id,
-                    title: selectedMeeting.title,
-                    date: d.toISOString().split("T")[0],
-                    time: d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-                    location: selectedMeeting.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-                  });
-                  setIsMeetingModalOpen(true);
-                }}
-                className="btn-heraldico-vidro px-3 py-2 rounded-xl text-xs"
-              >
-                <Edit2 className="w-3.5 h-3.5 text-[#D9AA45]" />
-                <span>Editar Reunião</span>
-              </button>
+              {/* Botão Editar Dados da Sessão (Apenas Master) */}
+              {isMaster && (
+                <button
+                  onClick={() => {
+                    const d = new Date(selectedMeeting.starts_at);
+                    setEditingMeeting({
+                      id: selectedMeeting.id,
+                      title: selectedMeeting.title,
+                      date: d.toISOString().split("T")[0],
+                      time: d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+                      location: selectedMeeting.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+                    });
+                    setIsMeetingModalOpen(true);
+                  }}
+                  className="btn-heraldico-vidro px-3 py-2 rounded-xl text-xs"
+                >
+                  <Edit2 className="w-3.5 h-3.5 text-[#D9AA45]" />
+                  <span>Editar Reunião</span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -984,12 +1088,14 @@ export default function ChamadaPage() {
                 <span className="text-xs font-bold uppercase tracking-wider text-blue-300">
                   DeMolays Visitantes
                 </span>
-                <button
-                  onClick={() => setIsDemolayVisitorModalOpen(true)}
-                  className="text-[10px] font-bold text-[#D9AA45] hover:underline cursor-pointer"
-                >
-                  + Adicionar
-                </button>
+                {canManageAttendance && (
+                  <button
+                    onClick={() => setIsDemolayVisitorModalOpen(true)}
+                    className="text-[10px] font-bold text-[#D9AA45] hover:underline cursor-pointer"
+                  >
+                    + Adicionar
+                  </button>
+                )}
               </div>
               <p className="text-2xl font-extrabold text-blue-300">{visitingDemolays.length}</p>
               <p className="text-[10px] text-blue-200/70 pt-1 border-t border-white/5">
@@ -1003,12 +1109,14 @@ export default function ChamadaPage() {
                 <span className="text-xs font-bold uppercase tracking-wider text-purple-300">
                   Maçons Visitantes
                 </span>
-                <button
-                  onClick={() => setIsMasonVisitorModalOpen(true)}
-                  className="text-[10px] font-bold text-[#D9AA45] hover:underline cursor-pointer"
-                >
-                  + Adicionar
-                </button>
+                {canManageAttendance && (
+                  <button
+                    onClick={() => setIsMasonVisitorModalOpen(true)}
+                    className="text-[10px] font-bold text-[#D9AA45] hover:underline cursor-pointer"
+                  >
+                    + Adicionar
+                  </button>
+                )}
               </div>
               <p className="text-2xl font-extrabold text-purple-300">{visitingMasons.length}</p>
               <p className="text-[10px] text-purple-200/70 pt-1 border-t border-white/5">
@@ -1064,7 +1172,7 @@ export default function ChamadaPage() {
                 </button>
               </div>
 
-              {activeTab === "visitantes_demolay" && (
+              {canManageAttendance && activeTab === "visitantes_demolay" && (
                 <button
                   onClick={() => setIsDemolayVisitorModalOpen(true)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md transition-all cursor-pointer"
@@ -1074,7 +1182,7 @@ export default function ChamadaPage() {
                 </button>
               )}
 
-              {activeTab === "visitantes_macom" && (
+              {canManageAttendance && activeTab === "visitantes_macom" && (
                 <button
                   onClick={() => setIsMasonVisitorModalOpen(true)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md transition-all cursor-pointer"
@@ -1107,49 +1215,75 @@ export default function ChamadaPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() =>
-                            setAttendanceMap((prev) => ({ ...prev, [m.id]: "presente" }))
-                          }
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                            currentStatus === "presente"
-                              ? "bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400/50"
-                              : "bg-white/5 text-emerald-200/60 hover:bg-white/10"
-                          }`}
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Presente</span>
-                        </button>
+                      {canManageAttendance ? (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAttendanceMap((prev) => ({ ...prev, [m.id]: "presente" }))
+                            }
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              currentStatus === "presente"
+                                ? "bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400/50"
+                                : "bg-white/5 text-emerald-200/60 hover:bg-white/10"
+                            }`}
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Presente</span>
+                          </button>
 
-                        <button
-                          onClick={() =>
-                            setAttendanceMap((prev) => ({ ...prev, [m.id]: "justificado" }))
-                          }
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                            currentStatus === "justificado"
-                              ? "bg-amber-600 text-white shadow-md ring-2 ring-amber-400/50"
-                              : "bg-white/5 text-amber-200/60 hover:bg-white/10"
-                          }`}
-                        >
-                          <AlertCircle className="w-3.5 h-3.5" />
-                          <span>Justificado</span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAttendanceMap((prev) => ({ ...prev, [m.id]: "justificado" }))
+                            }
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              currentStatus === "justificado"
+                                ? "bg-amber-600 text-white shadow-md ring-2 ring-amber-400/50"
+                                : "bg-white/5 text-amber-200/60 hover:bg-white/10"
+                            }`}
+                          >
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            <span>Justificado</span>
+                          </button>
 
-                        <button
-                          onClick={() =>
-                            setAttendanceMap((prev) => ({ ...prev, [m.id]: "ausente" }))
-                          }
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                            currentStatus === "ausente"
-                              ? "bg-red-600 text-white shadow-md ring-2 ring-red-400/50"
-                              : "bg-white/5 text-red-200/60 hover:bg-white/10"
-                          }`}
-                        >
-                          <XCircle className="w-3.5 h-3.5" />
-                          <span>Ausente</span>
-                        </button>
-                      </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAttendanceMap((prev) => ({ ...prev, [m.id]: "ausente" }))
+                            }
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              currentStatus === "ausente"
+                                ? "bg-red-600 text-white shadow-md ring-2 ring-red-400/50"
+                                : "bg-white/5 text-red-200/60 hover:bg-white/10"
+                            }`}
+                          >
+                            <XCircle className="w-3.5 h-3.5" />
+                            <span>Ausente</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          {currentStatus === "presente" && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Presente</span>
+                            </span>
+                          )}
+                          {currentStatus === "justificado" && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-amber-500/15 border border-amber-500/30 text-amber-300">
+                              <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Justificado</span>
+                            </span>
+                          )}
+                          {currentStatus === "ausente" && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 text-emerald-200/50">
+                              <XCircle className="w-3.5 h-3.5 text-red-400/70" />
+                              <span>Ausente</span>
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -1178,35 +1312,53 @@ export default function ChamadaPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() =>
-                            setAttendanceMap((prev) => ({ ...prev, [m.id]: "presente" }))
-                          }
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                            currentStatus === "presente"
-                              ? "bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400/50"
-                              : "bg-white/5 text-emerald-200/60 hover:bg-white/10"
-                          }`}
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Presente</span>
-                        </button>
+                      {canManageAttendance ? (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAttendanceMap((prev) => ({ ...prev, [m.id]: "presente" }))
+                            }
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              currentStatus === "presente"
+                                ? "bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400/50"
+                                : "bg-white/5 text-emerald-200/60 hover:bg-white/10"
+                            }`}
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Presente</span>
+                          </button>
 
-                        <button
-                          onClick={() =>
-                            setAttendanceMap((prev) => ({ ...prev, [m.id]: "ausente" }))
-                          }
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                            currentStatus === "ausente"
-                              ? "bg-red-600 text-white shadow-md ring-2 ring-red-400/50"
-                              : "bg-white/5 text-red-200/60 hover:bg-white/10"
-                          }`}
-                        >
-                          <XCircle className="w-3.5 h-3.5" />
-                          <span>Ausente</span>
-                        </button>
-                      </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAttendanceMap((prev) => ({ ...prev, [m.id]: "ausente" }))
+                            }
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              currentStatus === "ausente"
+                                ? "bg-red-600 text-white shadow-md ring-2 ring-red-400/50"
+                                : "bg-white/5 text-red-200/60 hover:bg-white/10"
+                            }`}
+                          >
+                            <XCircle className="w-3.5 h-3.5" />
+                            <span>Ausente</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          {currentStatus === "presente" ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Presente</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 text-emerald-200/50">
+                              <XCircle className="w-3.5 h-3.5 text-red-400/70" />
+                              <span>Ausente</span>
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -1219,15 +1371,17 @@ export default function ChamadaPage() {
                 {visitingDemolays.length === 0 ? (
                   <div className="py-8 text-center text-xs text-emerald-200/60 bg-white/[0.02] rounded-xl border border-dashed border-white/10">
                     Nenhum irmão DeMolay visitante registrado para esta sessão ainda.
-                    <div className="mt-3">
-                      <button
-                        onClick={() => setIsDemolayVisitorModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md cursor-pointer"
-                      >
-                        <UserPlus className="w-3.5 h-3.5" />
-                        <span>Adicionar DeMolay Visitante</span>
-                      </button>
-                    </div>
+                    {canManageAttendance && (
+                      <div className="mt-3">
+                        <button
+                          onClick={() => setIsDemolayVisitorModalOpen(true)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md cursor-pointer"
+                        >
+                          <UserPlus className="w-3.5 h-3.5" />
+                          <span>Adicionar DeMolay Visitante</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="divide-y divide-white/5">
@@ -1251,13 +1405,15 @@ export default function ChamadaPage() {
                           </p>
                         </div>
 
-                        <button
-                          onClick={() => handleRemoveDemolayVisitor(v.id)}
-                          className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 transition-colors cursor-pointer"
-                          title="Remover visitante"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {canManageAttendance && (
+                          <button
+                            onClick={() => handleRemoveDemolayVisitor(v.id)}
+                            className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 transition-colors cursor-pointer"
+                            title="Remover visitante"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1271,15 +1427,17 @@ export default function ChamadaPage() {
                 {visitingMasons.length === 0 ? (
                   <div className="py-8 text-center text-xs text-emerald-200/60 bg-white/[0.02] rounded-xl border border-dashed border-white/10">
                     Nenhum maçom visitante registrado para esta sessão ainda.
-                    <div className="mt-3">
-                      <button
-                        onClick={() => setIsMasonVisitorModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md cursor-pointer"
-                      >
-                        <UserPlus className="w-3.5 h-3.5" />
-                        <span>Adicionar Visitante</span>
-                      </button>
-                    </div>
+                    {canManageAttendance && (
+                      <div className="mt-3">
+                        <button
+                          onClick={() => setIsMasonVisitorModalOpen(true)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md cursor-pointer"
+                        >
+                          <UserPlus className="w-3.5 h-3.5" />
+                          <span>Adicionar Visitante</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="divide-y divide-white/5">
@@ -1301,13 +1459,15 @@ export default function ChamadaPage() {
                           <p className="text-xs text-[#D9AA45]">{v.masonic_lodge}</p>
                         </div>
 
-                        <button
-                          onClick={() => handleRemoveMasonVisitor(v.id)}
-                          className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 transition-colors cursor-pointer"
-                          title="Remover visitante"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {canManageAttendance && (
+                          <button
+                            onClick={() => handleRemoveMasonVisitor(v.id)}
+                            className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 transition-colors cursor-pointer"
+                            title="Remover visitante"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1385,9 +1545,12 @@ export default function ChamadaPage() {
                 <input
                   type="text"
                   required
+                  readOnly={!canManageAttendance}
                   value={minuteData.number}
                   onChange={(e) => setMinuteData({ ...minuteData, number: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/20 text-white font-bold focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  className={`w-full px-3 py-2 rounded-xl bg-black/40 border border-white/20 text-white font-bold focus:outline-none ${
+                    canManageAttendance ? "focus:ring-2 focus:ring-[#D9AA45]" : "cursor-default opacity-80"
+                  }`}
                   placeholder="Ex: Ata nº 24 — Sessão Ordinária"
                 />
               </div>
@@ -1395,9 +1558,12 @@ export default function ChamadaPage() {
               <div>
                 <label className="block font-semibold mb-1 text-emerald-200">Grau / Tipo de Cerimônia</label>
                 <select
+                  disabled={!canManageAttendance}
                   value={minuteData.degree}
                   onChange={(e) => setMinuteData({ ...minuteData, degree: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
+                  className={`w-full px-3 py-2 rounded-xl bg-black/40 border border-white/20 text-white focus:outline-none ${
+                    canManageAttendance ? "focus:ring-2 focus:ring-[#D9AA45] cursor-pointer" : "cursor-default opacity-80"
+                  }`}
                 >
                   <option value="Grau Iniciático">Grau Iniciático</option>
                   <option value="Grau DeMolay">Grau DeMolay</option>
@@ -1461,9 +1627,12 @@ export default function ChamadaPage() {
               <textarea
                 rows={9}
                 required
+                readOnly={!canManageAttendance}
                 value={minuteData.content}
                 onChange={(e) => setMinuteData({ ...minuteData, content: e.target.value })}
-                className="w-full p-4 rounded-2xl bg-black/40 border border-white/20 text-white leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#D9AA45] font-serif text-sm"
+                className={`w-full p-4 rounded-2xl bg-black/40 border border-white/20 text-white leading-relaxed font-serif text-sm ${
+                  canManageAttendance ? "focus:outline-none focus:ring-2 focus:ring-[#D9AA45]" : "cursor-default opacity-90"
+                }`}
                 placeholder="Redija o texto da ata da reunião..."
               />
             </div>
@@ -1500,21 +1669,23 @@ export default function ChamadaPage() {
                 <span>Imprimir Ata Oficial</span>
               </button>
 
-              <button
-                type="submit"
-                disabled={isSavingMinute}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs transition-all shadow-md cursor-pointer disabled:opacity-50"
-              >
-                <Save className="w-4 h-4" />
-                <span>{isSavingMinute ? "Salvando..." : "Salvar no Livro de Atas"}</span>
-              </button>
+              {canManageAttendance && (
+                <button
+                  type="submit"
+                  disabled={isSavingMinute}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs transition-all shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSavingMinute ? "Salvando..." : "Salvar no Livro de Atas"}</span>
+                </button>
+              )}
             </div>
           </form>
         </div>
       )}
 
       {/* MODAL: ADICIONAR / EDITAR REUNIÃO */}
-      {isMeetingModalOpen && editingMeeting && (
+      {isMeetingModalOpen && isMaster && editingMeeting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
           <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
             <h3 className="text-lg font-bold">
@@ -1642,7 +1813,7 @@ export default function ChamadaPage() {
       )}
 
       {/* MODAL: ADICIONAR DEMOLAY VISITANTE (ID, NOME COMPLETO, CAPÍTULO) */}
-      {isDemolayVisitorModalOpen && (
+      {isDemolayVisitorModalOpen && canManageAttendance && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
           <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center gap-2">
@@ -1723,7 +1894,7 @@ export default function ChamadaPage() {
       )}
 
       {/* MODAL: ADICIONAR MAÇOM VISITANTE */}
-      {isMasonVisitorModalOpen && (
+      {isMasonVisitorModalOpen && canManageAttendance && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
           <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center gap-2">
@@ -1816,7 +1987,7 @@ export default function ChamadaPage() {
       )}
 
       {/* MODAL: CONVOCAÇÃO OFICIAL FORMATADA */}
-      {isConvocationModalOpen && selectedMeeting && (
+      {isConvocationModalOpen && isMaster && selectedMeeting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
           <div className="w-full max-w-lg p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">

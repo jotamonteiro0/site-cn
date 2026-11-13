@@ -15,7 +15,8 @@ import {
   ChevronRight,
   ClipboardCheck,
   UserPlus,
-  Building2
+  Building2,
+  UserCheck
 } from "lucide-react";
 
 interface MemberRecord {
@@ -38,6 +39,70 @@ export default function DashboardOverviewPage() {
   const [meetings, setMeetings] = useState<MeetingRecord[]>([]);
   const [members, setMembers] = useState<MemberRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Permissões e Perfis (RBAC Guard)
+  const [userRole, setUserRole] = useState<string>("membro");
+  const [viewAsMember, setViewAsMember] = useState(false);
+
+  // Checa Permissão do Usuário Logado
+  useEffect(() => {
+    async function checkRole() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const isPermanentMaster =
+            user.user_metadata?.id_demolay === "127738" ||
+            user.user_metadata?.id_demolay === "102836" ||
+            user.email === "joaomonteiro0@icloud.com" ||
+            user.email === "airton@carvalhoneves500.org.br";
+
+          const { data: membership } = await supabase
+            .from("chapter_memberships")
+            .select("role_code")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
+            .maybeSingle();
+
+          if (isPermanentMaster || membership?.role_code === "master") {
+            setUserRole("master");
+          } else if (membership?.role_code) {
+            setUserRole(membership.role_code);
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao verificar papel do usuário:", err);
+      }
+    }
+    checkRole();
+  }, []);
+
+  // Sincroniza o modo "Ver como Membro" com a Sidebar e localStorage
+  useEffect(() => {
+    const checkViewAsMember = () => {
+      try {
+        const stored = localStorage.getItem("cn_view_as_member");
+        setViewAsMember(stored === "true");
+      } catch {
+        // ignore
+      }
+    };
+    const frameId = requestAnimationFrame(checkViewAsMember);
+    window.addEventListener("cn_view_as_member_change", checkViewAsMember);
+    window.addEventListener("storage", checkViewAsMember);
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("cn_view_as_member_change", checkViewAsMember);
+      window.removeEventListener("storage", checkViewAsMember);
+    };
+  }, []);
+
+  const effectiveRole = viewAsMember ? "membro" : userRole;
+  const isMaster = effectiveRole === "master" || effectiveRole === "admin";
+  const canManage = isMaster || effectiveRole === "escrivao";
 
   useEffect(() => {
     async function loadData() {
@@ -125,20 +190,41 @@ export default function DashboardOverviewPage() {
 
         {/* Atalhos Rápidos */}
         <div className="flex items-center gap-2.5">
-          <Link
-            href="/dashboard/chamada"
-            className="btn-heraldico-esmeralda px-4 py-2.5 rounded-xl text-xs"
-          >
-            <ClipboardCheck className="w-4 h-4 text-[#D9AA45]" />
-            <span>Frequência & Chamada</span>
-          </Link>
-          <Link
-            href="/dashboard/membros"
-            className="btn-heraldico-vidro px-4 py-2.5 rounded-xl text-xs"
-          >
-            <UserPlus className="w-4 h-4 text-emerald-300" />
-            <span>Novo Membro</span>
-          </Link>
+          {canManage ? (
+            <>
+              <Link
+                href="/dashboard/chamada"
+                className="btn-heraldico-esmeralda px-4 py-2.5 rounded-xl text-xs"
+              >
+                <ClipboardCheck className="w-4 h-4 text-[#D9AA45]" />
+                <span>Frequência & Chamada</span>
+              </Link>
+              <Link
+                href="/dashboard/membros"
+                className="btn-heraldico-vidro px-4 py-2.5 rounded-xl text-xs"
+              >
+                <UserPlus className="w-4 h-4 text-emerald-300" />
+                <span>Novo Membro</span>
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/dashboard/membro"
+                className="btn-heraldico-esmeralda px-4 py-2.5 rounded-xl text-xs"
+              >
+                <UserCheck className="w-4 h-4 text-[#D9AA45]" />
+                <span>Meu Autoatendimento</span>
+              </Link>
+              <Link
+                href="/dashboard/chamada"
+                className="btn-heraldico-vidro px-4 py-2.5 rounded-xl text-xs"
+              >
+                <ClipboardCheck className="w-4 h-4 text-emerald-300" />
+                <span>Consultar Frequência</span>
+              </Link>
+            </>
+          )}
         </div>
       </div>
 
@@ -239,26 +325,39 @@ export default function DashboardOverviewPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
-              {/* Botão Google Agenda */}
-              <a
-                href={getGoogleCalendarUrl(nextMeeting)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-heraldico-vidro px-3.5 py-2.5 rounded-xl text-xs"
-              >
-                <CalendarCheck className="w-4 h-4 text-[#D9AA45]" />
-                <span>Google Agenda</span>
-                <ExternalLink className="w-3 h-3 opacity-70" />
-              </a>
+              {/* Botão Google Agenda (Apenas Master) */}
+              {isMaster && (
+                <a
+                  href={getGoogleCalendarUrl(nextMeeting)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-heraldico-vidro px-3.5 py-2.5 rounded-xl text-xs"
+                  title="Adicionar ao Google Agenda"
+                >
+                  <CalendarCheck className="w-4 h-4 text-[#D9AA45]" />
+                  <span>Google Agenda</span>
+                  <ExternalLink className="w-3 h-3 opacity-70" />
+                </a>
+              )}
 
-              {/* Botão Chamada */}
-              <Link
-                href="/dashboard/chamada"
-                className="btn-heraldico-ouro px-4 py-2.5 rounded-xl text-xs"
-              >
-                <ClipboardCheck className="w-4 h-4" />
-                <span>Fazer Chamada</span>
-              </Link>
+              {/* Botão Chamada / Detalhes */}
+              {canManage ? (
+                <Link
+                  href="/dashboard/chamada"
+                  className="btn-heraldico-ouro px-4 py-2.5 rounded-xl text-xs"
+                >
+                  <ClipboardCheck className="w-4 h-4" />
+                  <span>Fazer Chamada</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/dashboard/chamada"
+                  className="btn-heraldico-vidro px-4 py-2.5 rounded-xl text-xs"
+                >
+                  <ClipboardCheck className="w-4 h-4 text-[#D9AA45]" />
+                  <span>Ver Detalhes da Sessão</span>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -311,7 +410,7 @@ export default function DashboardOverviewPage() {
               </p>
             </div>
             <div className="mt-5 flex items-center gap-2 text-xs font-bold text-[#D9AA45]">
-              <span>Acessar Atas & Chamada</span>
+              <span>{canManage ? "Acessar Atas & Chamada" : "Consultar Atas & Chamada"}</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
@@ -329,11 +428,13 @@ export default function DashboardOverviewPage() {
                 Quadro de Membros
               </h4>
               <p className="text-xs text-emerald-200/70 mt-2 leading-relaxed">
-                Consulta completa com filtros de regularidade, datas de iniciação e botão para habilitar novos membros no capítulo.
+                {canManage
+                  ? "Consulta completa com filtros de regularidade, datas de iniciação e botão para habilitar novos membros no capítulo."
+                  : "Consulta completa do quadro capitular de DeMolays ativos, sêniores e conselheiros maçônicos regulares."}
               </p>
             </div>
             <div className="mt-5 flex items-center gap-2 text-xs font-bold text-[#D9AA45]">
-              <span>Gerenciar Membros</span>
+              <span>{canManage ? "Gerenciar Membros" : "Consultar Membros"}</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
