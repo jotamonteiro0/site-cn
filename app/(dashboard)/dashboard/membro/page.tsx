@@ -2295,7 +2295,7 @@ export default function MemberSelfServicePage() {
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1">
                       <Sparkles className="w-3 h-3 text-[#D9AA45]" />
-                      Balaústre Oficial no Acervo
+                      Ata Oficial no Acervo
                     </span>
                     <h4 className="text-xs font-bold text-white">
                       {selectedMeetingForQuorum.ata_num || "Ata da Sessão Registrada"}

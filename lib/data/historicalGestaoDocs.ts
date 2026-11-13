@@ -320,7 +320,7 @@ export const authenticGestaoDocuments: GestaoDocumentRecord[] = [
     title: "Ato Capitular nº 001/2025 — Nomeação do Escrivão do Capítulo",
     category: "gestao",
     type: "Ato Administrativo",
-    description: "Nomeia o Irmão Escrivão para a guarda dos livros oficiais, correspondências e redação dos balaústres da XXIII Gestão.",
+    description: "Nomeia o Irmão Escrivão para a guarda dos livros oficiais, correspondências e redação das atas da XXIII Gestão.",
     visibility: "members",
     date: "01/07/2025 às 18:00",
     management: "Gestão XXIII (2025.2)",

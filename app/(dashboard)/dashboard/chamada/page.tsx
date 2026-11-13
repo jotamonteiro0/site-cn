@@ -369,7 +369,7 @@ export default function ChamadaPage() {
           setMinuteData({
             number: hist.ata_num,
             degree: "Grau Iniciático",
-            content: `Balaústre oficial registrado na ${hist.ata_num}.\nSessão realizada em ${new Date(currentM?.starts_at || Date.now()).toLocaleDateString("pt-BR")} na ${currentM?.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"}.\n\nDeliberações:\n${hist.description}\n\nQuórum Registrado:\n- DeMolays Presentes: ${hist.demolays_present_count}\n- Tios Maçons Presentes: ${hist.masons_present_count}\n- Total Quórum: ${hist.total_quorum}`,
+            content: `Ata oficial registrada na ${hist.ata_num}.\nSessão realizada em ${new Date(currentM?.starts_at || Date.now()).toLocaleDateString("pt-BR")} na ${currentM?.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"}.\n\nDeliberações:\n${hist.description}\n\nQuórum Registrado:\n- DeMolays Presentes: ${hist.demolays_present_count}\n- Tios Maçons Presentes: ${hist.masons_present_count}\n- Total Quórum: ${hist.total_quorum}`,
             storage_path: hist.ata_pdf_url,
           });
         } else if (currentM?.description) {
@@ -383,7 +383,7 @@ export default function ChamadaPage() {
           setMinuteData({
             number: `Ata da Sessão do dia ${new Date(currentM?.starts_at || Date.now()).toLocaleDateString("pt-BR")}`,
             degree: "Grau Iniciático",
-            content: `Aos ${new Date(currentM?.starts_at || Date.now()).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}, no Templo da A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI), sob a presidência do Mestre Conselheiro, reuniu-se o Capítulo Professor Carvalho Neves Nº 500 para a realização dos seus regulares trabalhos ritualísticos.\n\nAberta a sessão na forma regulamentar, procedeu-se à chamada geral dos irmãos presentes, verificação do quórum legal e leitura do balaústre da reunião anterior, que foi aprovado sem restrições. Seguiu-se com as deliberações administrativas e expediente do Escrivão.`,
+            content: `Aos ${new Date(currentM?.starts_at || Date.now()).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}, no Templo da A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI), sob a presidência do Mestre Conselheiro, reuniu-se o Capítulo Professor Carvalho Neves Nº 500 para a realização dos seus regulares trabalhos ritualísticos.\n\nAberta a sessão na forma regulamentar, procedeu-se à chamada geral dos irmãos presentes, verificação do quórum legal e leitura da ata da reunião anterior, que foi aprovada sem restrições. Seguiu-se com as deliberações administrativas e expediente do Escrivão.`,
             storage_path: hist?.ata_pdf_url || "",
           });
         }
@@ -931,7 +931,7 @@ export default function ChamadaPage() {
           }`}
         >
           <FileText className="w-4 h-4 text-[#D9AA45]" />
-          <span>2. Ata da Reunião & Balaústre</span>
+          <span>2. Ata da Reunião</span>
         </button>
       </div>
 
@@ -1318,7 +1318,7 @@ export default function ChamadaPage() {
         </div>
       )}
 
-      {/* SEÇÃO 2: ATA DA REUNIÃO & BALAÚSTRE OFICIAL */}
+      {/* SEÇÃO 2: ATA DA REUNIÃO */}
       {sessionSection === "ata" && selectedMeeting && (
         <div className="p-6 sm:p-8 rounded-3xl bg-[#04281A] border-2 border-[#D9AA45]/50 shadow-2xl space-y-6">
           {/* Cabeçalho da Ata */}
@@ -1327,7 +1327,7 @@ export default function ChamadaPage() {
               Ordem DeMolay • Capítulo Professor Carvalho Neves Nº 500
             </span>
             <h2 className="text-xl sm:text-2xl font-bold font-serif tracking-wide text-white">
-              LIVRO DE ATAS & BALAÚSTRE DA SESSÃO
+              LIVRO DE ATAS DA SESSÃO
             </h2>
             <p className="text-xs text-emerald-200/80">
               Sede dos Trabalhos: Templo da A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI) — Teresina/PI
@@ -1351,7 +1351,7 @@ export default function ChamadaPage() {
                       {minuteData.number || selectedMeeting.ata_num || "Ata Oficial Registrada"}
                     </h4>
                     <p className="text-xs text-emerald-200/80">
-                      Balaústre autenticado e assinado pelo Mestre Conselheiro e Escrivão.
+                      Ata autenticada e assinada pelo Mestre Conselheiro e Escrivão.
                     </p>
                   </div>
                 </div>

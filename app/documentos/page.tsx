@@ -1,148 +1,138 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { authenticGestaoDocuments, GestaoDocumentRecord } from "@/lib/data/historicalGestaoDocs";
+import { authenticAtasDocuments, AtaDocumentRecord } from "@/lib/data/historicalAtasDocs";
+import { scdbGeneralManuals, scdbPublicCeremonies } from "@/lib/data/scdbDocs";
 import {
   FileText,
   Download,
   Building,
   Shield,
   Search,
-  ArrowLeft
+  ArrowLeft,
+  ExternalLink,
+  BookOpen,
+  Sparkles,
+  Calendar
 } from "lucide-react";
 
-interface DocumentItem {
+interface PublicDocItem {
   id: string;
   title: string;
-  category: "supremo_conselho" | "gestao";
+  category: "scdb" | "gestao" | "atas";
   management?: string;
   type: string;
   description: string;
-  fileSize: string;
   date: string;
-  downloadUrl?: string;
+  fileName: string;
+  downloadUrl: string;
 }
 
-const officialDocuments: DocumentItem[] = [
-  // Documentos do Supremo Conselho (Externos / Gerais)
-  {
-    id: "sc-01",
-    title: "Regulamento Geral da Ordem DeMolay (RGD)",
-    category: "supremo_conselho",
-    type: "Legislação Nacional",
-    description: "Normas fundamentais, deveres, hierarquia e regulamento geral promulgado pelo Supremo Conselho DeMolay Brasil.",
-    fileSize: "2.4 MB",
-    date: "Atualizado 2024",
-  },
-  {
-    id: "sc-02",
-    title: "Estatuto Social do DeMolay Brasil",
-    category: "supremo_conselho",
-    type: "Estatuto Nacional",
-    description: "Estatuto constitutivo que rege a personalidade jurídica e representação da Ordem DeMolay em território brasileiro.",
-    fileSize: "1.8 MB",
-    date: "Oficial SCDB",
-  },
-  {
-    id: "sc-03",
-    title: "Código de Ética e Conduta Juvenil",
-    category: "supremo_conselho",
-    type: "Diretriz Moral",
-    description: "Diretrizes de comportamento, decoro, integridade e convivência fraterna aplicadas a todos os membros e tios consultores.",
-    fileSize: "980 KB",
-    date: "Oficial SCDB",
-  },
-  {
-    id: "sc-04",
-    title: "Ficha Padrão de Indicação para Iniciação",
-    category: "supremo_conselho",
-    type: "Formulário Oficial",
-    description: "Modelo oficial de proposta para ingresso de novos membros, com declarações e autorização formal dos pais.",
-    fileSize: "450 KB",
-    date: "DeMolay Brasil",
-  },
-  {
-    id: "sc-05",
-    title: "Manual de Cerimonial e Espaço Sagrado",
-    category: "supremo_conselho",
-    type: "Ritualística",
-    description: "Instruções oficiais sobre a disposição do Templo, paramentos ritualísticos e condução solene dos trabalhos.",
-    fileSize: "3.1 MB",
-    date: "Ritualística SCDB",
-  },
-
-  // Documentos Capitulares (Por Gestão)
-  {
-    id: "cn-01",
-    title: "Regimento Interno do Capítulo Professor Carvalho Neves Nº 500",
-    category: "gestao",
-    management: "Gestão XXIII (2025.2)",
-    type: "Regimento Local",
-    description: "Estatuto normativo local aprovado pelo Capítulo 500 e chancelado pelo Conselho Consultivo e Lojas Patrocinadoras.",
-    fileSize: "1.2 MB",
-    date: "Agosto 2025",
-  },
-  {
-    id: "cn-02",
-    title: "Ato Capitular nº 01/2025 — Nomeação de Oficiais e Comissões",
-    category: "gestao",
-    management: "Gestão XXIII (2025.2)",
-    type: "Ato da Gestão",
-    description: "Designação dos oficiais colaboradores, comissões de finanças, filantropia e sindicância da Gestão XXIII.",
-    fileSize: "320 KB",
-    date: "Agosto 2025",
-  },
-  {
-    id: "cn-03",
-    title: "Edital de Convocação Geral — Sessão Magna de Iniciação",
-    category: "gestao",
-    management: "Gestão XXIII (2025.2)",
-    type: "Edital",
-    description: "Convocatória oficial aos irmãos e convite aos tios maçons para a cerimônia solene no Templo da Caridade II nº 135.",
-    fileSize: "280 KB",
-    date: "Setembro 2025",
-  },
-  {
-    id: "cn-04",
-    title: "Prestação de Contas e Balancete Semestral",
-    category: "gestao",
-    management: "Gestão XXII (2025.1)",
-    type: "Balancete",
-    description: "Relatório financeiro, demonstração de receitas e despesas e parecer de auditoria do Conselho Consultivo da Gestão XXII.",
-    fileSize: "850 KB",
-    date: "Julho 2025",
-  },
-  {
-    id: "cn-05",
-    title: "Ato de Encerramento e Transmissão de Cargos — Gestão XXII",
-    category: "gestao",
-    management: "Gestão XXII (2025.1)",
-    type: "Ato da Gestão",
-    description: "Termo de encerramento da Gestão XXII liderada pelo Past MC Epaminondas Júnior e transferência à Gestão XXIII.",
-    fileSize: "410 KB",
-    date: "Julho 2025",
-  },
-];
-
 export default function DocumentosPublicosPage() {
-  const [activeTab, setActiveTab] = useState<"todos" | "supremo_conselho" | "gestao">("todos");
+  const [activeTab, setActiveTab] = useState<"todos" | "scdb" | "gestao" | "atas">("todos");
   const [selectedManagement, setSelectedManagement] = useState<string>("todas");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredDocs = officialDocuments.filter((doc) => {
-    const matchesTab = activeTab === "todos" || doc.category === activeTab;
-    const matchesManagement =
-      selectedManagement === "todas" || doc.management === selectedManagement || doc.category === "supremo_conselho";
-    const term = searchTerm.toLowerCase();
-    const matchesSearch =
-      doc.title.toLowerCase().includes(term) ||
-      doc.type.toLowerCase().includes(term) ||
-      doc.description.toLowerCase().includes(term);
+  // Constrói catálogo oficial público sem dados fictícios
+  const publicCatalog = useMemo<PublicDocItem[]>(() => {
+    const list: PublicDocItem[] = [];
 
-    return matchesTab && matchesManagement && matchesSearch;
-  });
+    // 1. Manuais e Legislação do Supremo Conselho DeMolay Brasil (SCDB)
+    scdbGeneralManuals.forEach((m, idx) => {
+      list.push({
+        id: `scdb-man-${idx + 1}`,
+        title: m.title,
+        category: "scdb",
+        type: m.type,
+        description: m.description,
+        date: "SCDB Oficial",
+        fileName: m.fileName,
+        downloadUrl: `/api/documents/${encodeURIComponent(m.fileName)}`,
+      });
+    });
+
+    // 2. Cerimônias Públicas Oficiais do SCDB
+    scdbPublicCeremonies.slice(0, 10).forEach((cer, idx) => {
+      const fileName = `${cer}.pdf`;
+      list.push({
+        id: `scdb-cer-${idx + 1}`,
+        title: cer,
+        category: "scdb",
+        type: "Cerimônia Pública SCDB",
+        description: "Cerimonial público oficial padronizado pelo Supremo Conselho DeMolay Brasil.",
+        date: "Norma SCDB",
+        fileName,
+        downloadUrl: `/api/documents/${encodeURIComponent(fileName)}`,
+      });
+    });
+
+    // 3. Documentos Capitulares Autênticos das Gestões
+    authenticGestaoDocuments.forEach((doc: GestaoDocumentRecord) => {
+      list.push({
+        id: doc.id,
+        title: doc.title,
+        category: "gestao",
+        management: doc.management,
+        type: doc.type,
+        description: doc.description,
+        date: doc.date,
+        fileName: doc.fileName,
+        downloadUrl: `/api/documents/${encodeURIComponent(doc.fileName)}`,
+      });
+    });
+
+    // 4. Atas Oficiais das Reuniões e Sessões Solenes
+    authenticAtasDocuments.forEach((doc: AtaDocumentRecord) => {
+      list.push({
+        id: doc.id,
+        title: doc.title,
+        category: "atas",
+        management: doc.management,
+        type: doc.type,
+        description: doc.description,
+        date: doc.date,
+        fileName: doc.fileName,
+        downloadUrl: `/api/documents/${encodeURIComponent(doc.fileName)}`,
+      });
+    });
+
+    return list;
+  }, []);
+
+  const filteredDocs = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+
+    return publicCatalog.filter((doc) => {
+      // Filtro de Aba
+      if (activeTab === "scdb" && doc.category !== "scdb") return false;
+      if (activeTab === "gestao" && doc.category !== "gestao") return false;
+      if (activeTab === "atas" && doc.category !== "atas") return false;
+
+      // Filtro de Gestão (aplica tanto em Atas quanto em Documentos de Gestão)
+      if (
+        selectedManagement !== "todas" &&
+        doc.management &&
+        doc.management !== selectedManagement
+      ) {
+        return false;
+      }
+
+      // Filtro de Busca
+      if (term) {
+        const matchesTitle = doc.title.toLowerCase().includes(term);
+        const matchesType = doc.type.toLowerCase().includes(term);
+        const matchesDesc = doc.description.toLowerCase().includes(term);
+        const matchesMgmt = doc.management?.toLowerCase().includes(term);
+        if (!matchesTitle && !matchesType && !matchesDesc && !matchesMgmt) return false;
+      }
+
+      return true;
+    });
+  }, [publicCatalog, activeTab, selectedManagement, searchTerm]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F2F5F1] text-gray-900 selection:bg-[#D9AA45] selection:text-white">
@@ -162,15 +152,15 @@ export default function DocumentosPublicosPage() {
 
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 border border-[#D9AA45]/40 text-xs font-bold text-[#D9AA45] uppercase tracking-wider">
               <FileText className="w-3.5 h-3.5" />
-              <span>Acervo Oficial & Legislação</span>
+              <span>Acervo Oficial & Documentos Capitulares</span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
-              Documentos Capitulares & SCDB
+              Documentos Capitulares, Atas & SCDB
             </h1>
 
             <p className="text-emerald-100 text-sm sm:text-base max-w-2xl mx-auto font-light leading-relaxed">
-              Consulte e baixe atos, editais capitulares divididos por gestão, regimento interno e a legislação oficial do Supremo Conselho DeMolay Brasil.
+              Consulte e baixe atos administrativos, editais capitulares e atas organizadas por gestão, além da legislação oficial e manuais do Supremo Conselho DeMolay Brasil.
             </p>
           </div>
         </section>
@@ -188,18 +178,18 @@ export default function DocumentosPublicosPage() {
                     : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
                 }`}
               >
-                Todos os Documentos
+                Todos ({publicCatalog.length})
               </button>
               <button
-                onClick={() => setActiveTab("supremo_conselho")}
+                onClick={() => setActiveTab("scdb")}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                  activeTab === "supremo_conselho"
+                  activeTab === "scdb"
                     ? "bg-[#087443] text-white shadow-md"
                     : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
                 }`}
               >
                 <Building className="w-3.5 h-3.5 text-[#D9AA45]" />
-                <span>Supremo Conselho (Gerais / Externos)</span>
+                <span>Supremo Conselho (Manuais & Cerimônias)</span>
               </button>
               <button
                 onClick={() => setActiveTab("gestao")}
@@ -210,22 +200,34 @@ export default function DocumentosPublicosPage() {
                 }`}
               >
                 <Shield className="w-3.5 h-3.5 text-[#D9AA45]" />
-                <span>Documentos Capitulares (Por Gestão)</span>
+                <span>Documentos da Gestão ({authenticGestaoDocuments.length})</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("atas")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  activeTab === "atas"
+                    ? "bg-[#087443] text-white shadow-md"
+                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5 text-[#D9AA45]" />
+                <span>Atas Capitulares ({authenticAtasDocuments.length})</span>
               </button>
             </div>
 
-            {/* Seletor de Gestão (caso veja documentos capitulares) */}
-            {activeTab !== "supremo_conselho" && (
+            {/* Seletor de Gestão (visível em todas as abas capitulares) */}
+            {activeTab !== "scdb" && (
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500">Gestão:</span>
+                <span className="text-xs font-semibold text-gray-500 whitespace-nowrap">Gestão / MC:</span>
                 <select
                   value={selectedManagement}
                   onChange={(e) => setSelectedManagement(e.target.value)}
                   className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#087443] cursor-pointer"
                 >
                   <option value="todas">Todas as Gestões</option>
-                  <option value="Gestão XXIII (2025.2)">Gestão XXIII (2025.2)</option>
-                  <option value="Gestão XXII (2025.1)">Gestão XXII (2025.1)</option>
+                  <option value="Gestão XXV (2026.2)">Gestão XXV (2026.2) — MC Rafael Inácio</option>
+                  <option value="Gestão XXIV (2026.1)">Gestão XXIV (2026.1) — MC José Keltton</option>
+                  <option value="Gestão XXIII (2025.2)">Gestão XXIII (2025.2) — MC João Guilherme</option>
                 </select>
               </div>
             )}
@@ -238,7 +240,7 @@ export default function DocumentosPublicosPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por título, tipo de documento ou palavra-chave..."
+              placeholder="Buscar por título, tipo de documento, gestão ou palavra-chave..."
               className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#087443] shadow-sm"
             />
           </div>
@@ -261,7 +263,7 @@ export default function DocumentosPublicosPage() {
                         {doc.type}
                       </span>
                       <span className="text-[11px] font-mono text-gray-400 font-medium">
-                        {doc.fileSize}
+                        PDF Oficial
                       </span>
                     </div>
 
@@ -282,13 +284,25 @@ export default function DocumentosPublicosPage() {
 
                   <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between text-xs">
                     <span className="text-gray-400 text-[11px]">{doc.date}</span>
-                    <button
-                      onClick={() => alert(`Download simulado do arquivo: ${doc.title}. Para baixar o documento oficial verificado, acesse com seu login institucional.`)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#087443] hover:bg-[#064D32] text-white font-bold text-xs transition-colors shadow-sm cursor-pointer"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Baixar PDF</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={doc.downloadUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#087443] hover:bg-[#064D32] text-white font-bold text-xs transition-colors shadow-sm cursor-pointer"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Visualizar</span>
+                      </a>
+                      <a
+                        href={`${doc.downloadUrl}?download=1`}
+                        download={doc.fileName}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition-colors shadow-sm cursor-pointer border border-gray-300"
+                      >
+                        <Download className="w-3.5 h-3.5 text-[#D9AA45]" />
+                        <span>Baixar</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
               ))

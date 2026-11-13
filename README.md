@@ -15,7 +15,7 @@ Plataforma digital para apresentar a história do Capítulo, aproximar a comunid
 ![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
-![Testes](https://img.shields.io/badge/testes-36%2F36_passando-brightgreen?style=for-the-badge)
+![Testes](https://img.shields.io/badge/testes-40%2F40_passando-brightgreen?style=for-the-badge)
 
 <br>
 
@@ -163,6 +163,7 @@ A adaptação completa para dispositivos móveis está prevista para uma etapa f
 | **História** | Biografia do patrono, Prof. Carvalho Neves, e marcos históricos do Capítulo. |
 | **Ordem DeMolay** | Princípios, Sete Virtudes Cardeais, requisitos de ingresso e informações institucionais. |
 | **Galeria de gestões** | Histórico das gestões com insígnias oficiais dos cargos, priorizando a privacidade dos membros. |
+| **Documentos** | Acervo oficial de atos, editais, atas por gestão e manuais gerais do Supremo Conselho DeMolay Brasil. |
 | **Contato** | Formulário para envio de mensagens ao Mestre Conselheiro (MC) e ao Presidente do Conselho Consultivo (PCC). |
 
 ### Área restrita
