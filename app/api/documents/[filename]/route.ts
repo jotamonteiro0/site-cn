@@ -58,7 +58,9 @@ export async function GET(
     }
 
     // 2. Resolução via CDN de Alta Performance Supabase Storage
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://qvvmpskixyjbislcatso.supabase.co";
+    const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "https://qvvmpskixyjbislcatso.supabase.co")
+      .trim()
+      .replace(/\/+$/, "");
 
     let folder = "acervo";
     if (finalFilename.startsWith("Ata_") || sanitizedName.startsWith("Ata_")) {
