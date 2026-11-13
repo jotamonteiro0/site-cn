@@ -15,9 +15,7 @@ import {
   Search,
   ArrowLeft,
   ExternalLink,
-  BookOpen,
-  Sparkles,
-  Calendar
+  BookOpen
 } from "lucide-react";
 
 interface PublicDocItem {
@@ -135,31 +133,33 @@ export default function DocumentosPublicosPage() {
   }, [publicCatalog, activeTab, selectedManagement, searchTerm]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F2F5F1] text-gray-900 selection:bg-[#D9AA45] selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#F8FAF8] text-gray-900 selection:bg-[#C59B3F] selection:text-[#06140D]">
       <Header />
 
       <main className="flex-1">
         {/* HERO SECTION */}
-        <section className="relative bg-gradient-to-b from-[#064D32] to-[#087443] text-white py-16 px-4 sm:px-6 lg:px-8">
+        <section className="relative bg-[#052E1D] text-white py-12 sm:py-16 px-3 sm:px-6 lg:px-8 border-b border-white/10">
           <div className="max-w-5xl mx-auto text-center space-y-4">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 text-xs text-emerald-200 hover:text-white transition-colors mb-2"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Voltar ao Portal Público</span>
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 mb-2">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-200 hover:text-white bg-white/10 px-3.5 py-1.5 rounded-full border border-white/10 transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-[#C59B3F]" />
+                <span>Voltar ao Portal Público</span>
+              </Link>
 
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 border border-[#D9AA45]/40 text-xs font-bold text-[#D9AA45] uppercase tracking-wider">
-              <FileText className="w-3.5 h-3.5" />
-              <span>Acervo Oficial & Documentos Capitulares</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-[#C59B3F]/30 text-xs font-bold text-[#C59B3F] uppercase tracking-wider font-mono">
+                <FileText className="w-3.5 h-3.5" />
+                <span>Acervo Oficial & Documentos Capitulares</span>
+              </div>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
+            <h1 className="text-2xl xs:text-3xl sm:text-5xl font-semibold tracking-tight">
               Documentos Capitulares, Atas & SCDB
             </h1>
 
-            <p className="text-emerald-100 text-sm sm:text-base max-w-2xl mx-auto font-light leading-relaxed">
+            <p className="text-emerald-100 text-xs sm:text-base max-w-2xl mx-auto font-light leading-relaxed px-2">
               Consulte e baixe atos administrativos, editais capitulares e atas organizadas por gestão, além da legislação oficial e manuais do Supremo Conselho DeMolay Brasil.
             </p>
           </div>
@@ -167,50 +167,54 @@ export default function DocumentosPublicosPage() {
 
         {/* ÁREA DE FILTROS & ABAS */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-200">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-200/80">
             {/* Abas */}
             <div className="flex flex-wrap items-center gap-2">
               <button
+                type="button"
                 onClick={() => setActiveTab("todos")}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   activeTab === "todos"
-                    ? "bg-[#087443] text-white shadow-md"
-                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                    ? "bg-[#087443] text-white shadow-sm"
+                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200/80"
                 }`}
               >
                 Todos ({publicCatalog.length})
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab("scdb")}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
                   activeTab === "scdb"
-                    ? "bg-[#087443] text-white shadow-md"
-                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                    ? "bg-[#087443] text-white shadow-sm"
+                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200/80"
                 }`}
               >
-                <Building className="w-3.5 h-3.5 text-[#D9AA45]" />
+                <Building className="w-3.5 h-3.5 text-[#C59B3F]" />
                 <span>Supremo Conselho (Manuais & Cerimônias)</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab("gestao")}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
                   activeTab === "gestao"
-                    ? "bg-[#087443] text-white shadow-md"
-                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                    ? "bg-[#087443] text-white shadow-sm"
+                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200/80"
                 }`}
               >
-                <Shield className="w-3.5 h-3.5 text-[#D9AA45]" />
+                <Shield className="w-3.5 h-3.5 text-[#C59B3F]" />
                 <span>Documentos da Gestão ({authenticGestaoDocuments.length})</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab("atas")}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
                   activeTab === "atas"
-                    ? "bg-[#087443] text-white shadow-md"
-                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                    ? "bg-[#087443] text-white shadow-sm"
+                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200/80"
                 }`}
               >
-                <BookOpen className="w-3.5 h-3.5 text-[#D9AA45]" />
+                <BookOpen className="w-3.5 h-3.5 text-[#C59B3F]" />
                 <span>Atas Capitulares ({authenticAtasDocuments.length})</span>
               </button>
             </div>
@@ -222,7 +226,7 @@ export default function DocumentosPublicosPage() {
                 <select
                   value={selectedManagement}
                   onChange={(e) => setSelectedManagement(e.target.value)}
-                  className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#087443] cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#087443] cursor-pointer"
                 >
                   <option value="todas">Todas as Gestões</option>
                   <option value="Gestão XXV (2026.2)">Gestão XXV (2026.2) — MC Rafael Inácio</option>
@@ -267,12 +271,12 @@ export default function DocumentosPublicosPage() {
                       </span>
                     </div>
 
-                    <h3 className="font-extrabold text-gray-900 text-base leading-snug group-hover:text-[#087443] transition-colors">
+                    <h3 className="font-semibold text-gray-900 text-base leading-snug group-hover:text-[#087443] transition-colors">
                       {doc.title}
                     </h3>
 
                     {doc.management && (
-                      <p className="text-[11px] font-bold text-[#D9AA45]">
+                      <p className="text-[11px] font-bold text-[#C59B3F]">
                         {doc.management}
                       </p>
                     )}
@@ -289,7 +293,7 @@ export default function DocumentosPublicosPage() {
                         href={doc.downloadUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#087443] hover:bg-[#064D32] text-white font-bold text-xs transition-colors shadow-sm cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#087443] hover:bg-[#065F36] text-white font-bold text-xs transition-colors shadow-sm cursor-pointer"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                         <span>Visualizar</span>
@@ -299,7 +303,7 @@ export default function DocumentosPublicosPage() {
                         download={doc.fileName}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition-colors shadow-sm cursor-pointer border border-gray-300"
                       >
-                        <Download className="w-3.5 h-3.5 text-[#D9AA45]" />
+                        <Download className="w-3.5 h-3.5 text-[#C59B3F]" />
                         <span>Baixar</span>
                       </a>
                     </div>

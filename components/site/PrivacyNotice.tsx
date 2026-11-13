@@ -24,10 +24,10 @@ export function PrivacyNotice() {
   return (
     <aside
       aria-label="Aviso de Privacidade e Cookies"
-      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 bg-[#04281A]/95 backdrop-blur-md border border-[#D9AA45]/40 text-white rounded-2xl p-4 shadow-2xl transition-all animate-in fade-in slide-in-from-bottom-5"
+      className="fixed bottom-3 sm:bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-50 bg-[#052E1D]/95 backdrop-blur-md border border-[#C59B3F]/40 text-white rounded-2xl p-3.5 sm:p-4 shadow-2xl transition-all animate-in fade-in slide-in-from-bottom-5"
     >
       <div className="flex items-start gap-3">
-        <div className="w-8 h-8 rounded-lg bg-[#087443] border border-[#D9AA45]/50 flex items-center justify-center text-[#D9AA45] shrink-0 mt-0.5">
+        <div className="w-8 h-8 rounded-lg bg-[#087443] border border-[#C59B3F]/50 flex items-center justify-center text-[#C59B3F] shrink-0 mt-0.5">
           <ShieldCheck className="w-4 h-4" />
         </div>
         <div className="flex-1 text-xs leading-relaxed text-emerald-100/90">
@@ -36,11 +36,11 @@ export function PrivacyNotice() {
           </p>
           <p>
             Utilizamos apenas cookies estritamente necessários para autenticação segura. Nenhum dado é compartilhado com terceiros comerciais. Conheça nossa{" "}
-            <Link href="/privacidade" className="text-[#D9AA45] underline hover:text-[#f0cc6a]">
+            <Link href="/privacidade" className="text-[#C59B3F] underline hover:text-[#D4AF37]">
               Política de Privacidade
             </Link>{" "}
             e{" "}
-            <Link href="/termos" className="text-[#D9AA45] underline hover:text-[#f0cc6a]">
+            <Link href="/termos" className="text-[#C59B3F] underline hover:text-[#D4AF37]">
               Termos de Uso
             </Link>
             .
@@ -58,7 +58,7 @@ export function PrivacyNotice() {
       <div className="mt-3 flex justify-end">
         <button
           onClick={handleDismiss}
-          className="px-4 py-1.5 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs transition-colors shadow-sm"
+          className="px-4 py-1.5 rounded-lg bg-[#C59B3F] hover:bg-[#D4AF37] text-[#052E1D] font-bold text-xs transition-colors shadow-sm"
         >
           Entendido
         </button>

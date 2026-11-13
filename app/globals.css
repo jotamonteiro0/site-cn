@@ -1,142 +1,283 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   ARQUITETURA DE DESIGN SYSTEM UNSLOP — CAPÍTULO CARVALHO NEVES Nº 500
+   ==========================================================================
+   Base fundamentada na metodologia Unslop:
+   1. Tipografia de alto contraste e legibilidade institucional
+   2. Superfícies sólidas e elevadas com hairlines nítidas (sem blur fatigue)
+   3. Eliminação total de clichês de IA (feixes de luz infinitos, neon glows, arco-íris)
+   4. Preservação estrita das cores heráldicas DeMolay e do Brasão Oficial
+   5. Micro-interações táteis e consistentes (150ms spring curve)
+   ========================================================================== */
+
 @theme {
+  /* Cores Heráldicas Oficiais Padronizadas — Capítulo 500 */
   --color-cn-green: #087443;
-  --color-cn-deep-green: #064D32;
-  --color-cn-gold: #D9AA45;
-  --color-cn-surface: #F2F5F1;
+  --color-cn-green-hover: #065F36;
+  --color-cn-green-light: #EBF5F0;
+  --color-cn-deep-green: #052E1D;
+  --color-cn-gold: #C59B3F;
+  --color-cn-gold-light: #FDF8EE;
+  --color-cn-gold-dark: #997018;
+  --color-cn-surface: #F8FAF8;
+
+  /* Superfícies Escuras do Dashboard e Painéis Solenes */
+  --color-cn-dark-0: #06140D;
+  --color-cn-dark-1: #0B1F16;
+  --color-cn-dark-2: #102B1F;
+  --color-cn-dark-3: #18382A;
+
+  /* Hairlines & Bordas Sutis */
+  --color-cn-hairline-dark: rgba(255, 255, 255, 0.08);
+  --color-cn-hairline-gold: rgba(197, 155, 63, 0.3);
+  --color-cn-hairline-green: rgba(8, 116, 67, 0.25);
+
+  /* Cores Semânticas de Status */
+  --color-cn-success: #059669;
+  --color-cn-warning: #D97706;
+  --color-cn-destructive: #DC2626;
+  --color-cn-info: #0284C7;
 }
 
 :root {
-  --background: #ffffff;
+  --background: #F8FAF8;
   --foreground: #111827;
+  --cn-green: #087443;
+  --cn-deep-green: #052E1D;
+  --cn-gold: #C59B3F;
+  --cn-surface: #F8FAF8;
+  --cn-dark: #06140D;
+  --cn-dark-surface: #0B1F16;
+
+  /* Tipografia do Sistema */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+
+  /* Micro-interações táteis */
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-quick: 150ms;
+}
+
+html {
+  overflow-x: clip;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
 }
 
-/* Glassmorphism Styles (Área Restrita & Destaques) */
+/* Foco Acessível Padronizado */
+:focus-visible {
+  outline: 2px solid #C59B3F;
+  outline-offset: 2px;
+}
+
+/* Numerais Tabulares para Finanças e Tabelas */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   PAINÉIS E SUPERFÍCIES ELEVADAS (REFORMULAÇÃO VISUAL CN)
+   ========================================================================== */
+
+/* 1. Painel Dark com Elevação Sólida e Hairline Fina */
 .glass-panel {
-  background: rgba(4, 40, 26, 0.72);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+  background: #0B1F16;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
 }
 
+/* 2. Painel Dark com Borda Dourada Heráldica Refinada */
 .glass-panel-gold {
-  background: rgba(6, 77, 50, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(217, 170, 69, 0.28);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  background: #0B1F16;
+  border: 1px solid rgba(197, 155, 63, 0.3);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
 }
 
+/* 3. Cards com Hairlines e Sem Excesso de Desfoque */
 .glass-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0B1F16;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
 }
 
 .glass-card-hover {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color var(--duration-quick) var(--ease-standard),
+              border-color var(--duration-quick) var(--ease-standard);
 }
 
 .glass-card-hover:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(217, 170, 69, 0.45);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
+  background: #102B1F;
+  border-color: rgba(197, 155, 63, 0.35);
 }
 
-/* Modais e Overlays com Glassmorphism Temático Estilo iOS */
+/* 4. Modais e Overlays: Fundo Sóbrio Escuro */
 .glass-overlay {
-  background: radial-gradient(circle at 50% 30%, rgba(8, 116, 67, 0.48) 0%, rgba(4, 40, 26, 0.72) 50%, rgba(2, 24, 16, 0.85) 100%);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background: rgba(6, 20, 13, 0.85);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .ios-glass-card {
-  background: linear-gradient(135deg, rgba(6, 77, 50, 0.7) 0%, rgba(4, 40, 26, 0.88) 100%);
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
-  border: 1px solid rgba(217, 170, 69, 0.35);
-  border-top: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.65), 0 0 35px rgba(217, 170, 69, 0.15), inset 0 1px 1px 0 rgba(255, 255, 255, 0.2);
+  background: #0B1F16;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.55);
 }
 
 .ios-glass-btn {
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.ios-glass-btn:hover {
-  transform: translateY(-1.5px);
+  border-radius: 8px;
+  transition: background-color var(--duration-quick) var(--ease-standard),
+              border-color var(--duration-quick) var(--ease-standard);
 }
 
 .ios-glass-btn:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
 }
 
+/* ==========================================================================
+   BOTÕES HERÁLDICOS E AÇÕES (PADRONIZADOS COM ALTO CONTRASTE)
+   ========================================================================== */
+
+/* 5. Botão Dourado Heráldico (Discreto e Nobre) */
+.btn-heraldico-ouro,
 .glass-button-gold {
-  background: linear-gradient(135deg, rgba(217, 170, 69, 0.95), rgba(235, 195, 95, 0.9));
-  color: #04281a;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 4px 14px rgba(217, 170, 69, 0.25);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #C59B3F;
+  color: #06140D;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: background-color var(--duration-quick) var(--ease-standard),
+              box-shadow var(--duration-quick) var(--ease-standard),
+              transform var(--duration-quick) var(--ease-standard);
+  cursor: pointer;
 }
 
+.btn-heraldico-ouro:hover,
 .glass-button-gold:hover {
-  background: linear-gradient(135deg, rgba(235, 195, 95, 1), rgba(217, 170, 69, 1));
-  box-shadow: 0 6px 20px rgba(217, 170, 69, 0.4);
-  transform: translateY(-1.5px);
+  background: #D4AF37;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
+.btn-heraldico-ouro:active,
 .glass-button-gold:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
 }
 
+/* 6. Botão Verde Institucional Oficial */
+.btn-heraldico-esmeralda {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #087443;
+  color: #FFFFFF;
+  font-weight: 600;
+  border: 1px solid rgba(197, 155, 63, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: background-color var(--duration-quick) var(--ease-standard),
+              border-color var(--duration-quick) var(--ease-standard),
+              box-shadow var(--duration-quick) var(--ease-standard),
+              transform var(--duration-quick) var(--ease-standard);
+  cursor: pointer;
+}
+
+.btn-heraldico-esmeralda:hover {
+  background: #065F36;
+  border-color: rgba(197, 155, 63, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.btn-heraldico-esmeralda:active {
+  transform: scale(0.98);
+}
+
+/* 7. Botão Esmeralda Suave */
 .glass-button-emerald {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   background: rgba(8, 116, 67, 0.25);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  color: #6ee7b7;
-  border: 1px solid rgba(110, 231, 183, 0.35);
-  border-top: 1px solid rgba(255, 255, 255, 0.25);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #A7F3D0;
+  font-weight: 600;
+  border: 1px solid rgba(8, 116, 67, 0.4);
+  border-radius: 8px;
+  transition: background-color var(--duration-quick) var(--ease-standard),
+              border-color var(--duration-quick) var(--ease-standard),
+              color var(--duration-quick) var(--ease-standard),
+              transform var(--duration-quick) var(--ease-standard);
 }
 
 .glass-button-emerald:hover {
-  background: rgba(8, 116, 67, 0.45);
-  border-color: rgba(110, 231, 183, 0.6);
-  color: #ffffff;
-  transform: translateY(-1.5px);
-  box-shadow: 0 0 18px rgba(110, 231, 183, 0.25);
+  background: rgba(8, 116, 67, 0.4);
+  border-color: rgba(8, 116, 67, 0.6);
+  color: #FFFFFF;
+  transform: translateY(-1px);
 }
 
 .glass-button-emerald:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
 }
 
-/* =========================================================
-   ELEMENTOS GRÁFICOS HERÁLDICOS (ADAPTADOS DO PRIORADO 156)
-   ========================================================= */
+/* 8. Botão Vidro Sóbrio e Contido */
+.btn-heraldico-vidro {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #FFFFFF;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  transition: background-color var(--duration-quick) var(--ease-standard),
+              border-color var(--duration-quick) var(--ease-standard),
+              transform var(--duration-quick) var(--ease-standard);
+  cursor: pointer;
+}
 
-/* 1. Selo de Vidro Heráldico (Frosted Glass Seal) */
+.btn-heraldico-vidro:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(197, 155, 63, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-heraldico-vidro:active {
+  transform: scale(0.98);
+}
+
+/* ==========================================================================
+   ELEMENTOS HERÁLDICOS E HISTÓRICOS (SÓBRIOS E INSTITUCIONAIS)
+   ========================================================================== */
+
+/* 9. Selo Heráldico Institucional */
 .selo-vidro-cn {
   position: relative;
-  background: radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, 0.15), rgba(4, 40, 26, 0.4));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(217, 170, 69, 0.35);
-  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.35), inset 0 1px 1px 0 rgba(255, 255, 255, 0.2);
+  background: rgba(11, 31, 22, 0.9);
+  border: 1px solid rgba(197, 155, 63, 0.3);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
 }
 
 .selo-vidro-cn::before {
@@ -144,85 +285,72 @@ body {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(217, 170, 69, 0.5) 45%, rgba(4, 40, 26, 0.1) 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   pointer-events: none;
 }
 
-/* 2. Feixe de Luz / Shimmer Dinâmico no Brasão */
+/* 10. Container do Brasão Oficial (Nítido, Fiel e Estático, Sem Sweep Artificial) */
 .brasao-shimmer-container {
   position: relative;
   overflow: hidden;
 }
 
-.brasao-shimmer-container::after {
-  content: "";
-  position: absolute;
-  inset: -150%;
-  background: linear-gradient(
-    115deg,
-    transparent 35%,
-    rgba(255, 255, 255, 0.05) 45%,
-    rgba(217, 170, 69, 0.45) 50%,
-    rgba(255, 255, 255, 0.2) 55%,
-    transparent 65%
-  );
-  transform: translateX(-100%);
-  animation: sweep-luz 6.5s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes sweep-luz {
-  0%, 70% {
-    transform: translateX(-100%) rotate(25deg);
-  }
-  100% {
-    transform: translateX(100%) rotate(25deg);
-  }
-}
-
-/* 3. Cards Heráldicos com Barra de Gradiente Superior */
+/* 11. Cards Heráldicos Claros (Site Público) */
 .card-heraldico {
   position: relative;
-  overflow: hidden;
-  background: #ffffff;
-  border: 1px solid rgba(8, 116, 67, 0.12);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.card-heraldico::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #04281A 0%, #087443 50%, #D9AA45 100%);
-  opacity: 0.85;
-  transition: height 0.25s ease;
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: border-color var(--duration-quick) var(--ease-standard),
+              box-shadow var(--duration-quick) var(--ease-standard);
 }
 
 .card-heraldico:hover {
-  transform: translateY(-3px);
-  border-color: rgba(217, 170, 69, 0.45);
-  box-shadow: 0 16px 32px -10px rgba(6, 77, 50, 0.12), 0 0 20px -5px rgba(217, 170, 69, 0.15);
+  border-color: rgba(8, 116, 67, 0.35);
+  box-shadow: 0 6px 20px -4px rgba(8, 116, 67, 0.08);
 }
 
-.card-heraldico:hover::before {
-  height: 5px;
+/* 12. Cards Heráldicos Escuros (Sistema / Dashboard) */
+.card-heraldico-dark {
+  position: relative;
+  background: #0B1F16;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  transition: background-color var(--duration-quick) var(--ease-standard),
+              border-color var(--duration-quick) var(--ease-standard);
 }
 
-/* 4. Divisor Ornamental DeMolay */
+.card-heraldico-dark:hover {
+  border-color: rgba(197, 155, 63, 0.3);
+  background: #102B1F;
+}
+
+/* 13. Badges Heráldicos Padronizados */
+.badge-heraldico-dourado {
+  background: #FDF8EE;
+  color: #997018;
+  border: 1px solid #EAD9AB;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.badge-heraldico-verde {
+  background: #EBF5F0;
+  color: #087443;
+  border: 1px solid #C8E6D7;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+/* 14. Divisor Ornamental DeMolay */
 .divisor-heraldico {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 2.5rem auto;
+  margin: 1.5rem auto 2rem auto;
   width: 100%;
-  max-width: 480px;
+  max-width: 320px;
 }
 
 .divisor-heraldico::before,
@@ -230,25 +358,26 @@ body {
   content: "";
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(217, 170, 69, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgba(197, 155, 63, 0.4), transparent);
 }
 
 .divisor-heraldico-icone {
-  margin: 0 1rem;
-  color: #D9AA45;
+  margin: 0 0.75rem;
+  color: #C59B3F;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* 5. Linha do Tempo Heráldica (Marcos Históricos - Adaptação Priorado 156) */
+/* 15. Linha do Tempo Histórica */
 .timeline-linha-cn {
   position: absolute;
   top: 1rem;
   bottom: 1rem;
   left: 24px;
   width: 2px;
-  background: linear-gradient(180deg, #D9AA45 0%, #087443 60%, rgba(8, 116, 67, 0.2) 100%);
+  background: #087443;
+  opacity: 0.35;
 }
 
 @media (min-width: 768px) {
@@ -260,154 +389,19 @@ body {
 
 .timeline-ponto-cn {
   position: relative;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #D9AA45;
-  border: 3px solid #064D32;
-  box-shadow: 0 0 12px rgba(217, 170, 69, 0.7);
+  background: #C59B3F;
+  border: 3px solid #052E1D;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   z-index: 10;
   flex-shrink: 0;
 }
 
-/* 6. Selo / Badge Heráldico Metálico */
-.badge-heraldico-dourado {
-  background: linear-gradient(135deg, rgba(217, 170, 69, 0.15) 0%, rgba(8, 116, 67, 0.08) 100%);
-  border: 1px solid rgba(217, 170, 69, 0.4);
-  color: #996515;
-  backdrop-filter: blur(8px);
-}
-
-/* 7. Cards Heráldicos Dark (Ambiente Dashboard) */
-.card-heraldico-dark {
-  position: relative;
-  overflow: hidden;
-  background: rgba(4, 40, 26, 0.45);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(217, 170, 69, 0.22);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.card-heraldico-dark::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #087443 0%, #D9AA45 50%, #087443 100%);
-  opacity: 0.8;
-  transition: height 0.25s ease, opacity 0.25s ease;
-}
-
-.card-heraldico-dark:hover {
-  transform: translateY(-2px);
-  border-color: rgba(217, 170, 69, 0.5);
-  background: rgba(4, 40, 26, 0.65);
-  box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.5), 0 0 20px -6px rgba(217, 170, 69, 0.2);
-}
-
-.card-heraldico-dark:hover::before {
-  height: 4px;
-  opacity: 1;
-}
-
-/* 8. Botões Heráldicos Dourados, Esmeralda e Vidro */
-.btn-heraldico-ouro {
-  position: relative;
-  overflow: hidden;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background: linear-gradient(135deg, #E5BA55 0%, #D9AA45 50%, #B8860B 100%);
-  color: #04281A;
-  font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 4px 14px -2px rgba(217, 170, 69, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.5);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  cursor: pointer;
-}
-
-.btn-heraldico-ouro:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px -2px rgba(217, 170, 69, 0.6), inset 0 1px 2px 0 rgba(255, 255, 255, 0.7);
-  filter: brightness(1.05);
-}
-
-.btn-heraldico-ouro:active {
-  transform: translateY(0);
-}
-
-.btn-heraldico-ouro::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
-  transform: skewX(-20deg);
-  transition: 0.5s ease;
-}
-
-.btn-heraldico-ouro:hover::after {
-  left: 140%;
-}
-
-.btn-heraldico-esmeralda {
-  position: relative;
-  overflow: hidden;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background: linear-gradient(135deg, #087443 0%, #064D32 100%);
-  color: #ffffff;
-  font-weight: 600;
-  border: 1px solid rgba(217, 170, 69, 0.45);
-  box-shadow: 0 4px 14px -2px rgba(6, 77, 50, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.2);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  cursor: pointer;
-}
-
-.btn-heraldico-esmeralda:hover {
-  transform: translateY(-1px);
-  border-color: rgba(217, 170, 69, 0.75);
-  box-shadow: 0 6px 20px -2px rgba(6, 77, 50, 0.6), 0 0 14px -2px rgba(217, 170, 69, 0.3);
-  filter: brightness(1.08);
-}
-
-.btn-heraldico-esmeralda:active {
-  transform: translateY(0);
-}
-
-.btn-heraldico-vidro {
-  position: relative;
-  overflow: hidden;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  color: #ffffff;
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.25);
-  transition: all 0.25s ease;
-  cursor: pointer;
-}
-
-.btn-heraldico-vidro:hover {
-  background: rgba(255, 255, 255, 0.13);
-  border-color: rgba(217, 170, 69, 0.45);
-  transform: translateY(-1px);
-}
-
-/* Regras de Impressão Oficial de Documentos & Declarações (A4) */
+/* ==========================================================================
+   REGRAS DE IMPRESSÃO OFICIAL (DOCUMENTOS, DECLARAÇÕES & ATAS A4)
+   ========================================================================== */
 @media print {
   body {
     background: #ffffff !important;

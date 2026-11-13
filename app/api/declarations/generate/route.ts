@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import crypto from "crypto";
 
 export async function POST(request: Request) {
   try {
@@ -28,15 +31,84 @@ export async function POST(request: Request) {
 
     const CHAPTER_ID = "00000000-0000-0000-0000-000000000500";
 
+    // 0. Autenticação e Autorização Estrita
+    const authHeader = request.headers.get("authorization");
+    let callerUser = null;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const { data: userData } = await supabaseAdmin.auth.getUser(token);
+      callerUser = userData?.user || null;
+    } else {
+      try {
+        const cookieStore = await cookies();
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+        const ssrClient = createServerClient(supabaseUrl, anonKey, {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll();
+            },
+            setAll() {},
+          },
+        });
+        const { data: userData } = await ssrClient.auth.getUser();
+        callerUser = userData?.user || null;
+      } catch {
+        callerUser = null;
+      }
+    }
+
+    if (!callerUser) {
+      return NextResponse.json(
+        { error: "Acesso não autorizado: autenticação obrigatória." },
+        { status: 401 }
+      );
+    }
+
     // 1. Busca membro
     const { data: member, error: memberErr } = await supabaseAdmin
       .from("members")
-      .select("id, id_demolay, full_name, category")
+      .select("id, id_demolay, full_name, category, profile_id")
       .eq("id", member_id)
       .single();
 
     if (memberErr || !member) {
       return NextResponse.json({ error: "Membro não encontrado." }, { status: 404 });
+    }
+
+    // Permissão: O próprio membro OU Diretoria (Master, Escrivão, Tesoureiro)
+    const isOwner = member.profile_id && member.profile_id === callerUser.id;
+    let isAuthorized = isOwner;
+
+    if (!isAuthorized) {
+      const isPermanentMaster =
+        callerUser.user_metadata?.id_demolay === "127738" ||
+        callerUser.user_metadata?.id_demolay === "102836" ||
+        callerUser.email === "joaomonteiro0@icloud.com" ||
+        callerUser.email === "airton@carvalhoneves500.org.br";
+
+      if (isPermanentMaster) {
+        isAuthorized = true;
+      } else {
+        const { data: membership } = await supabaseAdmin
+          .from("chapter_memberships")
+          .select("role_code")
+          .eq("chapter_id", CHAPTER_ID)
+          .eq("user_id", callerUser.id)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (membership && ["master", "escrivao", "tesoureiro"].includes(membership.role_code)) {
+          isAuthorized = true;
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: "Permissão negada para emitir declaração deste membro." },
+        { status: 403 }
+      );
     }
 
     // 2. Busca Gestão Ativa e Oficiais Vigentes (Tesoureiro e Escrivão)
@@ -115,8 +187,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // 5. Gera código de autenticidade único
-    const randomHex = Math.random().toString(36).substring(2, 10).toUpperCase();
+    // 5. Gera código de autenticidade único com CSPRNG
+    const randomHex = crypto.randomBytes(4).toString("hex").toUpperCase();
     const verificationCode = `CN-DECL-${randomHex}`;
 
     // 6. Monta o conteúdo oficial exato solicitado

@@ -16,7 +16,7 @@ import {
   Lock,
   BookOpen,
   Award,
-  Sparkles,
+  CheckCircle2,
   Download,
   Upload,
   Paperclip,
@@ -473,7 +473,7 @@ export default function DashboardDocumentosPage() {
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Voltar à Visão Geral</span>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
             <BookOpen className="w-7 h-7 text-[#D9AA45]" />
             <span>Acervo de Documentos</span>
           </h1>
@@ -497,7 +497,7 @@ export default function DashboardDocumentosPage() {
       {/* FEEDBACK DE SALVAMENTO */}
       {saveSuccessMsg && (
         <div className="p-3.5 rounded-xl bg-emerald-900/40 border border-emerald-500/50 text-emerald-200 text-xs flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-emerald-400" />
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{saveSuccessMsg}</span>
         </div>
       )}
@@ -507,7 +507,7 @@ export default function DashboardDocumentosPage() {
         <div className="card-heraldico-dark p-4 rounded-2xl shadow-sm space-y-1.5 group">
           <div className="flex items-center justify-between">
             <span className="font-bold text-[#D9AA45] flex items-center gap-1.5">
-              <Award className="w-4 h-4 text-[#D9AA45] group-hover:scale-110 transition-transform" />
+              <Award className="w-4 h-4 text-[#D9AA45]" />
               Cerimônias Públicas SCDB
             </span>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/30">
@@ -522,7 +522,7 @@ export default function DashboardDocumentosPage() {
         <div className="card-heraldico-dark p-4 rounded-2xl shadow-sm space-y-1.5 group">
           <div className="flex items-center justify-between">
             <span className="font-bold text-emerald-300 flex items-center gap-1.5">
-              <Building className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <Building className="w-4 h-4 text-emerald-400" />
               Manuais & Normas SCDB
             </span>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
@@ -537,7 +537,7 @@ export default function DashboardDocumentosPage() {
         <div className="card-heraldico-dark p-4 rounded-2xl shadow-sm space-y-1.5 group">
           <div className="flex items-center justify-between">
             <span className="font-bold text-blue-300 flex items-center gap-1.5">
-              <Shield className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+              <Shield className="w-4 h-4 text-blue-400" />
               Documentos por Gestão
             </span>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
@@ -552,7 +552,7 @@ export default function DashboardDocumentosPage() {
         <div className="card-heraldico-dark p-4 rounded-2xl shadow-sm space-y-1.5 group">
           <div className="flex items-center justify-between">
             <span className="font-bold text-amber-300 flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-[#D9AA45] group-hover:scale-110 transition-transform" />
+              <FileText className="w-4 h-4 text-[#D9AA45]" />
               Atas Capitulares
             </span>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/30">
@@ -913,7 +913,7 @@ export default function DashboardDocumentosPage() {
 
                 <button
                   onClick={() => window.print()}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#D9AA45] via-[#E5BC5C] to-[#D9AA45] hover:brightness-110 active:scale-95 text-[#04281A] font-extrabold text-xs cursor-pointer transition-all shadow-md hover:shadow-[0_0_18px_rgba(217,170,69,0.4)] flex items-center gap-1.5 ios-glass-btn"
+                  className="px-4 py-2 rounded-xl bg-[#D9AA45] hover:bg-[#E5BA55] text-[#041A10] font-bold text-xs cursor-pointer transition-colors shadow-sm flex items-center gap-1.5"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Imprimir / Salvar em PDF</span>

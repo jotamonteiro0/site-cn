@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Shield, Lock, Mail, ArrowLeft, Eye, EyeOff, Sparkles, CheckCircle2 } from "lucide-react";
+import { Shield, Lock, Mail, ArrowLeft, Eye, EyeOff, KeyRound, CheckCircle2 } from "lucide-react";
 
 declare global {
   interface Window {
@@ -37,6 +37,7 @@ export default function LoginPage() {
   // Estado do Primeiro Acesso (Ativação e Criação de Senha)
   const [isFirstAccessOpen, setIsFirstAccessOpen] = useState(false);
   const [firstAccessId, setFirstAccessId] = useState("");
+  const [firstAccessToken, setFirstAccessToken] = useState("");
   const [firstAccessEmail, setFirstAccessEmail] = useState("");
   const [firstAccessPassword, setFirstAccessPassword] = useState("");
   const [firstAccessConfirmPassword, setFirstAccessConfirmPassword] = useState("");
@@ -254,8 +255,20 @@ export default function LoginPage() {
       return;
     }
 
+    if (firstAccessPassword === firstAccessId.trim()) {
+      setFirstAccessError("Por segurança, sua senha não pode ser igual à sua ID DeMolay. Crie uma senha pessoal exclusiva.");
+      setIsSubmittingFirstAccess(false);
+      return;
+    }
+
     if (firstAccessPassword !== firstAccessConfirmPassword) {
       setFirstAccessError("A confirmação da senha não coincide com a senha criada.");
+      setIsSubmittingFirstAccess(false);
+      return;
+    }
+
+    if (!firstAccessToken.trim()) {
+      setFirstAccessError("Informe o Token de Ativação / Credencial Temporária fornecido pela Diretoria do Capítulo.");
       setIsSubmittingFirstAccess(false);
       return;
     }
@@ -266,6 +279,7 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id_demolay: firstAccessId.trim(),
+          token: firstAccessToken.trim().toUpperCase(),
           email: firstAccessEmail.trim(),
           password: firstAccessPassword.trim(),
         }),
@@ -292,30 +306,27 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden bg-gradient-to-br from-[#032015] via-[#064D32] to-[#087443] px-4 py-12">
-      {/* Padrão geométrico de fundo */}
-      <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#D9AA45_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
-
-      {/* Brilho decorativo no fundo */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#087443]/40 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden bg-[#06140D] px-4 py-12 selection:bg-[#C59B3F] selection:text-[#06140D]">
+      {/* Background Decorativo Solene */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(8,116,67,0.18),transparent_50%)] pointer-events-none" />
 
       {/* Link para voltar ao portal público */}
       <Link
         href="/"
-        className="relative z-10 mb-8 inline-flex items-center gap-2 text-sm font-medium text-emerald-200 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md"
+        className="relative z-10 mb-8 inline-flex items-center gap-2 text-sm font-medium text-emerald-200 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full border border-white/10"
       >
-        <ArrowLeft className="w-4 h-4 text-[#D9AA45]" />
+        <ArrowLeft className="w-4 h-4 text-[#C59B3F]" />
         <span>Voltar ao portal público</span>
       </Link>
 
-      {/* Card Glassmorphism de Login */}
-      <div className="relative z-10 w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 shadow-2xl shadow-black/40 text-white">
+      {/* Card Institucional de Login */}
+      <div className="relative z-10 w-full max-w-md bg-[#0B1F16] border border-white/10 rounded-3xl p-8 shadow-2xl text-white">
         {/* Identificação Institucional */}
         <div className="text-center mb-8">
-          <div className="inline-flex w-16 h-16 rounded-2xl bg-[#087443] border border-[#D9AA45]/60 items-center justify-center text-[#D9AA45] shadow-lg mb-4">
+          <div className="inline-flex w-16 h-16 rounded-2xl bg-[#087443] border border-[#C59B3F]/40 items-center justify-center text-[#C59B3F] shadow-md mb-4">
             <Shield className="w-9 h-9" />
           </div>
-          <span className="block text-xs uppercase tracking-widest text-[#D9AA45] font-bold">
+          <span className="block text-xs uppercase tracking-widest text-[#C59B3F] font-bold font-mono">
             Ordem DeMolay
           </span>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-1">
@@ -329,7 +340,7 @@ export default function LoginPage() {
         {/* Formulário */}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-semibold text-emerald-100 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-semibold text-emerald-100 uppercase tracking-wider mb-2 font-mono">
               E-mail ou ID
             </label>
             <div className="relative">
@@ -342,19 +353,19 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu.email@exemplo.com ou 127738"
-                className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-sm text-white placeholder-emerald-200/50 focus:outline-none focus:ring-2 focus:ring-[#D9AA45] focus:border-transparent transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-[#06140D] border border-white/15 rounded-xl text-sm text-white placeholder-emerald-200/40 focus:outline-none focus:ring-2 focus:ring-[#C59B3F] focus:border-transparent transition-all"
               />
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-semibold text-emerald-100 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-emerald-100 uppercase tracking-wider font-mono">
                 Senha de Acesso
               </label>
               <button
                 type="button"
-                className="text-xs text-[#D9AA45] hover:underline transition-colors cursor-pointer"
+                className="text-xs text-[#C59B3F] hover:underline transition-colors cursor-pointer"
                 onClick={() => {
                   setIsResetModalOpen(true);
                   setResetEmail(email.includes("@") ? email.trim() : "");
@@ -375,7 +386,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full pl-10 pr-10 py-3 bg-white/10 border border-white/20 rounded-lg text-sm text-white placeholder-emerald-200/50 focus:outline-none focus:ring-2 focus:ring-[#D9AA45] focus:border-transparent transition-all"
+                className="w-full pl-10 pr-10 py-2.5 bg-[#06140D] border border-white/15 rounded-xl text-sm text-white placeholder-emerald-200/40 focus:outline-none focus:ring-2 focus:ring-[#C59B3F] focus:border-transparent transition-all"
               />
               <button
                 type="button"
@@ -398,7 +409,7 @@ export default function LoginPage() {
               className="recaptcha-widget-container flex justify-center"
             />
             {!isCaptchaReady && (
-              <p className="text-[11px] text-emerald-200/60 mt-1 animate-pulse">
+              <p className="text-[11px] text-emerald-200/60 mt-1">
                 Carregando verificação de segurança...
               </p>
             )}
@@ -408,19 +419,19 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3.5 px-4 rounded-lg bg-gradient-to-r from-[#D9AA45] to-[#c59637] hover:from-[#e3b64f] hover:to-[#d0a040] text-[#04281A] font-bold text-sm tracking-wide shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3 px-4 rounded-xl bg-[#C59B3F] hover:bg-[#D4AF37] text-[#06140D] font-bold text-sm tracking-wide shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C59B3F]"
           >
             {isLoading ? (
-              <span className="inline-block w-5 h-5 border-2 border-[#04281A] border-t-transparent rounded-full animate-spin" />
+              <span className="inline-block w-5 h-5 border-2 border-[#06140D] border-t-transparent rounded-full animate-spin" />
             ) : (
-              <span>Entrar</span>
+              <span>Entrar no Sistema</span>
             )}
           </button>
 
           {error && (
             <p
               role="alert"
-              className="rounded-lg border border-red-300/40 bg-red-950/30 px-3 py-2 text-xs text-red-100 text-center"
+              className="rounded-xl border border-red-300/40 bg-red-950/30 px-3 py-2 text-xs text-red-100 text-center"
             >
               {error}
             </p>
@@ -438,9 +449,9 @@ export default function LoginPage() {
                 setFirstAccessError("");
                 setFirstAccessSuccess("");
               }}
-              className="text-xs text-[#D9AA45] hover:underline font-bold flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
+              className="text-xs text-[#C59B3F] hover:underline font-bold flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <KeyRound className="w-3.5 h-3.5" />
               <span>Primeiro acesso? Ative sua conta capitular</span>
             </button>
             <p className="text-[11px] text-emerald-200/70">
@@ -452,8 +463,8 @@ export default function LoginPage() {
 
       {/* MODAL DE PRIMEIRO ACESSO / CRIAÇÃO DE SENHA PESSOAL */}
       {isFirstAccessOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
-          <div className="ios-glass-card rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-white space-y-4 animate-in zoom-in-95">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#0E2018] border border-white/[0.08] rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-white space-y-4">
             <button
               onClick={() => setIsFirstAccessOpen(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-white text-xs cursor-pointer"
@@ -463,7 +474,7 @@ export default function LoginPage() {
 
             <div className="text-center space-y-1 pb-2 border-b border-white/10">
               <div className="inline-flex w-12 h-12 rounded-xl bg-[#087443] border border-[#D9AA45] items-center justify-center text-[#D9AA45] shadow mb-1">
-                <Sparkles className="w-6 h-6" />
+                <KeyRound className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-white">Primeiro Acesso Capitular</h3>
               <p className="text-xs text-emerald-200/80">
@@ -499,6 +510,23 @@ export default function LoginPage() {
                   />
                   <span className="text-[10px] text-gray-400 block mt-0.5">
                     Número do seu registro oficial no SISDM / DeMolay Brasil.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-emerald-200 font-semibold mb-1">
+                    Token de Ativação / Credencial Temporária *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={firstAccessToken}
+                    onChange={(e) => setFirstAccessToken(e.target.value.toUpperCase())}
+                    placeholder="Ex: CN-ACT-A1B2-C3D4"
+                    className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-white/20 text-white font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  />
+                  <span className="text-[10px] text-gray-400 block mt-0.5">
+                    Token individual de uso único fornecido pela Diretoria do Capítulo (validade de 7 dias).
                   </span>
                 </div>
 
@@ -579,8 +607,8 @@ export default function LoginPage() {
 
       {/* MODAL DE RECUPERAÇÃO DE ACESSO / SENHA */}
       {isResetModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
-          <div className="ios-glass-card rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-white space-y-4 animate-in zoom-in-95">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#0E2018] border border-white/[0.08] rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-white space-y-4">
             <button
               onClick={() => setIsResetModalOpen(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-white text-xs cursor-pointer"

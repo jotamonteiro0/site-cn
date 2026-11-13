@@ -29,7 +29,7 @@ import {
   Users,
   Download,
   MapPin,
-  Sparkles
+  ShieldCheck
 } from "lucide-react";
 import { HISTORICAL_MEETINGS } from "@/lib/data/historicalMeetings";
 import {
@@ -731,7 +731,7 @@ export default function MemberSelfServicePage() {
 
   if (isLoading) {
     return (
-      <div className="py-24 text-center text-xs text-emerald-200/60 animate-pulse">
+      <div className="py-24 text-center text-xs text-emerald-200/60 font-mono">
         Carregando dados capitulares do membro...
       </div>
     );
@@ -815,7 +815,7 @@ export default function MemberSelfServicePage() {
                 )}
               </div>
 
-              <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+              <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
                 {currentMember?.full_name || "Carregando perfil..."}
               </h1>
               <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-gray-300">
@@ -2293,8 +2293,8 @@ export default function MemberSelfServicePage() {
                     <FileText className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-[#D9AA45]" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1 font-mono">
+                      <ShieldCheck className="w-3 h-3 text-[#D9AA45]" />
                       Ata Oficial no Acervo
                     </span>
                     <h4 className="text-xs font-bold text-white">

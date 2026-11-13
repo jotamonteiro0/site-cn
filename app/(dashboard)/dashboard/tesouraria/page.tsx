@@ -20,7 +20,7 @@ import {
   Building,
   Users,
   Check,
-  Sparkles
+  ShieldCheck
 } from "lucide-react";
 
 interface FinancialPeriod {
@@ -505,16 +505,16 @@ export default function TesourariaPage() {
   if (isRoleChecked && effectiveRole !== "master" && effectiveRole !== "tesoureiro") {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
-        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 shadow-xl">
+        <div className="w-16 h-16 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 shadow-sm">
           <Shield className="w-8 h-8" />
         </div>
         <h2 className="text-xl font-bold text-white mb-2">Acesso Restrito à Gestão da Tesouraria</h2>
-        <p className="text-sm text-gray-400 max-w-md mb-6">
+        <p className="text-sm text-gray-400 max-w-md mb-6 leading-relaxed font-light">
           A visualização do livro caixa capitular, baixas de pagamentos de terceiros e controle contábil geral são restritos ao Mestre Conselheiro, Presidente do Conselho Consultivo e ao Tesoureiro do Capítulo.
         </p>
         <Link
           href="/dashboard/membro"
-          className="px-5 py-2.5 rounded-xl bg-[#087443] hover:bg-[#064D32] border border-[#D9AA45]/40 text-white font-semibold text-xs transition-all shadow-lg flex items-center gap-2"
+          className="px-5 py-2.5 rounded-lg bg-[#087443] hover:bg-[#09884F] border border-[#D9AA45]/40 text-white font-semibold text-xs transition-all shadow-sm flex items-center gap-2 cursor-pointer"
         >
           <UserCheck className="w-4 h-4 text-[#D9AA45]" />
           <span>Acessar Meu Autoatendimento (Minhas Mensalidades)</span>
@@ -535,10 +535,10 @@ export default function TesourariaPage() {
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Voltar à Visão Geral</span>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
             <span>Tesouraria Operacional Capitular</span>
           </h1>
-          <p className="text-sm text-emerald-200/70 mt-1">
+          <p className="text-sm text-emerald-200/70 mt-1 font-light">
             Controle de mensalidades de DeMolays e Maçons, baixas, PIX, InfinitePay e declarações
           </p>
         </div>
@@ -547,8 +547,9 @@ export default function TesourariaPage() {
         <div className="flex flex-wrap items-center gap-2">
           {/* Botão Principal: Gerar Relatório Mensal */}
           <button
+            type="button"
             onClick={() => setIsReportModalOpen(true)}
-            className="btn-heraldico-ouro px-4 py-2.5 rounded-xl text-xs"
+            className="btn-heraldico-ouro px-4 py-2.5 rounded-lg text-xs"
           >
             <Printer className="w-4 h-4" />
             <span>Gerar Relatório Mensal</span>
@@ -556,17 +557,19 @@ export default function TesourariaPage() {
 
           {/* Botão Alterar Valor da Mensalidade */}
           <button
+            type="button"
             onClick={() => setIsPriceModalOpen(true)}
-            className="btn-heraldico-vidro px-3.5 py-2.5 rounded-xl text-xs"
+            className="btn-heraldico-vidro px-3.5 py-2.5 rounded-lg text-xs"
           >
             <DollarSign className="w-4 h-4 text-[#D9AA45]" />
-            <span>Alterar Valor da Mensalidade</span>
+            <span>Alterar Valores</span>
           </button>
 
           {/* Botão PIX & InfinitePay */}
           <button
+            type="button"
             onClick={() => setIsPixModalOpen(true)}
-            className="btn-heraldico-vidro px-3.5 py-2.5 rounded-xl text-xs"
+            className="btn-heraldico-vidro px-3.5 py-2.5 rounded-lg text-xs"
           >
             <QrCode className="w-4 h-4 text-emerald-300" />
             <span>PIX & InfinitePay</span>
@@ -574,8 +577,9 @@ export default function TesourariaPage() {
 
           {/* Botão Lançar Mensalidades em Lote */}
           <button
+            type="button"
             onClick={() => setIsGenerateModalOpen(true)}
-            className="btn-heraldico-vidro px-3 py-2.5 rounded-xl text-xs"
+            className="btn-heraldico-vidro px-3 py-2.5 rounded-lg text-xs"
             title="Lançar mensalidades em lote para um novo mês"
           >
             <PlusCircle className="w-3.5 h-3.5" />
@@ -586,24 +590,24 @@ export default function TesourariaPage() {
 
       {/* FEEDBACK DE ATUALIZAÇÃO */}
       {feedbackMsg && (
-        <div className="p-3.5 rounded-xl bg-emerald-900/40 border border-emerald-500/50 text-emerald-200 text-xs flex items-center gap-2 shadow-lg animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className="p-3.5 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-emerald-200 text-xs flex items-center gap-2 shadow-sm animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{feedbackMsg}</span>
         </div>
       )}
 
       {/* SELETOR DE MÊS E VENCIMENTO */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 sm:p-6 rounded-xl bg-[#0C1D14] border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#D9AA45]">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#D9AA45] font-mono">
             Exercício Financeiro Selecionado
           </span>
           <div className="flex items-center gap-3 mt-1.5">
-            <Calendar className="w-5 h-5 text-emerald-300" />
+            <Calendar className="w-5 h-5 text-emerald-300 shrink-0" />
             <select
               value={selectedPeriodId}
               onChange={(e) => setSelectedPeriodId(e.target.value)}
-              className="bg-[#064D32] border border-emerald-500/40 rounded-xl px-4 py-2 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
+              className="bg-[#064D32] border border-emerald-500/40 rounded-lg px-4 py-2 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
             >
               {periods.map((p) => {
                 const mesNome = new Date(p.year, p.month - 1).toLocaleString("pt-BR", { month: "long" });
@@ -617,68 +621,68 @@ export default function TesourariaPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 text-xs text-emerald-100/80">
-          <div className="p-2.5 rounded-xl bg-black/20 border border-white/10">
+        <div className="flex flex-wrap items-center gap-2.5 text-xs text-emerald-100/90">
+          <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
             <span className="text-gray-400">Vencimento Padrão:</span>{" "}
-            <span className="font-bold text-white">Todo dia 28 (Final de Mês)</span>
+            <span className="font-bold text-white font-mono">Todo dia 28</span>
           </div>
-          <div className="p-2.5 rounded-xl bg-black/20 border border-white/10">
+          <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
             <span className="text-gray-400">DeMolay:</span>{" "}
-            <span className="font-bold text-[#D9AA45]">R$ 22,00</span>
+            <span className="font-bold text-[#D9AA45] font-mono tabular-nums">R$ 22,00</span>
           </div>
-          <div className="p-2.5 rounded-xl bg-black/20 border border-white/10">
+          <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
             <span className="text-gray-400">Tio Maçom:</span>{" "}
-            <span className="font-bold text-emerald-300">R$ 25,00</span>
+            <span className="font-bold text-emerald-300 font-mono tabular-nums">R$ 25,00</span>
           </div>
         </div>
       </div>
 
-      {/* 4 CARDS RESUMO DO MÊS SELECIONADO (ESTILO HERÁLDICO) */}
+      {/* 4 CARDS RESUMO DO MÊS SELECIONADO */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card-heraldico-dark p-5 rounded-2xl space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200/80">
+        <div className="card-heraldico-dark p-5 rounded-xl space-y-1">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200/80 font-mono">
             Previsão do Mês
           </span>
-          <p className="text-2xl font-extrabold text-white">
+          <p className="text-2xl font-extrabold text-white font-mono tabular-nums">
             R$ {stats.totalPrevisto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
-          <p className="text-[11px] text-emerald-200/60">
+          <p className="text-[11px] text-emerald-200/60 font-mono tabular-nums">
             {stats.qtdTotal} pagantes ({stats.qtdDemolay} DeMolays + {stats.qtdMacom} Maçons)
           </p>
         </div>
 
-        <div className="card-heraldico-dark p-5 rounded-2xl space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">
+        <div className="card-heraldico-dark p-5 rounded-xl space-y-1">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 font-mono">
             Total Arrecadado
           </span>
-          <p className="text-2xl font-extrabold text-emerald-300">
+          <p className="text-2xl font-extrabold text-emerald-300 font-mono tabular-nums">
             R$ {stats.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
-          <p className="text-[11px] text-emerald-200/60">
-            {stats.qtdPago} mensalidades quitadas ({stats.pagoDemolay} DM + {stats.pagoMacom} Maçons)
+          <p className="text-[11px] text-emerald-200/60 font-mono tabular-nums">
+            {stats.qtdPago} quitadas ({stats.pagoDemolay} DM + {stats.pagoMacom} Maçons)
           </p>
         </div>
 
-        <div className="card-heraldico-dark p-5 rounded-2xl space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#D9AA45]">
+        <div className="card-heraldico-dark p-5 rounded-xl space-y-1">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#D9AA45] font-mono">
             Saldo a Receber
           </span>
-          <p className="text-2xl font-extrabold text-[#D9AA45]">
+          <p className="text-2xl font-extrabold text-[#D9AA45] font-mono tabular-nums">
             R$ {stats.totalPendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
-          <p className="text-[11px] text-amber-200/60">
+          <p className="text-[11px] text-amber-200/60 font-mono tabular-nums">
             {stats.qtdTotal - stats.qtdPago} mensalidades em aberto
           </p>
         </div>
 
-        <div className="card-heraldico-dark p-5 rounded-2xl space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200/80">
+        <div className="card-heraldico-dark p-5 rounded-xl space-y-1">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200/80 font-mono">
             Taxa de Adimplência
           </span>
-          <p className="text-2xl font-extrabold text-white">{stats.percent}%</p>
+          <p className="text-2xl font-extrabold text-white font-mono tabular-nums">{stats.percent}%</p>
           <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden mt-2 border border-white/10">
             <div
-              className="bg-gradient-to-r from-[#087443] to-[#D9AA45] h-full rounded-full transition-all"
+              className="bg-[#087443] h-full rounded-full transition-all"
               style={{ width: `${stats.percent}%` }}
             />
           </div>
@@ -691,31 +695,33 @@ export default function TesourariaPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => setActiveSheet("demolay")}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeSheet === "demolay"
-                  ? "bg-[#087443] text-white border-2 border-[#D9AA45] shadow-lg"
+                  ? "bg-[#087443] text-white border border-[#D9AA45]/60 shadow-sm"
                   : "bg-white/5 text-emerald-200/70 hover:bg-white/10 hover:text-white"
               }`}
             >
               <Users className="w-4 h-4 text-[#D9AA45]" />
               <span>Planilha de DeMolays</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/40 text-emerald-200 font-mono">
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/40 text-emerald-200 font-mono tabular-nums">
                 {stats.qtdDemolay} • R$ {priceDemolay},00
               </span>
             </button>
 
             <button
+              type="button"
               onClick={() => setActiveSheet("macom")}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeSheet === "macom"
-                  ? "bg-[#087443] text-white border-2 border-[#D9AA45] shadow-lg"
+                  ? "bg-[#087443] text-white border border-[#D9AA45]/60 shadow-sm"
                   : "bg-white/5 text-emerald-200/70 hover:bg-white/10 hover:text-white"
               }`}
             >
               <Building className="w-4 h-4 text-[#D9AA45]" />
               <span>Planilha de Tios Maçons</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/40 text-emerald-200 font-mono">
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/40 text-emerald-200 font-mono tabular-nums">
                 {stats.qtdMacom} • R$ {priceMacom},00
               </span>
             </button>
@@ -729,7 +735,7 @@ export default function TesourariaPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={`Buscar em ${activeSheet === "demolay" ? "DeMolays" : "Maçons"} por nome, ID ou Loja...`}
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs placeholder:text-emerald-200/40 focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+              className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white text-xs placeholder:text-emerald-200/40 focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
             />
           </div>
         </div>
@@ -744,6 +750,7 @@ export default function TesourariaPage() {
           ].map((f) => (
             <button
               key={f.id}
+              type="button"
               onClick={() => setStatusFilter(f.id as "todos" | "confirmado" | "pendente")}
               className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                 statusFilter === f.id
@@ -757,10 +764,10 @@ export default function TesourariaPage() {
         </div>
 
         {/* TABELA / PLANILHA FINANCEIRA */}
-        <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md overflow-hidden shadow-xl">
+        <div className="rounded-xl bg-[#0C1D14] border border-white/10 overflow-hidden shadow-md">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-white">
-              <thead className="bg-[#04281A]/90 border-b border-white/10 text-emerald-300 uppercase tracking-wider text-[10px] font-bold">
+              <thead className="bg-[#08140E] border-b border-white/10 text-emerald-300 uppercase tracking-wider text-[10px] font-bold font-mono">
                 <tr>
                   <th className="py-3 px-4">{activeSheet === "demolay" ? "ID SISDM" : "CIM / ID"}</th>
                   <th className="py-3 px-4">{activeSheet === "demolay" ? "Nome do DeMolay" : "Nome do Tio Maçom"}</th>
@@ -774,7 +781,7 @@ export default function TesourariaPage() {
               <tbody className="divide-y divide-white/5">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={activeSheet === "macom" ? 7 : 6} className="py-8 text-center text-emerald-200/50">
+                    <td colSpan={activeSheet === "macom" ? 7 : 6} className="py-8 text-center text-emerald-200/50 font-mono">
                       Carregando planilha de mensalidades...
                     </td>
                   </tr>
@@ -789,14 +796,14 @@ export default function TesourariaPage() {
                     const isPago = c.status === "confirmado";
 
                     return (
-                      <tr key={c.id} className="hover:bg-white/[0.04] transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-[#D9AA45]">
+                      <tr key={c.id} className="hover:bg-white/[0.03] transition-colors">
+                        <td className="py-3 px-4 font-mono font-bold text-[#D9AA45] tabular-nums">
                           {c.member?.id_demolay || "—"}
                         </td>
                         <td className="py-3 px-4 font-semibold text-white">
                           <p>{c.payer_name}</p>
                           {c.paid_at && (
-                            <p className="text-[10px] text-emerald-300/80">
+                            <p className="text-[10px] text-emerald-300/80 font-mono tabular-nums">
                               Baixa em {new Date(c.paid_at).toLocaleDateString("pt-BR")}
                             </p>
                           )}
@@ -808,10 +815,10 @@ export default function TesourariaPage() {
                             </span>
                           </td>
                         )}
-                        <td className="py-3 px-4 text-emerald-100/70 font-mono">
+                        <td className="py-3 px-4 text-emerald-100/70 font-mono tabular-nums">
                           {c.due_date ? new Date(c.due_date).toLocaleDateString("pt-BR") : "28/11/2026"}
                         </td>
-                        <td className="py-3 px-4 font-bold text-white">
+                        <td className="py-3 px-4 font-bold text-white font-mono tabular-nums">
                           R$ {Number(c.amount).toFixed(2).replace(".", ",")}
                         </td>
                         <td className="py-3 px-4">
@@ -823,19 +830,20 @@ export default function TesourariaPage() {
                             }`}
                           >
                             {isPago ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                            <span>{isPago ? "Quitado (Pago)" : "Pendente"}</span>
+                            <span>{isPago ? "Quitado" : "Pendente"}</span>
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right">
                           <div className="inline-flex items-center gap-1.5">
                             {/* Botão de Baixa / Estorno */}
                             <button
+                              type="button"
                               onClick={() => handleTogglePaymentStatus(c.id, c.status)}
                               disabled={isUpdating}
                               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                                 isPago
                                   ? "bg-white/10 hover:bg-white/20 text-emerald-200"
-                                  : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-md"
+                                  : "bg-[#087443] hover:bg-[#09884F] text-white shadow-sm"
                               }`}
                             >
                               {isPago ? "Estornar" : "Dar Baixa"}
@@ -843,8 +851,9 @@ export default function TesourariaPage() {
 
                             {/* Botão de Emitir Declaração de Quitação */}
                             <button
+                              type="button"
                               onClick={() => handleOpenQuitacao(c)}
-                              className="px-2.5 py-1.5 rounded-lg bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 text-[#D9AA45] border border-[#D9AA45]/40 transition-all cursor-pointer"
+                              className="px-2.5 py-1.5 rounded-lg bg-[#D9AA45]/15 hover:bg-[#D9AA45]/25 text-[#D9AA45] border border-[#D9AA45]/30 transition-all cursor-pointer"
                               title="Emitir Declaração de Quitação Oficial"
                             >
                               <FileCheck className="w-3.5 h-3.5" />
@@ -864,21 +873,25 @@ export default function TesourariaPage() {
       {/* MODAL: PIX & INFINITEPAY AUTOMÁTICO */}
       {isPixModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
-          <div className="w-full max-w-lg p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
+          <div className="w-full max-w-lg p-6 sm:p-7 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/30 shadow-2xl space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <QrCode className="w-5 h-5 text-[#D9AA45]" />
                 <h3 className="text-base font-bold">Configuração PIX & InfinitePay API</h3>
               </div>
-              <button onClick={() => setIsPixModalOpen(false)} className="text-gray-400 hover:text-white text-xs">
+              <button 
+                type="button"
+                onClick={() => setIsPixModalOpen(false)} 
+                className="text-gray-400 hover:text-white text-xs cursor-pointer"
+              >
                 ✕
               </button>
             </div>
 
             <div className="space-y-4 text-xs">
               {/* Chave PIX Oficial */}
-              <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-2">
-                <span className="text-[10px] uppercase font-bold text-emerald-300">
+              <div className="p-3.5 rounded-lg bg-black/40 border border-white/10 space-y-2">
+                <span className="text-[10px] uppercase font-bold text-emerald-300 font-mono">
                   Chave PIX Oficial do Capítulo (E-mail)
                 </span>
                 <div className="flex items-center justify-between gap-2 bg-black/50 p-2.5 rounded-lg border border-white/10">
@@ -886,29 +899,30 @@ export default function TesourariaPage() {
                     capitulo500teresina@demolaypi.org.br
                   </span>
                   <button
+                    type="button"
                     onClick={() => {
                       navigator.clipboard.writeText("capitulo500teresina@demolaypi.org.br");
                       setPixCopied(true);
                       setTimeout(() => setPixCopied(false), 2500);
                     }}
-                    className="p-1.5 rounded bg-white/10 hover:bg-white/20 text-[#D9AA45] cursor-pointer"
+                    className="p-1.5 rounded-md bg-white/10 hover:bg-white/20 text-[#D9AA45] cursor-pointer"
                     title="Copiar Chave PIX"
                   >
                     {pixCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
-                {pixCopied && <p className="text-[10px] text-emerald-400 font-bold">✓ Chave copiada!</p>}
+                {pixCopied && <p className="text-[10px] text-emerald-400 font-bold font-mono">✓ Chave copiada!</p>}
               </div>
 
               {/* Conciliação Automática via Webhook InfinitePay */}
-              <div className="p-3.5 rounded-xl bg-black/40 border border-[#D9AA45]/30 space-y-2">
+              <div className="p-3.5 rounded-lg bg-black/40 border border-[#D9AA45]/30 space-y-2">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#D9AA45]" />
-                  <span className="text-[10px] uppercase font-bold text-[#D9AA45]">
+                  <ShieldCheck className="w-4 h-4 text-[#D9AA45]" />
+                  <span className="text-[10px] uppercase font-bold text-[#D9AA45] font-mono">
                     Conciliação Automática (InfinitePay Webhook)
                   </span>
                 </div>
-                <p className="text-[11px] text-gray-300 leading-relaxed">
+                <p className="text-[11px] text-gray-300 leading-relaxed font-light">
                   Para carregar os pagamentos <strong>automaticamente</strong> no sistema quando um irmão pagar pelo link ou cartão da InfinitePay, cadastre o endereço abaixo no painel da sua conta InfinitePay (em <em>Configurações &gt; Integrações / Webhooks</em>):
                 </p>
                 
@@ -917,22 +931,23 @@ export default function TesourariaPage() {
                     https://site-cn.vercel.app/api/webhooks/infinitepay
                   </span>
                   <button
+                    type="button"
                     onClick={() => {
                       navigator.clipboard.writeText("https://site-cn.vercel.app/api/webhooks/infinitepay");
                       setWebhookCopied(true);
                       setTimeout(() => setWebhookCopied(false), 2500);
                     }}
-                    className="p-1.5 rounded bg-white/10 hover:bg-white/20 text-[#D9AA45] cursor-pointer"
+                    className="p-1.5 rounded-md bg-white/10 hover:bg-white/20 text-[#D9AA45] cursor-pointer"
                     title="Copiar URL do Webhook"
                   >
                     {webhookCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
-                {webhookCopied && <p className="text-[10px] text-emerald-400 font-bold">✓ URL do Webhook copiada!</p>}
+                {webhookCopied && <p className="text-[10px] text-emerald-400 font-bold font-mono">✓ URL do Webhook copiada!</p>}
               </div>
 
               {/* Informações de Titularidade */}
-              <div className="p-3.5 rounded-xl bg-black/20 border border-white/10 text-gray-300 space-y-1">
+              <div className="p-3.5 rounded-lg bg-black/20 border border-white/10 text-gray-300 space-y-1 text-xs">
                 <p><strong>Titular:</strong> Capítulo Professor Carvalho Neves Nº 500</p>
                 <p><strong>Patrocinadora:</strong> A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)</p>
                 <p><strong>Adquirente:</strong> InfinitePay / Stone Instituição de Pagamento S.A.</p>
@@ -941,6 +956,7 @@ export default function TesourariaPage() {
 
             <div className="flex justify-end pt-3 border-t border-white/10">
               <button
+                type="button"
                 onClick={() => setIsPixModalOpen(false)}
                 className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs cursor-pointer"
               >
@@ -954,12 +970,12 @@ export default function TesourariaPage() {
       {/* MODAL: GERAR MENSALIDADES DO MÊS */}
       {isGenerateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
-          <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
+          <div className="w-full max-w-md p-6 sm:p-7 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/30 shadow-2xl space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center gap-2">
               <PlusCircle className="w-6 h-6 text-[#D9AA45]" />
               <h3 className="text-lg font-bold">Gerar Mensalidades em Lote</h3>
             </div>
-            <p className="text-xs text-emerald-200/80 leading-relaxed">
+            <p className="text-xs text-emerald-200/80 leading-relaxed font-light">
               O sistema lançará automaticamente a cobrança de <strong>R$ 22,00</strong> para os 35 DeMolays Ativos e <strong>R$ 25,00</strong> para os 27 Tios Maçons, com vencimento padronizado no <strong>dia 28 (final do mês)</strong>.
             </p>
 
@@ -970,7 +986,7 @@ export default function TesourariaPage() {
                   <select
                     value={generateMonth}
                     onChange={(e) => setGenerateMonth(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
+                    className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
                       <option key={m} value={m}>
@@ -985,7 +1001,7 @@ export default function TesourariaPage() {
                   <select
                     value={generateYear}
                     onChange={(e) => setGenerateYear(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
+                    className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
                   >
                     <option value={2025}>2025</option>
                     <option value={2026}>2026</option>
@@ -1005,7 +1021,7 @@ export default function TesourariaPage() {
                 <button
                   type="submit"
                   disabled={isUpdating}
-                  className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#E5BA55] text-[#041A10] font-bold cursor-pointer disabled:opacity-50"
                 >
                   {isUpdating ? "Gerando..." : "Confirmar e Lançar"}
                 </button>
@@ -1015,12 +1031,13 @@ export default function TesourariaPage() {
         </div>
       )}
 
-      {/* MODAL: GERAR RELATÓRIO MENSAL CONSOLIDADO (ARRECADADO, ESPERADO, INADIMPLÊNCIA) */}
+      {/* MODAL: GERAR RELATÓRIO MENSAL CONSOLIDADO (IMPRESSÃO & PDF) */}
       {isReportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in overflow-y-auto">
-          <div className="w-full max-w-3xl my-8 p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-[#064D32]/95 via-[#04281A]/95 to-[#021810]/95 backdrop-blur-2xl border border-[#D9AA45]/50 text-white shadow-[0_20px_60px_-15px_rgba(4,40,26,0.8),0_0_40px_rgba(217,170,69,0.2)] space-y-6 relative print:border-none print:shadow-none print:p-0 print:my-0 animate-in zoom-in-95">
+          <div className="w-full max-w-3xl my-8 p-6 sm:p-8 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/40 text-white shadow-2xl space-y-6 relative print:border-none print:shadow-none print:p-0 print:my-0 animate-in zoom-in-95">
             {/* Botão de Fechar */}
             <button
+              type="button"
               onClick={() => setIsReportModalOpen(false)}
               className="absolute top-4 right-4 text-white/50 hover:text-white print:hidden cursor-pointer"
             >
@@ -1029,7 +1046,7 @@ export default function TesourariaPage() {
 
             {/* Cabeçalho do Relatório Timbrado */}
             <div className="text-center space-y-1.5 border-b border-[#D9AA45]/40 pb-5">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#D9AA45]">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#D9AA45] font-mono">
                 Capítulo Professor Carvalho Neves Nº 500 • Ordem DeMolay
               </span>
               <h2 className="text-xl sm:text-2xl font-bold font-serif tracking-wide text-white">
@@ -1051,48 +1068,48 @@ export default function TesourariaPage() {
 
             {/* Quatro Indicadores Chave */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-center">
-                <span className="text-[10px] uppercase font-bold text-gray-300">Total Esperado</span>
-                <p className="text-lg font-black text-white mt-1">
+              <div className="p-3.5 rounded-lg bg-black/30 border border-white/10 text-center">
+                <span className="text-[10px] uppercase font-bold text-gray-300 font-mono">Total Esperado</span>
+                <p className="text-lg font-bold text-white mt-1 font-mono tabular-nums">
                   R$ {stats.totalPrevisto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </p>
-                <p className="text-[10px] text-gray-400">{stats.qtdTotal} mensalidades</p>
+                <p className="text-[10px] text-gray-400 font-mono tabular-nums">{stats.qtdTotal} mensalidades</p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-center">
-                <span className="text-[10px] uppercase font-bold text-emerald-300">Total Arrecadado</span>
-                <p className="text-lg font-black text-emerald-300 mt-1">
+              <div className="p-3.5 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-center">
+                <span className="text-[10px] uppercase font-bold text-emerald-300 font-mono">Total Arrecadado</span>
+                <p className="text-lg font-bold text-emerald-300 mt-1 font-mono tabular-nums">
                   R$ {stats.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </p>
-                <p className="text-[10px] text-emerald-400">{stats.qtdPago} quitadas</p>
+                <p className="text-[10px] text-emerald-400 font-mono tabular-nums">{stats.qtdPago} quitadas</p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-amber-950/60 border border-amber-500/40 text-center">
-                <span className="text-[10px] uppercase font-bold text-[#D9AA45]">Pendente / Em Aberto</span>
-                <p className="text-lg font-black text-[#D9AA45] mt-1">
+              <div className="p-3.5 rounded-lg bg-amber-950/40 border border-amber-500/30 text-center">
+                <span className="text-[10px] uppercase font-bold text-[#D9AA45] font-mono">Pendente / Aberto</span>
+                <p className="text-lg font-bold text-[#D9AA45] mt-1 font-mono tabular-nums">
                   R$ {stats.totalPendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </p>
-                <p className="text-[10px] text-amber-300">{stats.qtdTotal - stats.qtdPago} pendentes</p>
+                <p className="text-[10px] text-amber-300 font-mono tabular-nums">{stats.qtdTotal - stats.qtdPago} pendentes</p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-center">
-                <span className="text-[10px] uppercase font-bold text-gray-300">Taxa de Adimplência</span>
-                <p className="text-lg font-black text-white mt-1">{stats.percent}%</p>
-                <p className="text-[10px] text-red-300">{100 - stats.percent}% inadimplência</p>
+              <div className="p-3.5 rounded-lg bg-black/30 border border-white/10 text-center">
+                <span className="text-[10px] uppercase font-bold text-gray-300 font-mono">Adimplência</span>
+                <p className="text-lg font-bold text-white mt-1 font-mono tabular-nums">{stats.percent}%</p>
+                <p className="text-[10px] text-red-300 font-mono tabular-nums">{100 - stats.percent}% aberto</p>
               </div>
             </div>
 
             {/* Detalhamento por Categoria */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               {/* DeMolays */}
-              <div className="p-4 rounded-xl bg-black/30 border border-emerald-500/30 space-y-2">
+              <div className="p-4 rounded-lg bg-black/30 border border-emerald-500/30 space-y-2">
                 <div className="flex items-center justify-between pb-2 border-b border-white/10">
                   <span className="font-bold text-emerald-300">DeMolays Ativos (R$ {priceDemolay},00)</span>
-                  <span className="font-mono text-[11px] text-[#D9AA45]">
+                  <span className="font-mono text-[11px] text-[#D9AA45] tabular-nums">
                     {stats.pagoDemolay} / {stats.qtdDemolay} pagos
                   </span>
                 </div>
-                <div className="space-y-1 text-gray-300">
+                <div className="space-y-1 text-gray-300 font-mono tabular-nums">
                   <p className="flex justify-between">
                     <span>Arrecadado:</span>
                     <strong className="text-white">
@@ -1115,14 +1132,14 @@ export default function TesourariaPage() {
               </div>
 
               {/* Tios Maçons */}
-              <div className="p-4 rounded-xl bg-black/30 border border-amber-500/30 space-y-2">
+              <div className="p-4 rounded-lg bg-black/30 border border-amber-500/30 space-y-2">
                 <div className="flex items-center justify-between pb-2 border-b border-white/10">
                   <span className="font-bold text-[#D9AA45]">Tios Maçons / Conselho (R$ {priceMacom},00)</span>
-                  <span className="font-mono text-[11px] text-[#D9AA45]">
+                  <span className="font-mono text-[11px] text-[#D9AA45] tabular-nums">
                     {stats.pagoMacom} / {stats.qtdMacom} pagos
                   </span>
                 </div>
-                <div className="space-y-1 text-gray-300">
+                <div className="space-y-1 text-gray-300 font-mono tabular-nums">
                   <p className="flex justify-between">
                     <span>Arrecadado:</span>
                     <strong className="text-white">
@@ -1146,7 +1163,7 @@ export default function TesourariaPage() {
             </div>
 
             {/* Observações da Tesouraria */}
-            <div className="p-3.5 rounded-xl bg-black/20 border border-white/10 text-xs text-emerald-100/80 leading-relaxed">
+            <div className="p-3.5 rounded-lg bg-black/20 border border-white/10 text-xs text-emerald-100/80 leading-relaxed font-light">
               <p>
                 O presente relatório consolida os lançamentos contábeis e as baixas de pagamentos efetuadas via PIX, InfinitePay ou dinheiro em mãos, atestando a regularidade financeira e a transparência perante o Conselho Consultivo e o Capítulo.
               </p>
@@ -1156,7 +1173,7 @@ export default function TesourariaPage() {
             <div className="pt-6 border-t border-[#D9AA45]/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
               <div className="text-center sm:text-left">
                 <p className="font-bold text-white">Aloísio Oliveira Neto</p>
-                <p className="text-[11px] text-[#D9AA45]">ID Nº 134104</p>
+                <p className="text-[11px] text-[#D9AA45] font-mono">ID Nº 134104</p>
                 <p className="text-[11px] text-emerald-200/70">
                   Tesoureiro do Capítulo Professor Carvalho Neves Nº 500
                 </p>
@@ -1166,14 +1183,14 @@ export default function TesourariaPage() {
                 <button
                   type="button"
                   onClick={() => setIsReportModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium"
+                  className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-medium cursor-pointer"
                 >
                   Fechar
                 </button>
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="px-4 py-2 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold flex items-center gap-2 cursor-pointer shadow-md"
+                  className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#E5BA55] text-[#041A10] font-bold flex items-center gap-2 cursor-pointer shadow-sm"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Imprimir / Salvar PDF</span>
@@ -1187,12 +1204,12 @@ export default function TesourariaPage() {
       {/* MODAL: ALTERAR VALOR DA MENSALIDADE */}
       {isPriceModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
-          <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
+          <div className="w-full max-w-md p-6 sm:p-7 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/30 shadow-2xl space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center gap-2">
               <DollarSign className="w-6 h-6 text-[#D9AA45]" />
               <h3 className="text-lg font-bold">Alterar Valor das Mensalidades</h3>
             </div>
-            <p className="text-xs text-emerald-200/80 leading-relaxed">
+            <p className="text-xs text-emerald-200/80 leading-relaxed font-light">
               Defina os novos valores praticados pela Tesouraria para DeMolays e Maçons. As alterações serão aplicadas às mensalidades em aberto do período selecionado.
             </p>
 
@@ -1211,10 +1228,10 @@ export default function TesourariaPage() {
                       required
                       value={priceDemolay}
                       onChange={(e) => setPriceDemolay(Number(e.target.value))}
-                      className="w-full pl-10 pr-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                      className="w-full pl-10 pr-3 py-2 rounded-lg bg-[#08140E] border border-white/20 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#D9AA45] font-mono tabular-nums"
                     />
                   </div>
-                  <span className="text-[10px] text-emerald-300/70 mt-1 block">Valor padrão vigente: R$ 22,00</span>
+                  <span className="text-[10px] text-emerald-300/70 mt-1 block font-mono">Valor padrão vigente: R$ 22,00</span>
                 </div>
 
                 <div>
@@ -1230,14 +1247,14 @@ export default function TesourariaPage() {
                       required
                       value={priceMacom}
                       onChange={(e) => setPriceMacom(Number(e.target.value))}
-                      className="w-full pl-10 pr-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                      className="w-full pl-10 pr-3 py-2 rounded-lg bg-[#08140E] border border-white/20 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#D9AA45] font-mono tabular-nums"
                     />
                   </div>
-                  <span className="text-[10px] text-emerald-300/70 mt-1 block">Valor padrão vigente: R$ 25,00</span>
+                  <span className="text-[10px] text-emerald-300/70 mt-1 block font-mono">Valor padrão vigente: R$ 25,00</span>
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-black/20 border border-white/10 text-[11px] text-gray-300">
+              <div className="p-3 rounded-lg bg-black/20 border border-white/10 text-[11px] text-gray-300">
                 <p>
                   <strong>Vencimento:</strong> Todo dia 28 do mês. A atualização recalculará os saldos previstos e pendentes.
                 </p>
@@ -1254,7 +1271,7 @@ export default function TesourariaPage() {
                 <button
                   type="submit"
                   disabled={isUpdating}
-                  className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#E5BA55] text-[#041A10] font-bold cursor-pointer disabled:opacity-50"
                 >
                   {isUpdating ? "Salvando..." : "Salvar Novos Valores"}
                 </button>
@@ -1267,9 +1284,10 @@ export default function TesourariaPage() {
       {/* MODAL: DECLARAÇÃO DE QUITAÇÃO OFICIAL */}
       {quitacaoMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
-          <div className="w-full max-w-2xl p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-[#064D32]/95 via-[#04281A]/95 to-[#021810]/95 backdrop-blur-2xl border border-[#D9AA45]/50 text-white shadow-[0_20px_60px_-15px_rgba(4,40,26,0.8),0_0_40px_rgba(217,170,69,0.2)] space-y-6 relative print:border-none print:shadow-none print:p-0 animate-in zoom-in-95">
+          <div className="w-full max-w-2xl p-6 sm:p-8 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/40 text-white shadow-2xl space-y-6 relative print:border-none print:shadow-none print:p-0 animate-in zoom-in-95">
             {/* Botão de Fechar */}
             <button
+              type="button"
               onClick={() => setQuitacaoMember(null)}
               className="absolute top-4 right-4 text-white/50 hover:text-white print:hidden cursor-pointer"
             >
@@ -1278,7 +1296,7 @@ export default function TesourariaPage() {
 
             {/* Cabeçalho Oficial Timbrado */}
             <div className="text-center space-y-2 border-b border-[#D9AA45]/40 pb-5">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#D9AA45]">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#D9AA45] font-mono">
                 Ordem DeMolay • Capítulo Professor Carvalho Neves Nº 500
               </span>
               <h2 className="text-xl font-bold font-serif tracking-wide text-white">
@@ -1290,14 +1308,14 @@ export default function TesourariaPage() {
             </div>
 
             {/* Texto da Declaração */}
-            <div className="space-y-4 text-sm leading-relaxed text-emerald-100/90 text-justify">
+            <div className="space-y-4 text-sm leading-relaxed text-emerald-100/90 text-justify font-light">
               <p>
                 A Tesouraria do <strong>Capítulo Professor Carvalho Neves Nº 500</strong>, no uso de suas atribuições estatutárias e regimentais, declara para os devidos fins de comprovação e regularidade capitular que o {quitacaoMember.type === "macom" ? "Tio Maçom" : "Irmão DeMolay"}:
               </p>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-1">
+              <div className="p-4 rounded-lg bg-black/40 border border-white/10 space-y-1">
                 <p className="text-base font-bold text-[#D9AA45]">{quitacaoMember.name}</p>
-                <p className="text-xs text-gray-300">
+                <p className="text-xs text-gray-300 font-mono">
                   {quitacaoMember.type === "macom"
                     ? `Filiação Maçônica: ${quitacaoMember.lodge || "A∴R∴L∴S∴ Caridade II nº 135"}`
                     : `ID DeMolay: ${quitacaoMember.id_demolay}`}
@@ -1320,13 +1338,14 @@ export default function TesourariaPage() {
                 <span className="font-mono font-bold text-[#D9AA45] text-sm select-all">
                   {quitacaoMember.code}
                 </span>
-                <span className="block text-[10px] text-gray-400 mt-0.5">Emitido em: {quitacaoMember.date}</span>
+                <span className="block text-[10px] text-gray-400 mt-0.5 font-mono">Emitido em: {quitacaoMember.date}</span>
               </div>
 
               <div className="flex items-center gap-2 print:hidden">
                 <button
+                  type="button"
                   onClick={() => window.print()}
-                  className="px-4 py-2 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold flex items-center gap-2 cursor-pointer shadow-md"
+                  className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#E5BA55] text-[#041A10] font-bold flex items-center gap-2 cursor-pointer shadow-sm"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Imprimir / Salvar PDF</span>

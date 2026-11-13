@@ -10,26 +10,26 @@ export const metadata = {
 
 export default function PrivacidadePage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#F2F5F1] text-gray-900 selection:bg-[#D9AA45] selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#F8FAF8] text-gray-900 selection:bg-[#C59B3F] selection:text-white">
       <Header />
 
       <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-[#04281A] hover:text-[#087443] bg-white px-3.5 py-1.5 rounded-full border border-gray-200 mb-8 transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-[#052E1D] hover:text-[#087443] bg-white px-3.5 py-1.5 rounded-full border border-gray-200 mb-8 transition-colors shadow-sm"
         >
-          <ArrowLeft className="w-3.5 h-3.5 text-[#D9AA45]" />
+          <ArrowLeft className="w-3.5 h-3.5 text-[#C59B3F]" />
           <span>Voltar ao Portal Público</span>
         </Link>
 
         {/* Cabeçalho */}
-        <div className="bg-white rounded-3xl p-8 sm:p-10 border border-gray-200 shadow-sm mb-8">
+        <div className="bg-white rounded-3xl p-8 sm:p-10 border border-gray-200/80 shadow-sm mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#087443]/10 border border-[#087443]/20 text-[#087443] text-xs font-bold uppercase tracking-widest mb-4">
-            <Shield className="w-3.5 h-3.5 text-[#D9AA45]" />
+            <Shield className="w-3.5 h-3.5 text-[#C59B3F]" />
             <span>Conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018)</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-[#04281A] tracking-tight">
+          <h1 className="text-2xl sm:text-4xl font-bold text-[#052E1D] tracking-tight">
             Política de Privacidade e Proteção de Dados
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-2">
@@ -38,10 +38,10 @@ export default function PrivacidadePage() {
         </div>
 
         {/* Conteúdo Institucional */}
-        <div className="bg-white rounded-3xl p-8 sm:p-10 border border-gray-200 shadow-sm space-y-8 text-sm sm:text-base text-gray-700 leading-relaxed">
+        <div className="bg-white rounded-3xl p-8 sm:p-10 border border-gray-200/80 shadow-sm space-y-8 text-sm sm:text-base text-gray-700 leading-relaxed">
           <section className="space-y-3">
-            <h2 className="text-lg font-bold text-[#04281A] flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#D9AA45]"></span>
+            <h2 className="text-lg font-bold text-[#052E1D] flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#C59B3F]"></span>
               1. Identificação do Controlador
             </h2>
             <p>
@@ -50,8 +50,8 @@ export default function PrivacidadePage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-bold text-[#04281A] flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#D9AA45]"></span>
+            <h2 className="text-lg font-bold text-[#052E1D] flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#C59B3F]"></span>
               2. Finalidade e Minimização de Dados
             </h2>
             <p>
@@ -67,7 +67,7 @@ export default function PrivacidadePage() {
 
           <section className="space-y-3 p-5 rounded-2xl bg-amber-50/60 border border-amber-200/60">
             <h2 className="text-lg font-bold text-amber-900 flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#D9AA45]" />
+              <Users className="w-5 h-5 text-[#C59B3F]" />
               3. Tratamento de Dados de Menores de Idade (Art. 14 da LGPD)
             </h2>
             <p className="text-amber-950/90 text-sm leading-relaxed">
@@ -76,7 +76,7 @@ export default function PrivacidadePage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-bold text-[#04281A] flex items-center gap-2">
+            <h2 className="text-lg font-bold text-[#052E1D] flex items-center gap-2">
               <Lock className="w-4 h-4 text-[#087443]" />
               4. Não Compartilhamento Comercial
             </h2>
@@ -86,7 +86,7 @@ export default function PrivacidadePage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-bold text-[#04281A] flex items-center gap-2">
+            <h2 className="text-lg font-bold text-[#052E1D] flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#087443]" />
               5. Segurança e Armazenamento
             </h2>
@@ -96,7 +96,7 @@ export default function PrivacidadePage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-bold text-[#04281A] flex items-center gap-2">
+            <h2 className="text-lg font-bold text-[#052E1D] flex items-center gap-2">
               <FileText className="w-4 h-4 text-[#087443]" />
               6. Direitos do Titular (Art. 18 da LGPD)
             </h2>
@@ -106,8 +106,8 @@ export default function PrivacidadePage() {
           </section>
 
           <section className="space-y-3 pt-4 border-t border-gray-100">
-            <h2 className="text-lg font-bold text-[#04281A] flex items-center gap-2">
-              <Mail className="w-4 h-4 text-[#D9AA45]" />
+            <h2 className="text-lg font-bold text-[#052E1D] flex items-center gap-2">
+              <Mail className="w-4 h-4 text-[#C59B3F]" />
               7. Canal de Atendimento e DPO
             </h2>
             <p className="text-sm">

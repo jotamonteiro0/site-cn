@@ -13,7 +13,7 @@ import {
   User, 
   Award,
   ArrowLeft,
-  Sparkles,
+  MapPin,
   Star
 } from "lucide-react";
 
@@ -22,7 +22,7 @@ interface Gestao {
   romano: string;
   mc: string;
   periodo: string;
-  status: "Past MC" | "Atual";
+  status: "Past MC" | "Atual" | "Eleita";
   foto?: string;
   destaque?: boolean;
 }
@@ -44,7 +44,7 @@ const gestaoData: Gestao[] = [
     romano: "Gestão XXVI",
     mc: "João Guilherme Martins Lopes Monteiro",
     periodo: "2027.1",
-    status: "Past MC",
+    status: "Eleita",
     foto: "/gestoes/joao-guilherme.2027.1.jpg",
     destaque: true,
   },
@@ -257,32 +257,32 @@ export default function GestoesPage() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F2F5F1] text-gray-900 selection:bg-[#D9AA45] selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#F8FAF8] text-gray-900 selection:bg-[#C59B3F] selection:text-[#06140D]">
       <Header />
 
       <main className="flex-1">
         {/* HERO BANNER DA GALERIA */}
-        <section className="relative bg-gradient-to-b from-[#032015] via-[#064D32] to-[#087443] text-white py-20 px-4 sm:px-6 lg:px-8 overflow-hidden text-center">
-          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#D9AA45_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
-
+        <section className="relative bg-[#052E1D] text-white py-20 px-4 sm:px-6 lg:px-8 overflow-hidden text-center border-b border-white/10">
           <div className="max-w-4xl mx-auto relative z-10">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-200 hover:text-white bg-white/10 px-3.5 py-1.5 rounded-full border border-white/10 mb-6 transition-colors backdrop-blur-sm"
-            >
-              <ArrowLeft className="w-3.5 h-3.5 text-[#D9AA45]" />
-              <span>Voltar à Página Inicial</span>
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-200 hover:text-white bg-white/10 px-3.5 py-1.5 rounded-full border border-white/10 transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-[#C59B3F]" />
+                <span>Voltar ao Portal Público</span>
+              </Link>
 
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D9AA45]/20 border border-[#D9AA45]/40 text-[#D9AA45] text-xs font-bold uppercase tracking-widest mb-4">
-              <Crown className="w-4 h-4" />
-              <span>Registro Histórico Oficial</span>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-[#C59B3F]/30 text-[#C59B3F] text-xs font-bold uppercase tracking-wider font-mono">
+                <Crown className="w-3.5 h-3.5" />
+                <span>Registro Histórico Oficial</span>
+              </div>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-4">
+            <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight text-white mb-4">
               Galeria de Mestres Conselheiros
             </h1>
-            <div className="w-24 h-1.5 bg-[#D9AA45] mx-auto rounded-full mb-6" />
+            <div className="w-20 h-1 bg-[#C59B3F] mx-auto rounded-full mb-6" />
 
             <p className="text-base sm:text-lg text-emerald-100 max-w-2xl mx-auto font-light leading-relaxed mb-8">
               Homenagem aos líderes que conduziram os trabalhos do <strong>Capítulo Professor Carvalho Neves Nº 500</strong> desde a sua fundação em 2012, preservando os princípios e a fraternidade da Ordem DeMolay.
@@ -290,7 +290,7 @@ export default function GestoesPage() {
 
             {/* Barra de Busca Dinâmica */}
             <div className="max-w-md mx-auto relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-emerald-200">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-200">
                 <Search className="w-4 h-4" />
               </div>
               <input
@@ -298,39 +298,38 @@ export default function GestoesPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Buscar por nome, ano (ex: 2027) ou gestão..."
-                className="w-full pl-11 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-sm text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-[#D9AA45] backdrop-blur-md transition-all shadow-lg"
+                className="w-full pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-sm text-white placeholder-emerald-200/50 focus:outline-none focus:ring-2 focus:ring-[#C59B3F] transition-all shadow-sm"
               />
             </div>
           </div>
         </section>
 
-        {/* MC ATUAL EM DESTAQUE (ESTILO PRIORADO 156) */}
+        {/* MC ATUAL EM DESTAQUE */}
         {showAtual && mcAtual && (
           <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D9AA45]/15 border border-[#D9AA45]/30 text-[#D9AA45] text-xs font-bold uppercase tracking-widest">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#C59B3F]/15 border border-[#C59B3F]/30 text-[#C59B3F] text-xs font-bold uppercase tracking-widest font-mono">
                 <Star className="w-3.5 h-3.5" />
                 <span>Mestre Conselheiro Atual</span>
               </div>
             </div>
 
-            <div className="relative bg-white rounded-3xl overflow-hidden border-2 border-[#D9AA45] shadow-2xl group">
-              {/* Faixa dourada decorativa no topo */}
-              <div className="h-1.5 bg-gradient-to-r from-[#D9AA45] via-[#f0cc6a] to-[#D9AA45]" />
+            <div className="relative bg-white rounded-3xl overflow-hidden border-2 border-[#C59B3F] shadow-xl group">
+              <div className="h-1 bg-[#C59B3F]" />
 
               <div className="flex flex-col md:flex-row">
                 {/* Foto do MC Atual - Grande destaque */}
-                <div className="relative w-full md:w-80 aspect-[3/4] md:aspect-auto bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex items-center justify-center overflow-hidden shrink-0">
+                <div className="relative w-full md:w-80 aspect-[3/4] md:aspect-auto bg-[#052E1D] flex items-center justify-center overflow-hidden shrink-0">
                   {/* Badge Gestão */}
                   <div className="absolute top-4 left-4 z-10">
-                    <span className="px-3 py-1.5 rounded-lg text-xs font-black bg-[#D9AA45] text-[#04281A] shadow-lg">
+                    <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#C59B3F] text-[#06140D] shadow-md font-mono">
                       {mcAtual.numero}
                     </span>
                   </div>
 
                   {/* Badge MC Atual */}
                   <div className="absolute top-4 right-4 z-10">
-                    <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#D9AA45] text-[#04281A] shadow-lg flex items-center gap-1.5">
+                    <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#C59B3F] text-[#06140D] shadow-md flex items-center gap-1.5">
                       <Star className="w-3.5 h-3.5" />
                       MC Atual
                     </span>
@@ -354,20 +353,16 @@ export default function GestoesPage() {
                   <div className="relative z-0 flex flex-col items-center justify-center p-8 text-center text-emerald-200/40 text-xs">
                     <span>Foto Oficial Capitular</span>
                   </div>
-
-                  {/* Detalhe dourado na borda */}
-                  <div className="absolute bottom-0 inset-x-0 z-10 h-1 bg-gradient-to-r from-transparent via-[#D9AA45] to-transparent md:hidden" />
-                  <div className="hidden md:block absolute top-0 bottom-0 right-0 z-10 w-1 bg-gradient-to-b from-transparent via-[#D9AA45] to-transparent" />
                 </div>
 
                 {/* Informações do MC Atual */}
-                <div className="flex-1 p-8 md:p-10 flex flex-col justify-center">
-                  <div className="inline-flex items-center gap-2 text-xs font-bold text-[#D9AA45] uppercase tracking-widest mb-3">
+                <div className="flex-1 p-5 sm:p-8 md:p-10 flex flex-col justify-center">
+                  <div className="inline-flex items-center gap-2 text-xs font-bold text-[#C59B3F] uppercase tracking-widest mb-3">
                     <Calendar className="w-3.5 h-3.5" />
                     <span>Período {mcAtual.periodo}</span>
                   </div>
 
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mb-2">
+                  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 tracking-tight mb-2">
                     {mcAtual.mc}
                   </h2>
 
@@ -385,7 +380,7 @@ export default function GestoesPage() {
                       <span>Capítulo Nº 500</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <Sparkles className="w-3.5 h-3.5 text-[#D9AA45]" />
+                      <MapPin className="w-3.5 h-3.5 text-[#C59B3F]" />
                       <span>Teresina — PI</span>
                     </div>
                   </div>
@@ -417,19 +412,31 @@ export default function GestoesPage() {
                   className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200/80 hover:border-[#087443]/40 flex flex-col group"
                 >
                   {/* ESPAÇO SUPERIOR PARA FOTO OFICIAL */}
-                  <div className="relative w-full aspect-[4/4] bg-gradient-to-b from-[#04281A] via-[#064D32] to-[#087443] flex items-center justify-center overflow-hidden border-b border-gray-100">
+                  <div className="relative w-full aspect-[4/4] bg-[#052E1D] flex items-center justify-center overflow-hidden border-b border-gray-100">
                     {/* Selo / Badge de Status */}
                     <div className="absolute top-3 right-3 z-10">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-md backdrop-blur-md bg-black/40 text-emerald-100 border border-white/10">
-                        Past MC
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm font-mono border ${
+                          item.status === "Eleita"
+                            ? "bg-[#087443] text-white border-white/20"
+                            : "bg-black/60 text-emerald-100 border-white/10"
+                        }`}
+                      >
+                        {item.status === "Eleita" ? "MC Eleito" : "Past MC"}
                       </span>
                     </div>
 
                     {/* Número da Gestão no topo */}
                     <div className="absolute top-3 left-3 z-10">
-                      <span className="px-2.5 py-1 rounded-md text-[10px] font-black bg-white/15 text-white backdrop-blur-md border border-white/15">
+                      <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-white/20 text-white backdrop-blur-md border border-white/15 font-mono">
                         {item.numero}
                       </span>
+                    </div>
+
+                    {/* Fundo elegante caso a foto ainda esteja sendo carregada */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-emerald-200/40 text-[10px] z-0">
+                      <Crown className="w-8 h-8 text-[#C59B3F]/40 mb-1" />
+                      <span className="font-mono uppercase tracking-wider">Foto Capitular</span>
                     </div>
 
                     {item.foto && (
@@ -437,7 +444,8 @@ export default function GestoesPage() {
                         src={item.foto}
                         alt={`Foto oficial de ${item.mc}, gestão ${item.periodo}`}
                         fill
-                        loading="lazy"
+                        loading={item.destaque ? "eager" : "lazy"}
+                        priority={item.destaque}
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                         className="z-[1] object-cover"
                         onError={(event) => {
@@ -446,20 +454,15 @@ export default function GestoesPage() {
                       />
                     )}
 
-                    {/* Fundo elegante caso a foto ainda esteja sendo carregada */}
-                    <div className="relative z-0 flex flex-col items-center justify-center p-6 text-center text-emerald-200/40 text-[10px]">
-                      <span>Foto Oficial</span>
-                    </div>
-
-                    {/* Detalhe Dourado na Divisória */}
-                    <div className="absolute bottom-0 inset-x-0 z-10 h-1 bg-gradient-to-r from-transparent via-[#D9AA45] to-transparent" />
+                    {/* Linha discreta de acabamento */}
+                    <div className="absolute bottom-0 inset-x-0 z-10 h-0.5 bg-[#C59B3F]/40" />
                   </div>
 
                   {/* INFORMAÇÕES DO MESTRE CONSELHEIRO */}
                   <div className="p-5 flex-1 flex flex-col justify-between bg-white">
                     <div>
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-[#087443] mb-1">
-                        <Calendar className="w-3.5 h-3.5 text-[#D9AA45]" />
+                        <Calendar className="w-3.5 h-3.5 text-[#C59B3F]" />
                         <span>Período {item.periodo}</span>
                       </div>
 
@@ -468,7 +471,7 @@ export default function GestoesPage() {
                       </h3>
 
                       <p className="text-xs text-gray-500 font-medium mt-1">
-                        Mestre Conselheiro
+                        {item.status === "Eleita" ? "Mestre Conselheiro Eleito" : "Past Mestre Conselheiro"}
                       </p>
                     </div>
 
@@ -476,7 +479,7 @@ export default function GestoesPage() {
                       <span className="font-semibold text-gray-400 text-[11px]">
                         Capítulo Nº 500
                       </span>
-                      <span className="font-mono text-[11px] font-bold text-[#D9AA45]">
+                      <span className="font-mono text-[11px] font-bold text-[#C59B3F]">
                         {item.romano}
                       </span>
                     </div>

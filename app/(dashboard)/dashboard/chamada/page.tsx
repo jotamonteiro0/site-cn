@@ -23,7 +23,8 @@ import {
   Compass,
   FileText,
   Printer,
-  Sparkles,
+  ShieldCheck,
+  BookOpen,
   Download
 } from "lucide-react";
 import { HISTORICAL_MEETINGS } from "@/lib/data/historicalMeetings";
@@ -239,7 +240,6 @@ export default function ChamadaPage() {
   // Permissões e Perfis (RBAC Guard)
   const [userRole, setUserRole] = useState<string>("membro");
   const [viewAsMember, setViewAsMember] = useState(false);
-  const [isRoleChecked, setIsRoleChecked] = useState(false);
 
   // Checa Permissão do Usuário Logado
   useEffect(() => {
@@ -272,8 +272,6 @@ export default function ChamadaPage() {
         }
       } catch (err) {
         console.error("Erro ao verificar papel do usuário:", err);
-      } finally {
-        setIsRoleChecked(true);
       }
     }
     checkRole();
@@ -339,7 +337,9 @@ export default function ChamadaPage() {
         });
 
         setMeetings(enrichedMeetings);
-        setSelectedMeetingId(enrichedMeetings[0].id);
+        if (enrichedMeetings.length > 0) {
+          setSelectedMeetingId(enrichedMeetings[0].id);
+        }
 
         if (memRes.data) {
           setMembers(memRes.data as MemberRecord[]);
@@ -359,7 +359,7 @@ export default function ChamadaPage() {
       try {
         const supabase = createClient();
 
-        // Execução paralela das 4 consultas de detalhes da reunião
+        // Execução paralela das consultas de detalhes da reunião
         const [attRes, visRes, dmVisRes, minRes] = await Promise.all([
           supabase
             .from("meeting_attendance")
@@ -796,20 +796,20 @@ export default function ChamadaPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in">
-      {/* Header com Navegação */}
+      {/* Header com Navegação e Ações Rápidas */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
         <div>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs text-emerald-300 hover:text-white transition-colors mb-2"
+            className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors mb-2"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Voltar à Visão Geral</span>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
             <span>Sessões, Atas & Chamada Capitular</span>
           </h1>
-          <p className="text-sm text-emerald-200/70 mt-1">
+          <p className="text-sm text-gray-400 mt-1">
             Gestão integrada da ata da reunião, registro de presença de membros e cadastro de visitantes
           </p>
         </div>
@@ -827,7 +827,7 @@ export default function ChamadaPage() {
                 });
                 setIsMeetingModalOpen(true);
               }}
-              className="btn-heraldico-vidro px-3.5 py-2 rounded-xl text-xs"
+              className="px-3.5 py-2 rounded-lg bg-[#0E2218] hover:bg-[#132E20] border border-white/10 hover:border-[#D9AA45]/40 text-white font-medium text-xs transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
             >
               <PlusCircle className="w-4 h-4 text-[#D9AA45]" />
               <span>Nova Reunião</span>
@@ -839,7 +839,7 @@ export default function ChamadaPage() {
               <button
                 onClick={handleSaveAttendance}
                 disabled={isSaving}
-                className="btn-heraldico-ouro px-4 py-2 rounded-xl text-xs disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs transition-colors flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
                 <span>{isSaving ? "Salvando..." : "Salvar Chamada"}</span>
@@ -848,14 +848,14 @@ export default function ChamadaPage() {
               <button
                 onClick={handleSaveMinute}
                 disabled={isSavingMinute}
-                className="btn-heraldico-ouro px-4 py-2 rounded-xl text-xs disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs transition-colors flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
                 <span>{isSavingMinute ? "Salvando..." : "Salvar Ata Oficial"}</span>
               </button>
             )
           ) : (
-            <span className="selo-vidro-cn px-3.5 py-2 rounded-xl text-xs text-emerald-300 font-semibold flex items-center gap-1.5">
+            <span className="px-3.5 py-2 rounded-lg bg-[#0E2218] border border-white/10 text-emerald-300 font-semibold text-xs flex items-center gap-1.5 shadow-sm">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
               <span>Modo Leitura (Membro)</span>
             </span>
@@ -865,25 +865,25 @@ export default function ChamadaPage() {
 
       {/* FEEDBACK DE SALVAMENTO */}
       {saveSuccessMsg && (
-        <div className="p-3.5 rounded-xl bg-emerald-900/40 border border-emerald-500/50 text-emerald-200 text-xs flex items-center gap-2 shadow-lg animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className="p-3.5 rounded-lg bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs flex items-center gap-2 shadow-sm animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{saveSuccessMsg}</span>
         </div>
       )}
 
-      {/* SELETOR DE REUNIÃO / CALENDÁRIO (ESTILO HERÁLDICO DARK) */}
-      <div className="card-heraldico-dark p-5 sm:p-6 rounded-2xl space-y-4">
+      {/* SELETOR DE REUNIÃO / CALENDÁRIO EXECUTIVO */}
+      <div className="p-5 sm:p-6 rounded-xl bg-[#0C1D14] border border-white/10 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#D9AA45]">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#D9AA45] font-mono">
               Sessão Capitular Selecionada
             </span>
             <div className="flex items-center gap-3 mt-1.5">
-              <CalendarIcon className="w-5 h-5 text-emerald-300" />
+              <CalendarIcon className="w-5 h-5 text-emerald-400 shrink-0" />
               <select
                 value={selectedMeetingId}
                 onChange={(e) => setSelectedMeetingId(e.target.value)}
-                className="bg-[#064D32] border border-emerald-500/40 rounded-xl px-4 py-2 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
+                className="bg-[#08140E] border border-white/15 rounded-lg px-3.5 py-2 text-white text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45] cursor-pointer shadow-inner"
               >
                 {meetings.map((m) => {
                   const d = new Date(m.starts_at);
@@ -893,7 +893,7 @@ export default function ChamadaPage() {
                     year: "numeric",
                   });
                   return (
-                    <option key={m.id} value={m.id}>
+                    <option key={m.id} value={m.id} className="bg-[#08140E] text-white py-1">
                       {dataFormatada} — {m.title}
                     </option>
                   );
@@ -910,12 +910,12 @@ export default function ChamadaPage() {
                   href={getGoogleCalendarUrl(selectedMeeting)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-heraldico-vidro px-3.5 py-2 rounded-xl text-xs"
+                  className="px-3.5 py-2 rounded-lg bg-[#0E2218] hover:bg-[#132E20] border border-white/10 hover:border-[#D9AA45]/40 text-gray-200 hover:text-white text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
                   title="Adicionar ao Google Agenda"
                 >
                   <CalendarCheck className="w-4 h-4 text-[#D9AA45]" />
                   <span>Google Agenda</span>
-                  <ExternalLink className="w-3 h-3 opacity-70" />
+                  <ExternalLink className="w-3 h-3 opacity-60" />
                 </a>
               )}
 
@@ -923,9 +923,9 @@ export default function ChamadaPage() {
               {isMaster && (
                 <button
                   onClick={() => setIsConvocationModalOpen(true)}
-                  className="btn-heraldico-vidro px-3.5 py-2 rounded-xl text-xs"
+                  className="px-3.5 py-2 rounded-lg bg-[#0E2218] hover:bg-[#132E20] border border-white/10 hover:border-emerald-400/40 text-gray-200 hover:text-white text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
                 >
-                  <Mail className="w-4 h-4 text-emerald-300" />
+                  <Mail className="w-4 h-4 text-emerald-400" />
                   <span>Convocação Oficial</span>
                 </button>
               )}
@@ -936,7 +936,7 @@ export default function ChamadaPage() {
                   href={minuteData.storage_path || selectedMeeting.ata_pdf_url || "#"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="selo-vidro-cn px-3.5 py-2 rounded-xl text-[#D9AA45] text-xs font-bold transition-all flex items-center gap-2"
+                  className="px-3.5 py-2 rounded-lg bg-[#0E2218] hover:bg-[#132E20] border border-[#D9AA45]/30 text-[#D9AA45] text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
                   title="Abrir Ata Oficial assinada em PDF"
                 >
                   <FileText className="w-4 h-4" />
@@ -959,7 +959,7 @@ export default function ChamadaPage() {
                     });
                     setIsMeetingModalOpen(true);
                   }}
-                  className="btn-heraldico-vidro px-3 py-2 rounded-xl text-xs"
+                  className="px-3 py-2 rounded-lg bg-[#0E2218] hover:bg-[#132E20] border border-white/10 hover:border-[#D9AA45]/40 text-gray-200 hover:text-white text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
                 >
                   <Edit2 className="w-3.5 h-3.5 text-[#D9AA45]" />
                   <span>Editar Reunião</span>
@@ -971,7 +971,7 @@ export default function ChamadaPage() {
 
         {/* Detalhes da Sessão Selecionada */}
         {selectedMeeting && (
-          <div className="pt-3 border-t border-white/10 flex flex-wrap items-center gap-6 text-xs text-emerald-100/80">
+          <div className="pt-3 border-t border-white/10 flex flex-wrap items-center gap-6 text-xs text-gray-300">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-[#D9AA45]" />
               <span>
@@ -993,18 +993,18 @@ export default function ChamadaPage() {
               <span>{selectedMeeting.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"}</span>
             </div>
             {selectedMeeting.livro_demolay_page && (
-              <div className="flex items-center gap-1.5 text-xs text-[#D9AA45]">
+              <div className="flex items-center gap-1.5 text-xs text-[#D9AA45] font-mono">
                 <FileText className="w-3.5 h-3.5" />
                 <span>Livro Presença DM: pág. {selectedMeeting.livro_demolay_page}</span>
               </div>
             )}
             {selectedMeeting.livro_macom_page && (
-              <div className="flex items-center gap-1.5 text-xs text-purple-300">
+              <div className="flex items-center gap-1.5 text-xs text-purple-300 font-mono">
                 <FileText className="w-3.5 h-3.5" />
                 <span>Livro Presença Maçom: pág. {selectedMeeting.livro_macom_page}</span>
               </div>
             )}
-            <div className="flex items-center gap-1.5 text-xs text-emerald-300 font-semibold">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold font-mono tabular-nums">
               <Users className="w-3.5 h-3.5" />
               <span>Quórum: {presentesDemolay.length + presentesMacons.length} presentes</span>
             </div>
@@ -1012,14 +1012,14 @@ export default function ChamadaPage() {
         )}
       </div>
 
-      {/* NAVEGAÇÃO ENTRE CHAMADA E ATA DA REUNIÃO (UNIFICADAS) */}
-      <div className="flex items-center gap-3 border-b border-white/10 pb-1">
+      {/* NAVEGAÇÃO ENTRE CHAMADA E ATA DA REUNIÃO (SEGMENTED CONTROL UNSLOP) */}
+      <div className="flex items-center gap-2 p-1 rounded-xl bg-[#08140E] border border-white/10 w-fit">
         <button
           onClick={() => setSessionSection("chamada")}
-          className={`pb-3 px-4 text-sm font-extrabold transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
             sessionSection === "chamada"
-              ? "border-[#D9AA45] text-white"
-              : "border-transparent text-emerald-200/60 hover:text-white"
+              ? "bg-[#087443] text-white border border-[#D9AA45]/40 shadow-sm"
+              : "text-gray-400 hover:text-white"
           }`}
         >
           <Users className="w-4 h-4 text-[#D9AA45]" />
@@ -1028,10 +1028,10 @@ export default function ChamadaPage() {
 
         <button
           onClick={() => setSessionSection("ata")}
-          className={`pb-3 px-4 text-sm font-extrabold transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
             sessionSection === "ata"
-              ? "border-[#D9AA45] text-white"
-              : "border-transparent text-emerald-200/60 hover:text-white"
+              ? "bg-[#087443] text-white border border-[#D9AA45]/40 shadow-sm"
+              : "text-gray-400 hover:text-white"
           }`}
         >
           <FileText className="w-4 h-4 text-[#D9AA45]" />
@@ -1045,47 +1045,49 @@ export default function ChamadaPage() {
           {/* CARDS RESUMIDOS (DeMolays, Maçons, DeMolays Visitantes, Maçons Visitantes) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Resumo DeMolay */}
-            <div className="p-5 rounded-2xl bg-white/5 border border-emerald-500/30 space-y-2">
+            <div className="p-5 rounded-xl bg-[#0E2218] border border-white/10 space-y-2 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-200">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-300 font-mono">
                   DeMolays Ativos
                 </span>
-                <span className="text-xs font-bold text-emerald-300">
+                <span className="text-xs font-bold text-emerald-400 font-mono tabular-nums">
                   {demolayStats.percent}% Assiduidade
                 </span>
               </div>
-              <p className="text-2xl font-extrabold text-white">
-                {demolayStats.presentes} <span className="text-xs text-emerald-200/60 font-normal">de {demolayStats.total}</span>
+              <p className="text-2xl font-bold text-white font-mono tabular-nums">
+                {demolayStats.presentes}{" "}
+                <span className="text-xs text-gray-400 font-normal">de {demolayStats.total}</span>
               </p>
-              <div className="flex items-center gap-2 text-[10px] text-emerald-200/70 pt-1 border-t border-white/5">
+              <div className="flex items-center gap-2 text-[10px] text-gray-400 pt-1 border-t border-white/5 font-mono tabular-nums">
                 <span className="text-[#D9AA45] font-semibold">{demolayStats.justificados} justificados</span>
                 <span>•</span>
-                <span className="text-red-300 font-semibold">{demolayStats.ausentes} ausentes</span>
+                <span className="text-red-400 font-semibold">{demolayStats.ausentes} ausentes</span>
               </div>
             </div>
 
             {/* Resumo Maçônico */}
-            <div className="p-5 rounded-2xl bg-white/5 border border-amber-500/30 space-y-2">
+            <div className="p-5 rounded-xl bg-[#0E2218] border border-white/10 space-y-2 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#D9AA45]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#D9AA45] font-mono">
                   Conselho Consultivo
                 </span>
-                <span className="text-xs font-bold text-[#D9AA45]">
+                <span className="text-xs font-bold text-[#D9AA45] font-mono tabular-nums">
                   {macomStats.presentes} Presentes
                 </span>
               </div>
-              <p className="text-2xl font-extrabold text-white">
-                {macomStats.presentes} <span className="text-xs text-emerald-200/60 font-normal">de {macomStats.total} tios</span>
+              <p className="text-2xl font-bold text-white font-mono tabular-nums">
+                {macomStats.presentes}{" "}
+                <span className="text-xs text-gray-400 font-normal">de {macomStats.total} tios</span>
               </p>
-              <p className="text-[10px] text-emerald-200/70 pt-1 border-t border-white/5">
+              <p className="text-[10px] text-gray-400 pt-1 border-t border-white/5">
                 Lojas mantenedoras regulares
               </p>
             </div>
 
             {/* Resumo DeMolays Visitantes */}
-            <div className="p-5 rounded-2xl bg-white/5 border border-blue-500/30 space-y-2">
+            <div className="p-5 rounded-xl bg-[#0E2218] border border-white/10 space-y-2 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-blue-300">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300 font-mono">
                   DeMolays Visitantes
                 </span>
                 {canManageAttendance && (
@@ -1097,16 +1099,16 @@ export default function ChamadaPage() {
                   </button>
                 )}
               </div>
-              <p className="text-2xl font-extrabold text-blue-300">{visitingDemolays.length}</p>
-              <p className="text-[10px] text-blue-200/70 pt-1 border-t border-white/5">
+              <p className="text-2xl font-bold text-blue-300 font-mono tabular-nums">{visitingDemolays.length}</p>
+              <p className="text-[10px] text-gray-400 pt-1 border-t border-white/5">
                 Irmãos de outros capítulos
               </p>
             </div>
 
             {/* Resumo Maçons Visitantes */}
-            <div className="p-5 rounded-2xl bg-white/5 border border-purple-500/30 space-y-2">
+            <div className="p-5 rounded-xl bg-[#0E2218] border border-white/10 space-y-2 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-purple-300">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300 font-mono">
                   Maçons Visitantes
                 </span>
                 {canManageAttendance && (
@@ -1118,54 +1120,54 @@ export default function ChamadaPage() {
                   </button>
                 )}
               </div>
-              <p className="text-2xl font-extrabold text-purple-300">{visitingMasons.length}</p>
-              <p className="text-[10px] text-purple-200/70 pt-1 border-t border-white/5">
+              <p className="text-2xl font-bold text-purple-300 font-mono tabular-nums">{visitingMasons.length}</p>
+              <p className="text-[10px] text-gray-400 pt-1 border-t border-white/5">
                 Tios de outras oficinas
               </p>
             </div>
           </div>
 
           {/* LISTA DE CHAMADA EM ABAS */}
-          <div className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-5">
+          <div className="p-5 sm:p-6 rounded-xl bg-[#0C1D14] border border-white/10 shadow-sm space-y-5">
             {/* Abas */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => setActiveTab("demolay")}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     activeTab === "demolay"
                       ? "bg-[#087443] text-white border border-[#D9AA45]/50 shadow-sm"
-                      : "bg-white/5 text-emerald-200/70 hover:text-white"
+                      : "bg-[#0E2218] text-gray-400 hover:text-white border border-white/5"
                   }`}
                 >
                   DeMolays Ativos ({demolaysAtivos.length})
                 </button>
                 <button
                   onClick={() => setActiveTab("macom")}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     activeTab === "macom"
                       ? "bg-[#087443] text-white border border-[#D9AA45]/50 shadow-sm"
-                      : "bg-white/5 text-emerald-200/70 hover:text-white"
+                      : "bg-[#0E2218] text-gray-400 hover:text-white border border-white/5"
                   }`}
                 >
                   Tios Maçons ({macons.length})
                 </button>
                 <button
                   onClick={() => setActiveTab("visitantes_demolay")}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     activeTab === "visitantes_demolay"
                       ? "bg-blue-700 text-white border border-[#D9AA45]/50 shadow-sm"
-                      : "bg-white/5 text-blue-200/70 hover:text-white"
+                      : "bg-[#0E2218] text-gray-400 hover:text-white border border-white/5"
                   }`}
                 >
                   DeMolays Visitantes ({visitingDemolays.length})
                 </button>
                 <button
                   onClick={() => setActiveTab("visitantes_macom")}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     activeTab === "visitantes_macom"
                       ? "bg-purple-700 text-white border border-[#D9AA45]/50 shadow-sm"
-                      : "bg-white/5 text-purple-200/70 hover:text-white"
+                      : "bg-[#0E2218] text-gray-400 hover:text-white border border-white/5"
                   }`}
                 >
                   Maçons Visitantes ({visitingMasons.length})
@@ -1175,7 +1177,7 @@ export default function ChamadaPage() {
               {canManageAttendance && activeTab === "visitantes_demolay" && (
                 <button
                   onClick={() => setIsDemolayVisitorModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-sm transition-colors cursor-pointer"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>+ Adicionar DeMolay Visitante</span>
@@ -1185,7 +1187,7 @@ export default function ChamadaPage() {
               {canManageAttendance && activeTab === "visitantes_macom" && (
                 <button
                   onClick={() => setIsMasonVisitorModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-sm transition-colors cursor-pointer"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>+ Adicionar Maçom Visitante</span>
@@ -1195,7 +1197,7 @@ export default function ChamadaPage() {
 
             {/* TAB 1: DEMOLAYS ATIVOS */}
             {activeTab === "demolay" && (
-              <div className="divide-y divide-white/5 max-h-[500px] overflow-y-auto pr-1">
+              <div className="divide-y divide-white/5 max-h-[520px] overflow-y-auto pr-1">
                 {demolaysAtivos.map((m) => {
                   const currentStatus = attendanceMap[m.id] || "ausente";
                   return (
@@ -1209,7 +1211,7 @@ export default function ChamadaPage() {
                         </span>
                         <div>
                           <p className="text-sm font-semibold text-white">{m.full_name}</p>
-                          <p className="text-[11px] text-emerald-200/60">
+                          <p className="text-[11px] text-gray-400">
                             {m.regularity || "DeMolay Regular"}
                           </p>
                         </div>
@@ -1224,11 +1226,11 @@ export default function ChamadaPage() {
                             }
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                               currentStatus === "presente"
-                                ? "bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400/50"
-                                : "bg-white/5 text-emerald-200/60 hover:bg-white/10"
+                                ? "bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-400"
+                                : "bg-[#0E2218] text-gray-400 hover:bg-[#132E20] hover:text-white border border-white/5"
                             }`}
                           >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
                             <span>Presente</span>
                           </button>
 
@@ -1239,11 +1241,11 @@ export default function ChamadaPage() {
                             }
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                               currentStatus === "justificado"
-                                ? "bg-amber-600 text-white shadow-md ring-2 ring-amber-400/50"
-                                : "bg-white/5 text-amber-200/60 hover:bg-white/10"
+                                ? "bg-amber-600 text-white shadow-sm ring-1 ring-amber-400"
+                                : "bg-[#0E2218] text-gray-400 hover:bg-[#132E20] hover:text-white border border-white/5"
                             }`}
                           >
-                            <AlertCircle className="w-3.5 h-3.5" />
+                            <AlertCircle className="w-3.5 h-3.5 text-amber-300" />
                             <span>Justificado</span>
                           </button>
 
@@ -1254,11 +1256,11 @@ export default function ChamadaPage() {
                             }
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                               currentStatus === "ausente"
-                                ? "bg-red-600 text-white shadow-md ring-2 ring-red-400/50"
-                                : "bg-white/5 text-red-200/60 hover:bg-white/10"
+                                ? "bg-red-700 text-white shadow-sm ring-1 ring-red-400"
+                                : "bg-[#0E2218] text-gray-400 hover:bg-[#132E20] hover:text-white border border-white/5"
                             }`}
                           >
-                            <XCircle className="w-3.5 h-3.5" />
+                            <XCircle className="w-3.5 h-3.5 text-red-300" />
                             <span>Ausente</span>
                           </button>
                         </div>
@@ -1277,8 +1279,8 @@ export default function ChamadaPage() {
                             </span>
                           )}
                           {currentStatus === "ausente" && (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 text-emerald-200/50">
-                              <XCircle className="w-3.5 h-3.5 text-red-400/70" />
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 text-gray-400">
+                              <XCircle className="w-3.5 h-3.5 text-red-400/80" />
                               <span>Ausente</span>
                             </span>
                           )}
@@ -1292,7 +1294,7 @@ export default function ChamadaPage() {
 
             {/* TAB 2: TIOS MAÇONS */}
             {activeTab === "macom" && (
-              <div className="divide-y divide-white/5 max-h-[500px] overflow-y-auto pr-1">
+              <div className="divide-y divide-white/5 max-h-[520px] overflow-y-auto pr-1">
                 {macons.map((m) => {
                   const currentStatus = attendanceMap[m.id] || "ausente";
                   return (
@@ -1321,11 +1323,11 @@ export default function ChamadaPage() {
                             }
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                               currentStatus === "presente"
-                                ? "bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400/50"
-                                : "bg-white/5 text-emerald-200/60 hover:bg-white/10"
+                                ? "bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-400"
+                                : "bg-[#0E2218] text-gray-400 hover:bg-[#132E20] hover:text-white border border-white/5"
                             }`}
                           >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
                             <span>Presente</span>
                           </button>
 
@@ -1336,11 +1338,11 @@ export default function ChamadaPage() {
                             }
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                               currentStatus === "ausente"
-                                ? "bg-red-600 text-white shadow-md ring-2 ring-red-400/50"
-                                : "bg-white/5 text-red-200/60 hover:bg-white/10"
+                                ? "bg-red-700 text-white shadow-sm ring-1 ring-red-400"
+                                : "bg-[#0E2218] text-gray-400 hover:bg-[#132E20] hover:text-white border border-white/5"
                             }`}
                           >
-                            <XCircle className="w-3.5 h-3.5" />
+                            <XCircle className="w-3.5 h-3.5 text-red-300" />
                             <span>Ausente</span>
                           </button>
                         </div>
@@ -1352,8 +1354,8 @@ export default function ChamadaPage() {
                               <span>Presente</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 text-emerald-200/50">
-                              <XCircle className="w-3.5 h-3.5 text-red-400/70" />
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 text-gray-400">
+                              <XCircle className="w-3.5 h-3.5 text-red-400/80" />
                               <span>Ausente</span>
                             </span>
                           )}
@@ -1365,17 +1367,17 @@ export default function ChamadaPage() {
               </div>
             )}
 
-            {/* TAB 3: DEMOLAYS VISITANTES (NOVO) */}
+            {/* TAB 3: DEMOLAYS VISITANTES */}
             {activeTab === "visitantes_demolay" && (
               <div className="space-y-4">
                 {visitingDemolays.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-emerald-200/60 bg-white/[0.02] rounded-xl border border-dashed border-white/10">
+                  <div className="py-8 text-center text-xs text-gray-400 bg-[#08140E] rounded-xl border border-dashed border-white/10">
                     Nenhum irmão DeMolay visitante registrado para esta sessão ainda.
                     {canManageAttendance && (
                       <div className="mt-3">
                         <button
                           onClick={() => setIsDemolayVisitorModalOpen(true)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-sm cursor-pointer transition-colors"
                         >
                           <UserPlus className="w-3.5 h-3.5" />
                           <span>Adicionar DeMolay Visitante</span>
@@ -1425,13 +1427,13 @@ export default function ChamadaPage() {
             {activeTab === "visitantes_macom" && (
               <div className="space-y-4">
                 {visitingMasons.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-emerald-200/60 bg-white/[0.02] rounded-xl border border-dashed border-white/10">
+                  <div className="py-8 text-center text-xs text-gray-400 bg-[#08140E] rounded-xl border border-dashed border-white/10">
                     Nenhum maçom visitante registrado para esta sessão ainda.
                     {canManageAttendance && (
                       <div className="mt-3">
                         <button
                           onClick={() => setIsMasonVisitorModalOpen(true)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-sm cursor-pointer transition-colors"
                         >
                           <UserPlus className="w-3.5 h-3.5" />
                           <span>Adicionar Visitante</span>
@@ -1480,16 +1482,16 @@ export default function ChamadaPage() {
 
       {/* SEÇÃO 2: ATA DA REUNIÃO */}
       {sessionSection === "ata" && selectedMeeting && (
-        <div className="p-6 sm:p-8 rounded-3xl bg-[#04281A] border-2 border-[#D9AA45]/50 shadow-2xl space-y-6">
+        <div className="p-6 sm:p-8 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/30 shadow-sm space-y-6">
           {/* Cabeçalho da Ata */}
-          <div className="text-center space-y-1.5 border-b border-[#D9AA45]/40 pb-5">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#D9AA45]">
+          <div className="text-center space-y-1.5 border-b border-[#D9AA45]/30 pb-5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#D9AA45] font-mono">
               Ordem DeMolay • Capítulo Professor Carvalho Neves Nº 500
             </span>
             <h2 className="text-xl sm:text-2xl font-bold font-serif tracking-wide text-white">
               LIVRO DE ATAS DA SESSÃO
             </h2>
-            <p className="text-xs text-emerald-200/80">
+            <p className="text-xs text-gray-400">
               Sede dos Trabalhos: Templo da A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI) — Teresina/PI
             </p>
           </div>
@@ -1497,20 +1499,20 @@ export default function ChamadaPage() {
           <form onSubmit={handleSaveMinute} className="space-y-6">
             {/* Banner de Ata Oficial Digitalizada em PDF */}
             {(minuteData.storage_path || selectedMeeting.ata_pdf_url) && (
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-[#04281A] to-emerald-950/80 border-2 border-emerald-500/50 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+              <div className="p-4 rounded-xl bg-[#0E2218] border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <div className="p-2.5 rounded-lg bg-[#087443]/30 text-emerald-300 border border-emerald-500/30">
                     <FileText className="w-6 h-6" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#D9AA45]" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5 font-mono">
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#D9AA45]" />
                       Documento Oficial Assinado em Acervo
                     </span>
                     <h4 className="text-sm font-bold text-white">
                       {minuteData.number || selectedMeeting.ata_num || "Ata Oficial Registrada"}
                     </h4>
-                    <p className="text-xs text-emerald-200/80">
+                    <p className="text-xs text-gray-400">
                       Ata autenticada e assinada pelo Mestre Conselheiro e Escrivão.
                     </p>
                   </div>
@@ -1521,7 +1523,7 @@ export default function ChamadaPage() {
                     href={minuteData.storage_path || selectedMeeting.ata_pdf_url || "#"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-2 rounded-xl bg-[#D9AA45] hover:bg-amber-400 text-black text-xs font-bold transition-all flex items-center gap-2 shadow cursor-pointer"
+                    className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] text-xs font-bold transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
                   >
                     <ExternalLink className="w-4 h-4" />
                     <span>Visualizar Ata (PDF)</span>
@@ -1529,9 +1531,9 @@ export default function ChamadaPage() {
                   <a
                     href={minuteData.storage_path || selectedMeeting.ata_pdf_url || "#"}
                     download
-                    className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer"
+                    className="px-4 py-2 rounded-lg bg-[#08140E] hover:bg-black/50 border border-white/10 text-white text-xs font-semibold transition-colors flex items-center gap-2 cursor-pointer"
                   >
-                    <Download className="w-4 h-4 text-emerald-300" />
+                    <Download className="w-4 h-4 text-emerald-400" />
                     <span>Baixar</span>
                   </a>
                 </div>
@@ -1541,28 +1543,28 @@ export default function ChamadaPage() {
             {/* Metadados da Ata */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div>
-                <label className="block font-semibold mb-1 text-emerald-200">Identificação da Ata</label>
+                <label className="block font-semibold mb-1 text-gray-300">Identificação da Ata</label>
                 <input
                   type="text"
                   required
                   readOnly={!canManageAttendance}
                   value={minuteData.number}
                   onChange={(e) => setMinuteData({ ...minuteData, number: e.target.value })}
-                  className={`w-full px-3 py-2 rounded-xl bg-black/40 border border-white/20 text-white font-bold focus:outline-none ${
-                    canManageAttendance ? "focus:ring-2 focus:ring-[#D9AA45]" : "cursor-default opacity-80"
+                  className={`w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white font-bold focus:outline-none ${
+                    canManageAttendance ? "focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]" : "cursor-default opacity-80"
                   }`}
                   placeholder="Ex: Ata nº 24 — Sessão Ordinária"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold mb-1 text-emerald-200">Grau / Tipo de Cerimônia</label>
+                <label className="block font-semibold mb-1 text-gray-300">Grau / Tipo de Cerimônia</label>
                 <select
                   disabled={!canManageAttendance}
                   value={minuteData.degree}
                   onChange={(e) => setMinuteData({ ...minuteData, degree: e.target.value })}
-                  className={`w-full px-3 py-2 rounded-xl bg-black/40 border border-white/20 text-white focus:outline-none ${
-                    canManageAttendance ? "focus:ring-2 focus:ring-[#D9AA45] cursor-pointer" : "cursor-default opacity-80"
+                  className={`w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none ${
+                    canManageAttendance ? "focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45] cursor-pointer" : "cursor-default opacity-80"
                   }`}
                 >
                   <option value="Grau Iniciático">Grau Iniciático</option>
@@ -1574,43 +1576,43 @@ export default function ChamadaPage() {
               </div>
 
               <div>
-                <label className="block font-semibold mb-1 text-emerald-200">Data e Local</label>
-                <div className="px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-emerald-200 font-mono text-[11px] truncate">
+                <label className="block font-semibold mb-1 text-gray-300">Data e Local</label>
+                <div className="px-3 py-2 rounded-lg bg-[#08140E] border border-white/10 text-gray-300 font-mono text-[11px] truncate">
                   {new Date(selectedMeeting.starts_at).toLocaleDateString("pt-BR")} • Caridade II (GOB-PI)
                 </div>
               </div>
             </div>
 
             {/* Quórum e Presença Extraída da Chamada em Tempo Real */}
-            <div className="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-3 text-xs">
-              <span className="font-bold text-[#D9AA45] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+            <div className="p-4 rounded-xl bg-[#08140E] border border-white/10 space-y-3 text-xs">
+              <span className="font-bold text-[#D9AA45] uppercase tracking-wider text-[11px] flex items-center gap-1.5 font-mono">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <span>Relação de Presenças Vinculadas à Chamada Oficial</span>
               </span>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-[11px]">
-                <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                <div className="p-3 rounded-lg bg-[#0C1D14] border border-white/10">
                   <p className="font-bold text-white">DeMolays Presentes ({presentesDemolay.length})</p>
                   <p className="text-emerald-300 mt-1 line-clamp-2">
                     {presentesDemolay.map((p) => p.full_name.split(" ")[0]).join(", ") || "Nenhum marcado presente"}
                   </p>
                 </div>
 
-                <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                <div className="p-3 rounded-lg bg-[#0C1D14] border border-white/10">
                   <p className="font-bold text-white">Conselho Consultivo ({presentesMacons.length})</p>
                   <p className="text-[#D9AA45] mt-1 line-clamp-2">
                     {presentesMacons.map((p) => p.full_name.split(" ")[0]).join(", ") || "Nenhum marcado presente"}
                   </p>
                 </div>
 
-                <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                <div className="p-3 rounded-lg bg-[#0C1D14] border border-white/10">
                   <p className="font-bold text-blue-300">DeMolays Visitantes ({visitingDemolays.length})</p>
                   <p className="text-blue-200 mt-1 line-clamp-2">
                     {visitingDemolays.map((v) => `${v.name} (${v.chapter})`).join(", ") || "Nenhum visitante"}
                   </p>
                 </div>
 
-                <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                <div className="p-3 rounded-lg bg-[#0C1D14] border border-white/10">
                   <p className="font-bold text-purple-300">Maçons Visitantes ({visitingMasons.length})</p>
                   <p className="text-purple-200 mt-1 line-clamp-2">
                     {visitingMasons.map((v) => `${v.name} (${v.masonic_lodge})`).join(", ") || "Nenhum visitante"}
@@ -1621,7 +1623,7 @@ export default function ChamadaPage() {
 
             {/* Conteúdo / Resumo dos Trabalhos Redigidos pelo Escrivão */}
             <div className="space-y-1.5 text-xs">
-              <label className="block font-semibold text-emerald-200">
+              <label className="block font-semibold text-gray-300">
                 Texto Oficial da Ata / Deliberações e Trabalhos Realizados
               </label>
               <textarea
@@ -1630,15 +1632,15 @@ export default function ChamadaPage() {
                 readOnly={!canManageAttendance}
                 value={minuteData.content}
                 onChange={(e) => setMinuteData({ ...minuteData, content: e.target.value })}
-                className={`w-full p-4 rounded-2xl bg-black/40 border border-white/20 text-white leading-relaxed font-serif text-sm ${
-                  canManageAttendance ? "focus:outline-none focus:ring-2 focus:ring-[#D9AA45]" : "cursor-default opacity-90"
+                className={`w-full p-4 rounded-xl bg-[#08140E] border border-white/15 text-white leading-relaxed font-serif text-sm ${
+                  canManageAttendance ? "focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]" : "cursor-default opacity-90"
                 }`}
                 placeholder="Redija o texto da ata da reunião..."
               />
             </div>
 
             {/* Assinaturas Oficiais */}
-            <div className="pt-6 border-t border-[#D9AA45]/40 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center text-xs">
+            <div className="pt-6 border-t border-[#D9AA45]/30 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center text-xs">
               <div className="space-y-1">
                 <div className="w-3/4 mx-auto border-b border-white/20 pb-1" />
                 <p className="font-bold text-white">Mestre Conselheiro</p>
@@ -1663,7 +1665,7 @@ export default function ChamadaPage() {
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0E2218] hover:bg-[#132E20] border border-white/10 text-white font-semibold text-xs transition-colors cursor-pointer"
               >
                 <Printer className="w-4 h-4 text-[#D9AA45]" />
                 <span>Imprimir Ata Oficial</span>
@@ -1673,7 +1675,7 @@ export default function ChamadaPage() {
                 <button
                   type="submit"
                   disabled={isSavingMinute}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs transition-all shadow-md cursor-pointer disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs transition-colors shadow-sm cursor-pointer disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
                   <span>{isSavingMinute ? "Salvando..." : "Salvar no Livro de Atas"}</span>
@@ -1687,14 +1689,14 @@ export default function ChamadaPage() {
       {/* MODAL: ADICIONAR / EDITAR REUNIÃO */}
       {isMeetingModalOpen && isMaster && editingMeeting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
-          <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
+          <div className="w-full max-w-md p-6 sm:p-7 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/30 shadow-2xl space-y-4 text-white animate-in zoom-in-95">
             <h3 className="text-lg font-bold">
               {editingMeeting.id ? "Editar Dados da Reunião" : "Cadastrar Nova Reunião"}
             </h3>
 
             <form onSubmit={handleSaveMeeting} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-semibold mb-1 text-emerald-200">Título da Sessão</label>
+                <label className="block font-semibold mb-1 text-gray-300">Título da Sessão</label>
                 <input
                   type="text"
                   required
@@ -1702,13 +1704,13 @@ export default function ChamadaPage() {
                   onChange={(e) =>
                     setEditingMeeting({ ...editingMeeting, title: e.target.value })
                   }
-                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
                   placeholder="Ex: Sessão Ordinária do Grau Iniciático"
                 />
 
                 {/* Validação de Dia Obrigatório fora do mês correto */}
                 {getMandatoryDayWarning(editingMeeting.title, editingMeeting.date) && (
-                  <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-[11px] flex items-start gap-1.5 mt-1.5 animate-in fade-in">
+                  <div className="p-2.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-200 text-[11px] flex items-start gap-1.5 mt-1.5 animate-in fade-in">
                     <AlertCircle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
                     <span>{getMandatoryDayWarning(editingMeeting.title, editingMeeting.date)}</span>
                   </div>
@@ -1717,7 +1719,7 @@ export default function ChamadaPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold mb-1 text-emerald-200">Data</label>
+                  <label className="block font-semibold mb-1 text-gray-300">Data</label>
                   <input
                     type="date"
                     required
@@ -1725,11 +1727,11 @@ export default function ChamadaPage() {
                     onChange={(e) =>
                       setEditingMeeting({ ...editingMeeting, date: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                    className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1 text-emerald-200">Horário</label>
+                  <label className="block font-semibold mb-1 text-gray-300">Horário</label>
                   <input
                     type="time"
                     required
@@ -1737,14 +1739,14 @@ export default function ChamadaPage() {
                     onChange={(e) =>
                       setEditingMeeting({ ...editingMeeting, time: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                    className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
                   />
                 </div>
               </div>
 
               {/* Lembrete Litúrgico: Reuniões aos Domingos */}
               {editingMeeting.date && !isSunday(editingMeeting.date) && (
-                <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-[11px] flex items-start gap-1.5 animate-in fade-in">
+                <div className="p-2.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-200 text-[11px] flex items-start gap-1.5 animate-in fade-in">
                   <AlertCircle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
                   <span>
                     <strong>Aviso Litúrgico:</strong> A data selecionada cai em uma <strong>{getDayOfWeekName(editingMeeting.date)}</strong>. Lembre-se que as reuniões do Capítulo habitualmente acontecem aos <strong>domingos</strong>.
@@ -1754,9 +1756,9 @@ export default function ChamadaPage() {
 
               {/* Sugestões de Dias Obrigatórios para o mês selecionado */}
               {editingMeeting.date && getMandatoryDaysForDate(editingMeeting.date).length > 0 && (
-                <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-200 text-[11px] space-y-1.5 animate-in fade-in">
-                  <span className="font-bold text-[#D9AA45] flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-[#D9AA45]" />
+                <div className="p-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-200 text-[11px] space-y-1.5 animate-in fade-in">
+                  <span className="font-bold text-[#D9AA45] flex items-center gap-1 font-mono">
+                    <BookOpen className="w-3.5 h-3.5 text-[#D9AA45]" />
                     Dias Obrigatórios previstos para este mês (Vade Mecum):
                   </span>
                   <div className="flex flex-wrap gap-1.5">
@@ -1776,7 +1778,7 @@ export default function ChamadaPage() {
               )}
 
               <div>
-                <label className="block font-semibold mb-1 text-emerald-200">Local da Sessão</label>
+                <label className="block font-semibold mb-1 text-gray-300">Local da Sessão</label>
                 <input
                   type="text"
                   required
@@ -1784,7 +1786,7 @@ export default function ChamadaPage() {
                   onChange={(e) =>
                     setEditingMeeting({ ...editingMeeting, location: e.target.value })
                   }
-                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
                   placeholder="A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"
                 />
               </div>
@@ -1796,13 +1798,13 @@ export default function ChamadaPage() {
                     setIsMeetingModalOpen(false);
                     setEditingMeeting(null);
                   }}
-                  className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold cursor-pointer transition-colors shadow-sm"
                 >
                   Salvar Reunião
                 </button>
@@ -1815,18 +1817,18 @@ export default function ChamadaPage() {
       {/* MODAL: ADICIONAR DEMOLAY VISITANTE (ID, NOME COMPLETO, CAPÍTULO) */}
       {isDemolayVisitorModalOpen && canManageAttendance && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
-          <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
+          <div className="w-full max-w-md p-6 sm:p-7 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/30 shadow-2xl space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-300" />
               <h3 className="text-lg font-bold">Adicionar DeMolay Visitante</h3>
             </div>
-            <p className="text-xs text-emerald-200/80">
+            <p className="text-xs text-gray-400">
               Cadastre a presença do irmão visitante de outro capítulo nesta sessão oficial.
             </p>
 
             <form onSubmit={handleAddDemolayVisitor} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-semibold mb-1 text-emerald-200">
+                <label className="block font-semibold mb-1 text-gray-300">
                   ID SISDM do DeMolay *
                 </label>
                 <input
@@ -1836,13 +1838,13 @@ export default function ChamadaPage() {
                   onChange={(e) =>
                     setNewDemolayVisitor({ ...newDemolayVisitor, id_demolay: e.target.value })
                   }
-                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white font-mono focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white font-mono focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
                   placeholder="Ex: 148194"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold mb-1 text-emerald-200">
+                <label className="block font-semibold mb-1 text-gray-300">
                   Nome Completo do Irmão *
                 </label>
                 <input
@@ -1852,13 +1854,13 @@ export default function ChamadaPage() {
                   onChange={(e) =>
                     setNewDemolayVisitor({ ...newDemolayVisitor, name: e.target.value })
                   }
-                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
                   placeholder="Ex: Gabriel Carvalho de Sousa"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold mb-1 text-emerald-200">
+                <label className="block font-semibold mb-1 text-gray-300">
                   Capítulo de Origem / Cidade *
                 </label>
                 <input
@@ -1868,7 +1870,7 @@ export default function ChamadaPage() {
                   onChange={(e) =>
                     setNewDemolayVisitor({ ...newDemolayVisitor, chapter: e.target.value })
                   }
-                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
                   placeholder="Ex: Capítulo Teresina Nº 124"
                 />
               </div>
@@ -1877,13 +1879,13 @@ export default function ChamadaPage() {
                 <button
                   type="button"
                   onClick={() => setIsDemolayVisitorModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold cursor-pointer transition-colors shadow-sm"
                 >
                   Registrar Irmão Visitante
                 </button>
@@ -1896,19 +1898,19 @@ export default function ChamadaPage() {
       {/* MODAL: ADICIONAR MAÇOM VISITANTE */}
       {isMasonVisitorModalOpen && canManageAttendance && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
-          <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
+          <div className="w-full max-w-md p-6 sm:p-7 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/30 shadow-2xl space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center gap-2">
               <Compass className="w-5 h-5 text-purple-300" />
               <h3 className="text-lg font-bold">Adicionar Maçom Visitante</h3>
             </div>
-            <p className="text-xs text-emerald-200/80">
+            <p className="text-xs text-gray-400">
               Registre a presença do Tio Maçom visitante nesta sessão do Capítulo 500.
             </p>
 
             <form onSubmit={handleAddMasonVisitor} className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold mb-1 text-emerald-200">CIM / Identificação</label>
+                  <label className="block font-semibold mb-1 text-gray-300">CIM / Identificação</label>
                   <input
                     type="text"
                     required
@@ -1916,19 +1918,19 @@ export default function ChamadaPage() {
                     onChange={(e) =>
                       setNewMasonVisitor({ ...newMasonVisitor, cim: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white font-mono focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                    className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white font-mono focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
                     placeholder="Ex: 284910"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold mb-1 text-emerald-200">Potência</label>
+                  <label className="block font-semibold mb-1 text-gray-300">Potência</label>
                   <select
                     value={newMasonVisitor.potency}
                     onChange={(e) =>
                       setNewMasonVisitor({ ...newMasonVisitor, potency: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
+                    className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45] cursor-pointer"
                   >
                     <option value="GOB-PI">GOB-PI</option>
                     <option value="GLMPI">GLMPI</option>
@@ -1939,7 +1941,7 @@ export default function ChamadaPage() {
               </div>
 
               <div>
-                <label className="block font-semibold mb-1 text-emerald-200">Nome Completo</label>
+                <label className="block font-semibold mb-1 text-gray-300">Nome Completo</label>
                 <input
                   type="text"
                   required
@@ -1947,13 +1949,13 @@ export default function ChamadaPage() {
                   onChange={(e) =>
                     setNewMasonVisitor({ ...newMasonVisitor, name: e.target.value })
                   }
-                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
                   placeholder="Ex: Antônio Carlos da Silva"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold mb-1 text-emerald-200">Loja Maçônica</label>
+                <label className="block font-semibold mb-1 text-gray-300">Loja Maçônica</label>
                 <input
                   type="text"
                   required
@@ -1961,7 +1963,7 @@ export default function ChamadaPage() {
                   onChange={(e) =>
                     setNewMasonVisitor({ ...newMasonVisitor, masonic_lodge: e.target.value })
                   }
-                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
                   placeholder="Ex: A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"
                 />
               </div>
@@ -1970,13 +1972,13 @@ export default function ChamadaPage() {
                 <button
                   type="button"
                   onClick={() => setIsMasonVisitorModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold cursor-pointer transition-colors shadow-sm"
                 >
                   Adicionar Maçom
                 </button>
@@ -1989,7 +1991,7 @@ export default function ChamadaPage() {
       {/* MODAL: CONVOCAÇÃO OFICIAL FORMATADA */}
       {isConvocationModalOpen && isMaster && selectedMeeting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
-          <div className="w-full max-w-lg p-6 sm:p-7 rounded-3xl ios-glass-card space-y-4 text-white animate-in zoom-in-95">
+          <div className="w-full max-w-lg p-6 sm:p-7 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/30 shadow-2xl space-y-4 text-white animate-in zoom-in-95">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <Mail className="w-5 h-5 text-[#D9AA45]" />
@@ -2003,18 +2005,18 @@ export default function ChamadaPage() {
               </button>
             </div>
 
-            <p className="text-xs text-emerald-200/80">
+            <p className="text-xs text-gray-400">
               Copie o texto padronizado para disparo aos irmãos no WhatsApp Capitular ou e-mail:
             </p>
 
-            <div className="p-3.5 rounded-xl bg-black/40 border border-white/10">
+            <div className="p-3.5 rounded-lg bg-[#08140E] border border-white/10">
               <pre className="text-xs text-gray-200 font-mono whitespace-pre-wrap select-all max-h-56 overflow-y-auto">
                 {convocationText}
               </pre>
             </div>
 
             <div className="flex items-center justify-between pt-3 border-t border-white/10">
-              <span className="text-[11px] text-emerald-300">
+              <span className="text-[11px] text-emerald-400 font-medium">
                 {convocationCopied ? "✓ Texto copiado com sucesso!" : ""}
               </span>
 
@@ -2025,7 +2027,7 @@ export default function ChamadaPage() {
                     setConvocationCopied(true);
                     setTimeout(() => setConvocationCopied(false), 3000);
                   }}
-                  className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs cursor-pointer shadow-md"
+                  className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs cursor-pointer shadow-sm transition-colors"
                 >
                   {convocationCopied ? "Copiado!" : "Copiar Convocação"}
                 </button>

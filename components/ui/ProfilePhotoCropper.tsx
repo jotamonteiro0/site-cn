@@ -309,7 +309,7 @@ export function ProfilePhotoCropper({
             type="button"
             onClick={handleConfirmCrop}
             disabled={isSaving}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#D9AA45] via-[#E5BC5C] to-[#D9AA45] hover:brightness-110 active:scale-95 text-[#04281A] font-extrabold text-xs cursor-pointer disabled:opacity-50 transition-all shadow-[0_4px_16px_rgba(217,170,69,0.3)] hover:shadow-[0_6px_22px_rgba(217,170,69,0.45)] flex items-center gap-1.5"
+            className="px-5 py-2.5 rounded-lg bg-[#D9AA45] hover:bg-[#E5BA55] text-[#041A10] font-bold text-xs cursor-pointer disabled:opacity-50 transition-colors shadow-sm flex items-center gap-1.5"
           >
             <Check className="w-4 h-4" />
             <span>{isSaving ? "Salvando foto..." : "Concluir e Salvar"}</span>

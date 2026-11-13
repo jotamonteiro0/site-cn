@@ -10,26 +10,26 @@ export const metadata = {
 
 export default function TermosPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#F2F5F1] text-gray-900 selection:bg-[#D9AA45] selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#F8FAF8] text-gray-900 selection:bg-[#C59B3F] selection:text-white">
       <Header />
 
       <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-[#04281A] hover:text-[#087443] bg-white px-3.5 py-1.5 rounded-full border border-gray-200 mb-8 transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-[#052E1D] hover:text-[#087443] bg-white px-3.5 py-1.5 rounded-full border border-gray-200 mb-8 transition-colors shadow-sm"
         >
-          <ArrowLeft className="w-3.5 h-3.5 text-[#D9AA45]" />
+          <ArrowLeft className="w-3.5 h-3.5 text-[#C59B3F]" />
           <span>Voltar ao Portal Público</span>
         </Link>
 
         {/* Cabeçalho */}
-        <div className="bg-white rounded-3xl p-8 sm:p-10 border border-gray-200 shadow-sm mb-8">
+        <div className="bg-white rounded-3xl p-8 sm:p-10 border border-gray-200/80 shadow-sm mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#087443]/10 border border-[#087443]/20 text-[#087443] text-xs font-bold uppercase tracking-widest mb-4">
-            <BookOpen className="w-3.5 h-3.5 text-[#D9AA45]" />
+            <BookOpen className="w-3.5 h-3.5 text-[#C59B3F]" />
             <span>Regulamento de Uso do Sistema Integrado</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-[#04281A] tracking-tight">
+          <h1 className="text-2xl sm:text-4xl font-bold text-[#052E1D] tracking-tight">
             Termos e Condições de Uso
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-2">
@@ -38,10 +38,10 @@ export default function TermosPage() {
         </div>
 
         {/* Conteúdo Institucional */}
-        <div className="bg-white rounded-3xl p-8 sm:p-10 border border-gray-200 shadow-sm space-y-8 text-sm sm:text-base text-gray-700 leading-relaxed">
+        <div className="bg-white rounded-3xl p-8 sm:p-10 border border-gray-200/80 shadow-sm space-y-8 text-sm sm:text-base text-gray-700 leading-relaxed">
           <section className="space-y-3">
-            <h2 className="text-lg font-bold text-[#04281A] flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#D9AA45]"></span>
+            <h2 className="text-lg font-bold text-[#052E1D] flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#C59B3F]"></span>
               1. Natureza do Sistema e Aceite
             </h2>
             <p>
@@ -50,7 +50,7 @@ export default function TermosPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-bold text-[#04281A] flex items-center gap-2">
+            <h2 className="text-lg font-bold text-[#052E1D] flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-[#087443]" />
               2. Elegibilidade e Acesso
             </h2>
@@ -65,7 +65,7 @@ export default function TermosPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-bold text-[#04281A] flex items-center gap-2">
+            <h2 className="text-lg font-bold text-[#052E1D] flex items-center gap-2">
               <Shield className="w-4 h-4 text-[#087443]" />
               3. Segurança das Credenciais
             </h2>
@@ -75,7 +75,7 @@ export default function TermosPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-bold text-[#04281A] flex items-center gap-2">
+            <h2 className="text-lg font-bold text-[#052E1D] flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#087443]" />
               4. Gestão Financeira e Mensalidades Associativas
             </h2>
@@ -85,8 +85,8 @@ export default function TermosPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-bold text-[#04281A] flex items-center gap-2">
-              <Scale className="w-4 h-4 text-[#D9AA45]" />
+            <h2 className="text-lg font-bold text-[#052E1D] flex items-center gap-2">
+              <Scale className="w-4 h-4 text-[#C59B3F]" />
               5. Foro e Legislação
             </h2>
             <p>
