@@ -30,7 +30,7 @@ export async function GET(
     const sanitizedName = sanitize(finalFilename);
     const dispositionType = isDownload ? "attachment" : "inline";
 
-    // 1. Resolução estática direta do sistema de arquivos local (se presente no ambiente)
+    // 1. Resolução estática direta a partir do sistema de arquivos local
     const localCandidates = [
       path.join(process.cwd(), "public", "documentos", "gestao", finalFilename),
       path.join(process.cwd(), "public", "documentos", "gestao", sanitizedName),
@@ -57,7 +57,7 @@ export async function GET(
       }
     }
 
-    // 2. Resolução via CDN de Alta Performance Supabase Storage (Redirecionamento 307 com status numérico)
+    // 2. Resolução via CDN de Alta Performance Supabase Storage
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://qvvmpskixyjbislcatso.supabase.co";
 
     let folder = "acervo";
@@ -82,13 +82,14 @@ export async function GET(
       ? `${cdnBase}/${objectPath}?download=${encodeURIComponent(finalFilename)}`
       : `${cdnBase}/${objectPath}`;
 
-    // Status numérico obrigatório para compatibilidade estrita com Web Standard Response.redirect
-    const redirectResponse = NextResponse.redirect(redirectUrl, 307);
-    redirectResponse.headers.set(
-      "Cache-Control",
-      "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400"
-    );
-    return redirectResponse;
+    // Construção direta com cabeçalhos mutáveis sem colisão de guard de redirecionamento
+    return new NextResponse(null, {
+      status: 307,
+      headers: {
+        Location: redirectUrl,
+        "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400",
+      },
+    });
   } catch (err) {
     console.error("Erro ao servir documento PDF:", err);
     return NextResponse.json(
