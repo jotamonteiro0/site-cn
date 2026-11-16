@@ -763,3 +763,47 @@ O projeto **site-cn — Sistema de Gestão do Capítulo Professor Carvalho Neves
 6. **Concorrência Real Comprovada:** Testada com duas conexões PostgreSQL simultâneas reais com 0 erros, 0 duplicatas e integridade orçamentária absoluta.
 7. **Integridade Histórica e Base Limpa:** Todas as 382 cobranças legadas estão rigorosamente preservadas, com zero registros artificiais ou residuais.
 8. **Bateria de Qualidade:** 252 testes automatizados aprovados (0 falhas), linting e typecheck impecáveis, build Turbopack perfeito e deploy de produção em operação com HTTP 200.
+
+---
+
+### 35. TERMO DE ENCERRAMENTO OFICIAL DA HOMOLOGAÇÃO
+
+Declara-se **OFICIALMENTE ENCERRADA E HOMOLOGADA** a etapa de auditoria, correção estrutural, regras financeiras, segurança criptográfica e publicação do **Sistema de Gestão do Capítulo Professor Carvalho Neves nº 500**.
+
+#### 35.1 Identificação do Baseline Estável Homologado
+- **Repositório:** `site-cn`
+- **Branch Oficial de Trabalho:** `developer`
+- **Base Histórica Preservada:** `7fe3c29`
+- **Último Commit de Código Funcional e Migrations:** `6fa3aac` (`fix(security): migration 40 - delimitacao universal de escopo institucional exclusivo do Capitulo 500 na rpc de cobrancas`)
+- **Migrations Registradas e Aplicadas:**
+  - `20261116000036_conselho_membros_relational_source_of_truth.sql` (Migration 36)
+  - `20261116000037_conselho_rpc_hardening_and_idempotency.sql` (Migration 37)
+  - `20261116000038_conselho_temporal_history_and_charge_modalities.sql` (Migration 38)
+  - `20261116000039_conselho_rpc_fail_closed_security.sql` (Migration 39)
+  - `20261116000040_conselho_rpc_chapter_500_scope_enforcement.sql` (Migration 40)
+- **Ambiente de Produção (Vercel):**
+  - **URL Canônica Oficial:** [https://site-cn-mu.vercel.app](https://site-cn-mu.vercel.app)
+  - **Deployment Ativo:** [https://site-8s8rkw74h-jotamonteiro0s-projects.vercel.app](https://site-8s8rkw74h-jotamonteiro0s-projects.vercel.app)
+  - **Status Operacional:** `Ready` (HTTP 200 OK confirmado em todas as rotas).
+
+#### 35.2 Regras Institucionais e Financeiras Imutáveis (Baseline de Governança)
+Para todo e qualquer ciclo de manutenção ou desenvolvimento posterior, as seguintes diretrizes são de cumprimento obrigatório e incondicional:
+1. **Regra de Mensalidades da Tesouraria:**
+   - A cobrança de mensalidade de R$ 25,00/mês vincula-se **estrita e exclusivamente aos integrantes ativos de `public.conselho_membros`** (18 membros ativos = previsão de R$ 450,00/mês).
+   - Carlos André Machado da Silva Júnior (ID 134106) permanece com a classificação correta `payer_type = 'demolay'` (Sênior DeMolay não Maçom pagante).
+   - José Airton Rodrigues Galdino Júnior (ID 102836) permanece isento por ausência relacional em `conselho_membros`, com 0 cobranças, 0 pendências e Acesso Master preservado via RBAC (`public.chapter_memberships`).
+2. **Imutabilidade do Acervo Histórico:**
+   - As **382 cobranças históricas** registradas em `public.member_charges` são patrimônio imutável e jamais poderão ser redefinidas, alteradas ou expurgadas.
+3. **Escopo Institucional Exclusivo (Capítulo 500):**
+   - O sistema é monotenant e restrito ao Capítulo Professor Carvalho Neves nº 500 (`00000000-0000-0000-0000-000000000500`). Todas as rotinas, RPCs e policies devem recusar terminantemente `chapter_id` distinto.
+4. **Segurança Fail-Closed e Princípio do Menor Privilégio:**
+   - Acesso financeiro e geração de lançamentos pertencem unicamente a `master` e `tesoureiro`. O cargo de `Escrivão` possui atribuição estritamente notarial/secretarial e não deve receber delegação financeira.
+   - Qualquer requisição web sem credenciais inequívocas (`auth.uid() IS NULL`, JWT nulo ou role manipulada) deve falhar fechada (*fail-closed*).
+5. **Fonte Única de Verdade:**
+   - O PostgreSQL / Supabase de produção é a única e exclusiva fonte de verdade relacional. É terminantemente vedada a introdução de mocks, arquivos JSON como fallback de escrita/leitura ou simulações locais que mascarem o comportamento real.
+
+#### 35.3 Diretriz para o Desenvolvimento Futuro
+Toda e qualquer intervenção futura no projeto deverá:
+- Ser estritamente incremental a partir deste baseline estável no branch `developer`.
+- Preservar o histórico completo do Git a partir da base `7fe3c29`.
+- Ser obrigatoriamente precedida e sucedida pela execução bem-sucedida da suíte de 252 testes automatizados (`npm test`), compilação TypeScript (`npx tsc --noEmit`), linting (`npm run lint`) e build de produção Next.js Turbopack (`npm run build`).
