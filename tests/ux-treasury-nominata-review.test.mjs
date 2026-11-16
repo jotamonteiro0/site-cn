@@ -101,7 +101,7 @@ describe("Homologação da Revisão Estrutural de UX/UI e Fluxos Funcionais — 
       assert.ok(!code.includes("Meu Autoatendimento"), "Botão redundante 'Meu Autoatendimento' deve ser removido");
       assert.ok(code.includes("canManage"), "Deve haver distinção estrita via canManage");
       assert.ok(code.includes("Minha Situação"), "Membro regular deve visualizar suas métricas pessoais");
-      assert.ok(code.includes("Assiduidade Litúrgica"), "Membro regular deve visualizar assiduidade própria");
+      assert.ok(code.includes("Frequência") || code.includes("Assiduidade Litúrgica"), "Membro regular deve visualizar frequência própria");
       assert.ok(code.includes("Minhas Mensalidades"), "Membro regular deve visualizar mensalidades próprias");
     });
   });

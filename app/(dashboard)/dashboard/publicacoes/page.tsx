@@ -33,7 +33,8 @@ import {
   RefreshCw,
   Database,
   BookOpen,
-  Lock
+  Lock,
+  Sparkles
 } from "lucide-react";
 import { ProfilePhotoCropper } from "@/components/ui/ProfilePhotoCropper";
 import type { SitePublication, PublicationStatus } from "@/lib/publications-store";
@@ -476,6 +477,49 @@ export default function MasterPublicacoesPage() {
       setIsUploadingPhoto(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  // Sugestão de Legenda Padrão Oficial do Capítulo
+  const handleSuggestCaption = () => {
+    if (pubForm.description.trim()) {
+      const confirmReplace = window.confirm(
+        "Você já digitou um texto na descrição. Deseja substituí-lo pelo modelo oficial de legenda?"
+      );
+      if (!confirmReplace) return;
+    }
+
+    let formattedDate = "[DATA]";
+    if (pubForm.starts_at) {
+      try {
+        const [year, month, day] = pubForm.starts_at.split("-");
+        if (year && month && day) {
+          const dateObj = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+          formattedDate = dateObj.toLocaleDateString("pt-BR", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          });
+        }
+      } catch {
+        formattedDate = pubForm.starts_at;
+      }
+    }
+
+    const activityName = pubForm.headlineText.trim() || "[NOME DA ATIVIDADE]";
+
+    const captionTemplate = `No dia ${formattedDate}, ocorreu ${activityName}, um momento marcado pela fraternidade, união e participação dos irmãos e tios do Capítulo Professor Carvalho Neves nº 500.
+
+Durante a ocasião, [BREVE DESCRIÇÃO DO QUE ACONTECEU E DOS PRINCIPAIS MOMENTOS DA ATIVIDADE].
+
+Agradecemos a todos os irmãos e tios que estiveram presentes e contribuíram para a realização deste momento!
+
+#demolay #demolaybrasil #demolaypiaui
+#avantecn500 #cn500 #500e500`;
+
+    setPubForm((prev) => ({
+      ...prev,
+      description: captionTemplate,
+    }));
   };
 
   // Salvar Publicação (Criar ou Atualizar)
@@ -1954,9 +1998,20 @@ export default function MasterPublicacoesPage() {
 
                 {/* Linha 4: Descrição Narrativa Contextualizada */}
                 <div>
-                  <label className="block text-xs font-bold text-emerald-200 uppercase tracking-wider mb-1 font-mono">
-                    Descrição Narrativa Contextualizada *
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-emerald-200 uppercase tracking-wider font-mono">
+                      Descrição Narrativa Contextualizada *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleSuggestCaption}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#D9AA45]/15 hover:bg-[#D9AA45]/25 text-[#D9AA45] border border-[#D9AA45]/30 text-[11px] font-bold font-mono transition-colors cursor-pointer"
+                      title="Preencher sugestão de legenda padrão oficial do Capítulo"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Sugerir Legenda</span>
+                    </button>
+                  </div>
                   <textarea
                     required
                     rows={4}

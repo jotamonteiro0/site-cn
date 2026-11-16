@@ -146,10 +146,26 @@ export default function AtividadesMembroPage() {
   const scrollRecentCarousel = useCallback((direction: "left" | "right") => {
     if (!carouselTrackRef.current) return;
     const cardWidth = 320;
-    carouselTrackRef.current.scrollBy({
-      left: direction === "right" ? cardWidth : -cardWidth,
-      behavior: "smooth",
-    });
+    const { scrollLeft, scrollWidth, clientWidth } = carouselTrackRef.current;
+    if (direction === "right") {
+      if (scrollLeft + clientWidth >= scrollWidth - 15) {
+        carouselTrackRef.current.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        carouselTrackRef.current.scrollBy({
+          left: cardWidth,
+          behavior: "smooth",
+        });
+      }
+    } else {
+      if (scrollLeft <= 15) {
+        carouselTrackRef.current.scrollTo({ left: Math.max(0, scrollWidth - clientWidth), behavior: "smooth" });
+      } else {
+        carouselTrackRef.current.scrollBy({
+          left: -cardWidth,
+          behavior: "smooth",
+        });
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -160,15 +176,15 @@ export default function AtividadesMembroPage() {
     const timer = setInterval(() => {
       if (!carouselTrackRef.current) return;
       const { scrollLeft, scrollWidth, clientWidth } = carouselTrackRef.current;
-      if (scrollLeft + clientWidth >= scrollWidth - 10) {
+      if (scrollLeft + clientWidth >= scrollWidth - 15) {
         carouselTrackRef.current.scrollTo({ left: 0, behavior: "smooth" });
       } else {
-        scrollRecentCarousel("right");
+        carouselTrackRef.current.scrollBy({ left: 320, behavior: "smooth" });
       }
     }, 4500);
 
     return () => clearInterval(timer);
-  }, [isCarouselPaused, scrollRecentCarousel]);
+  }, [isCarouselPaused]);
 
   useEffect(() => {
     async function checkRole() {
@@ -306,7 +322,7 @@ export default function AtividadesMembroPage() {
         if (dbMeetings.length === 0) {
           const { data } = await supabase
             .from("meetings")
-            .select("id, title, starts_at, ends_at, location, description, complementary_info, category, status, management, mc_name")
+            .select("id, title, starts_at, ends_at, location, description, complementary_info, category, status, management")
             .order("starts_at", { ascending: true });
           if (data && data.length > 0) {
             dbMeetings = data as CalendarMeeting[];
@@ -340,7 +356,7 @@ export default function AtividadesMembroPage() {
 
   // 1. Identificação da Próxima Reunião Oficial (Estritamente Futura)
   const nextMeeting = useMemo(() => {
-    const threshold = clientNow ?? new Date("2026-11-14T00:00:00Z").getTime();
+    const threshold = clientNow || 0;
     // Filtra estritamente reuniões com data e horário futuros que não estejam canceladas nem realizadas
     const future = meetings
       .filter((m) => {

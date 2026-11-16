@@ -129,8 +129,7 @@ export default function DashboardOverviewPage() {
           supabase
             .from("meetings")
             .select("id, title, starts_at, location, status, description")
-            .order("starts_at", { ascending: true })
-            .limit(10),
+            .order("starts_at", { ascending: true }),
           supabase
             .from("members")
             .select("id, id_demolay, full_name, category, masonic_lodge"),
@@ -273,7 +272,7 @@ export default function DashboardOverviewPage() {
 
   // Próxima Reunião Oficial (Estritamente com data/horário futuros)
   const nextMeeting = useMemo(() => {
-    const threshold = clientNow ?? new Date("2026-11-14T00:00:00Z").getTime();
+    const threshold = clientNow || 0;
     const upcoming = meetings
       .filter((m) => {
         const mDate = new Date(m.starts_at);
@@ -286,7 +285,7 @@ export default function DashboardOverviewPage() {
 
   // Próximas Obrigações Litúrgicas e Calendário
   const upcomingObligations = useMemo(() => {
-    const threshold = clientNow ?? new Date("2026-11-14T00:00:00Z").getTime();
+    const threshold = clientNow || 0;
     return meetings.filter((m) => {
       const mDate = new Date(m.starts_at);
       return mDate.getTime() > threshold && m.status !== "cancelada" && m.status !== "realizada";
@@ -328,8 +327,6 @@ export default function DashboardOverviewPage() {
             <span className="selo-vidro-cn px-3 py-1 rounded-full text-[11px] font-bold text-[#D9AA45] tracking-wider uppercase font-mono">
               Gestão XXV • 2026.2
             </span>
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span className="text-xs text-emerald-300 font-medium font-mono">Conexão Oficial Ativa</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
             Visão Geral do Capítulo
@@ -492,14 +489,14 @@ export default function DashboardOverviewPage() {
             </p>
           </Link>
 
-          {/* Card Pessoal 2: Assiduidade & Frequência */}
+          {/* Card Pessoal 2: Frequência */}
           <Link
             href="/dashboard/membro?tab=frequencia"
             className="card-heraldico-dark p-5 rounded-xl group cursor-pointer"
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-amber-200/80 font-mono">
-                Assiduidade Litúrgica
+                Frequência
               </span>
               <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[#D9AA45] flex items-center justify-center">
                 <ClipboardCheck className="w-4 h-4" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -19,7 +19,13 @@ import {
   UserCheck,
   Building,
   Check,
-  ShieldCheck
+  ShieldCheck,
+  CheckSquare,
+  Square,
+  Users,
+  Send,
+  X,
+  RefreshCw
 } from "lucide-react";
 
 interface FinancialPeriod {
@@ -40,6 +46,8 @@ interface MemberCharge {
   status: "pendente" | "confirmado" | "aguardando_confirmacao" | "cancelado";
   paid_at?: string;
   financial_period_id: string;
+  payment_method?: string;
+  infinitepay_checkout_url?: string;
   member?: {
     id_demolay: string;
     category: string;
@@ -49,16 +57,38 @@ interface MemberCharge {
 
 export default function TesourariaPage() {
   const [periods, setPeriods] = useState<FinancialPeriod[]>([]);
-  const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
+  const [selectedPeriodId, setSelectedPeriodId] = useState<string>("all");
   const [charges, setCharges] = useState<MemberCharge[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "pendente" | "confirmado">("todos");
   
-  // Abas de Planilha dedicadas: Conselho Consultivo vs Acervo Histórico
-  const [activeSheet, setActiveSheet] = useState<"conselho" | "historico">("conselho");
+  // Abas de Planilha dedicadas: DeMolays Ativos, Conselho Consultivo e Visão Geral
+  const [activeSheet, setActiveSheet] = useState<"demolay" | "conselho" | "todas">("demolay");
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState("");
+
+  // Seleção múltipla de mensalidades (Pagamento e Baixa em Lote)
+  const [selectedChargeIds, setSelectedChargeIds] = useState<string[]>([]);
+  const [isBatchConfirmModalOpen, setIsBatchConfirmModalOpen] = useState(false);
+  const [batchPaymentMethod, setBatchPaymentMethod] = useState("baixa_manual");
+  const [batchNotes, setBatchNotes] = useState("");
+  const [isBatchConfirming, setIsBatchConfirming] = useState(false);
+
+  // Modal de Cobrança / PIX em Lote
+  const [isBatchPayModalOpen, setIsBatchPayModalOpen] = useState(false);
+  const [batchPayData, setBatchPayData] = useState<{
+    totalAmount: number;
+    count: number;
+    chargeIds: string[];
+    descriptions: string[];
+    pixPayload: string;
+    pixQrCodeUrl: string;
+    infinitePayUrl?: string;
+    txid: string;
+  } | null>(null);
+  const [isGeneratingBatchPay, setIsGeneratingBatchPay] = useState(false);
+  const [pixBatchCopied, setPixBatchCopied] = useState(false);
 
   // Permissões de Acesso (RBAC Guard)
   const [userRole, setUserRole] = useState<string>("membro");
@@ -161,9 +191,6 @@ export default function TesourariaPage() {
 
         if (pData && pData.length > 0) {
           setPeriods(pData);
-          // Seleciona o mês de novembro/2026 ou o primeiro
-          const match = pData.find((p) => p.month === 11 && p.year === 2026);
-          setSelectedPeriodId(match ? match.id : pData[0].id);
         }
       } catch (err) {
         console.error("Erro ao carregar períodos:", err);
@@ -172,13 +199,12 @@ export default function TesourariaPage() {
     loadPeriods();
   }, []);
 
-  // 3. Carrega Cobranças do Período Selecionado
-  const loadCharges = async () => {
-    if (!selectedPeriodId) return;
+  // 3. Carrega Cobranças (suporta filtro por período ou todas as competências)
+  const loadCharges = useCallback(async () => {
     setIsLoading(true);
     try {
       const supabase = createClient();
-      const { data } = await supabase
+      let query = supabase
         .from("member_charges")
         .select(`
           id,
@@ -191,37 +217,41 @@ export default function TesourariaPage() {
           status,
           paid_at,
           financial_period_id,
+          payment_method,
+          infinitepay_checkout_url,
           member:members (
             id_demolay,
             category,
             masonic_lodge
           )
         `)
-        .eq("financial_period_id", selectedPeriodId)
         .order("payer_name", { ascending: true });
 
+      if (selectedPeriodId && selectedPeriodId !== "all") {
+        query = query.eq("financial_period_id", selectedPeriodId);
+      }
+
+      const { data } = await query;
       if (data) {
         setCharges(data as unknown as MemberCharge[]);
       }
     } catch (err) {
-      console.error("Erro ao carregar mensalidades do mês:", err);
+      console.error("Erro ao carregar mensalidades:", err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedPeriodId]);
 
   useEffect(() => {
-    let ignore = false;
+    let isMounted = true;
     async function fetchCharges() {
-      if (!selectedPeriodId) return;
       try {
         const supabase = createClient();
-        const { data } = await supabase
+        let query = supabase
           .from("member_charges")
           .select(`
             id,
             member_id,
-            financial_period_id,
             payer_name,
             payer_type,
             description,
@@ -229,6 +259,7 @@ export default function TesourariaPage() {
             due_date,
             status,
             paid_at,
+            financial_period_id,
             payment_method,
             infinitepay_checkout_url,
             member:members (
@@ -237,32 +268,35 @@ export default function TesourariaPage() {
               masonic_lodge
             )
           `)
-          .eq("financial_period_id", selectedPeriodId)
           .order("payer_name", { ascending: true });
 
-        if (!ignore && data) {
+        if (selectedPeriodId && selectedPeriodId !== "all") {
+          query = query.eq("financial_period_id", selectedPeriodId);
+        }
+
+        const { data } = await query;
+        if (isMounted && data) {
           setCharges(data as unknown as MemberCharge[]);
         }
       } catch (err) {
-        console.error("Erro ao carregar mensalidades do mês:", err);
+        if (isMounted) console.error("Erro ao carregar mensalidades:", err);
       } finally {
-        if (!ignore) setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     }
     fetchCharges();
     return () => {
-      ignore = true;
+      isMounted = false;
     };
   }, [selectedPeriodId]);
 
   // Período Selecionado Atual
   const selectedPeriod = useMemo(() => {
+    if (selectedPeriodId === "all") return null;
     return periods.find((p) => p.id === selectedPeriodId);
   }, [periods, selectedPeriodId]);
 
-  // Membros do Conselho Consultivo que possuem mensalidade devida
-  // Regra Institucional Definitiva: TODO integrante ativo do Conselho Consultivo deve pagar mensalidade (R$ 25,00),
-  // independentemente de sua categoria cadastral ou de ser maçom (ex: Carlos André Machado da Silva Júnior 134106).
+  // Membros do Conselho Consultivo que possuem mensalidade devida (R$ 25,00)
   const [conselhoMemberIds, setConselhoMemberIds] = useState<Set<string>>(new Set());
   const [conselhoMembersMap, setConselhoMembersMap] = useState<Map<string, { sponsoring_lodge: string; role_name: string }>>(new Map());
 
@@ -294,25 +328,38 @@ export default function TesourariaPage() {
     loadConselhoMembros();
   }, []);
 
+  // Listagem de DeMolays Ativos (R$ 22,00)
+  const demolayCharges = useMemo(() => {
+    return charges.filter(
+      (c) => c.payer_type === "demolay" || c.member?.category === "demolay_ativo"
+    );
+  }, [charges]);
+
+  // Listagem do Conselho Consultivo (R$ 25,00)
   const conselhoCharges = useMemo(() => {
     return charges.filter((c) => {
       // Exclui expressamente José Airton e pessoas fora do Conselho
       if (c.member?.id_demolay === "102836" || c.payer_name?.toLowerCase().includes("airton")) return false;
-      // Membro ativo do Conselho Consultivo
       return c.member_id && conselhoMemberIds.has(c.member_id);
     });
   }, [charges, conselhoMemberIds]);
 
-  // Estatísticas Financeiras Institucionais (Somente Maçons do Conselho Consultivo R$ 25,00)
+  // Planilha Ativa Base
+  const activeBaseList = useMemo(() => {
+    if (activeSheet === "demolay") return demolayCharges;
+    if (activeSheet === "conselho") return conselhoCharges;
+    return charges;
+  }, [activeSheet, demolayCharges, conselhoCharges, charges]);
+
+  // Estatísticas Financeiras Institucionais
   const stats = useMemo(() => {
     let totalPrevisto = 0;
     let totalPago = 0;
     let totalPendente = 0;
     let qtdPago = 0;
-    const activeList = activeSheet === "conselho" ? conselhoCharges : charges;
-    const qtdTotal = activeList.length;
+    const qtdTotal = activeBaseList.length;
 
-    activeList.forEach((c) => {
+    activeBaseList.forEach((c) => {
       const amt = Number(c.amount || 0);
       totalPrevisto += amt;
 
@@ -334,10 +381,60 @@ export default function TesourariaPage() {
       percent,
       qtdConselho: conselhoCharges.length,
       pagoConselho: conselhoCharges.filter((c) => c.status === "confirmado").length,
+      qtdDemolay: demolayCharges.length,
+      pagoDemolay: demolayCharges.filter((c) => c.status === "confirmado").length,
     };
-  }, [charges, conselhoCharges, activeSheet]);
+  }, [activeBaseList, conselhoCharges, demolayCharges]);
 
-  // Dar Baixa / Estornar Pagamento
+  // Filtros de Busca e Status
+  const filteredCharges = useMemo(() => {
+    return activeBaseList.filter((c) => {
+      // 1. Filtro de Status
+      const matchesStatus =
+        statusFilter === "todos" ||
+        (statusFilter === "pendente" && c.status !== "confirmado") ||
+        (statusFilter === "confirmado" && c.status === "confirmado");
+
+      // 2. Filtro de Busca
+      const search = searchTerm.toLowerCase().trim();
+      const matchesSearch =
+        !search ||
+        c.payer_name.toLowerCase().includes(search) ||
+        (c.member?.id_demolay && c.member.id_demolay.includes(search)) ||
+        (c.member?.masonic_lodge && c.member.masonic_lodge.toLowerCase().includes(search));
+
+      return matchesStatus && matchesSearch;
+    });
+  }, [activeBaseList, statusFilter, searchTerm]);
+
+  // Cálculos para a seleção múltipla atual
+  const selectedChargesList = useMemo(() => {
+    return charges.filter((c) => selectedChargeIds.includes(c.id));
+  }, [charges, selectedChargeIds]);
+
+  const selectedTotalAmount = useMemo(() => {
+    return selectedChargesList.reduce((acc, c) => acc + Number(c.amount || 0), 0);
+  }, [selectedChargesList]);
+
+  // Alterna seleção de uma cobrança
+  const handleToggleSelectCharge = (chargeId: string) => {
+    setSelectedChargeIds((prev) =>
+      prev.includes(chargeId) ? prev.filter((id) => id !== chargeId) : [...prev, chargeId]
+    );
+  };
+
+  // Seleciona todas as cobranças da visualização filtrada atual
+  const handleToggleSelectAll = () => {
+    const visibleIds = filteredCharges.map((c) => c.id);
+    const allSelected = visibleIds.every((id) => selectedChargeIds.includes(id));
+    if (allSelected) {
+      setSelectedChargeIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+    } else {
+      setSelectedChargeIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+    }
+  };
+
+  // Dar Baixa / Estornar Pagamento Individual
   const handleTogglePaymentStatus = async (chargeId: string, currentStatus: string) => {
     setIsUpdating(true);
     const newStatus = currentStatus === "confirmado" ? "pendente" : "confirmado";
@@ -350,7 +447,7 @@ export default function TesourariaPage() {
         .update({
           status: newStatus,
           paid_at: paidAt,
-          payment_method: newStatus === "confirmado" ? "baixa_manual" : null
+          payment_method: newStatus === "confirmado" ? "baixa_manual" : null,
         })
         .eq("id", chargeId);
 
@@ -376,7 +473,85 @@ export default function TesourariaPage() {
     }
   };
 
-  // Gerar Mensalidades em Lote via RPC (Somente Maçons do Conselho Consultivo R$ 25,00, Vencimento Dia 28)
+  // Executa Baixa Manual em Lote pelo Tesoureiro
+  const handleBatchConfirm = async () => {
+    if (selectedChargeIds.length === 0) return;
+    setIsBatchConfirming(true);
+    try {
+      const res = await fetch("/api/charges/batch-confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          charge_ids: selectedChargeIds,
+          payment_method: batchPaymentMethod,
+          notes: batchNotes,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Erro ao confirmar baixa em lote.");
+      }
+
+      setFeedbackMsg(data.message || `${selectedChargeIds.length} mensalidades baixadas com sucesso!`);
+      setSelectedChargeIds([]);
+      setIsBatchConfirmModalOpen(false);
+      await loadCharges();
+      setTimeout(() => setFeedbackMsg(""), 6000);
+    } catch (err: unknown) {
+      console.error("Erro na baixa em lote:", err);
+      alert(err instanceof Error ? err.message : "Falha ao processar baixa em lote.");
+    } finally {
+      setIsBatchConfirming(false);
+    }
+  };
+
+  // Gera Link Pix / Checkout em Lote pelo Tesoureiro
+  const handleGenerateBatchPayLink = async () => {
+    if (selectedChargeIds.length === 0) return;
+    const selectedList = charges.filter((c) => selectedChargeIds.includes(c.id));
+    const memberIds = Array.from(new Set(selectedList.map((c) => c.member_id)));
+
+    if (memberIds.length > 1) {
+      alert("Para gerar pagamento Pix consolidado, todas as mensalidades selecionadas devem pertencer ao mesmo membro.");
+      return;
+    }
+
+    setIsGeneratingBatchPay(true);
+    try {
+      const res = await fetch("/api/charges/batch-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          member_id: memberIds[0],
+          charge_ids: selectedChargeIds,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Erro ao gerar cobrança.");
+      }
+
+      setBatchPayData({
+        totalAmount: data.total_amount,
+        count: data.count,
+        chargeIds: data.charge_ids,
+        descriptions: data.descriptions,
+        pixPayload: data.pix_copia_cola,
+        pixQrCodeUrl: data.pix_qrcode_url,
+        infinitePayUrl: data.infinitepay_url,
+        txid: data.txid,
+      });
+      setIsBatchPayModalOpen(true);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Falha ao gerar cobrança consolidada.");
+    } finally {
+      setIsGeneratingBatchPay(false);
+    }
+  };
+
+  // Gerar Mensalidades em Lote via RPC (Conselho Consultivo R$ 25,00)
   const handleGenerateMonthlyCharges = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUpdating(true);
@@ -405,8 +580,6 @@ export default function TesourariaPage() {
 
       if (pData) {
         setPeriods(pData);
-        const match = pData.find((p) => p.month === generateMonth && p.year === generateYear);
-        if (match) setSelectedPeriodId(match.id);
       }
 
       await loadCharges();
@@ -459,11 +632,10 @@ export default function TesourariaPage() {
   // Alterar Valores das Mensalidades no período
   const handleUpdatePrices = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPeriodId) return;
+    if (!selectedPeriodId || selectedPeriodId === "all") return;
     setIsUpdating(true);
     try {
       const supabase = createClient();
-      // Atualiza cobranças pendentes dos integrantes do Conselho Consultivo
       const conselhoIdsArray = Array.from(conselhoMemberIds);
       if (conselhoIdsArray.length > 0) {
         await supabase
@@ -500,28 +672,6 @@ export default function TesourariaPage() {
     }
   };
 
-  // Filtros da Planilha Ativa (DeMolay ou Maçom), Status e Busca
-  const filteredCharges = useMemo(() => {
-    const listToFilter = activeSheet === "conselho" ? conselhoCharges : charges;
-    return listToFilter.filter((c) => {
-      // 1. Filtro de Status
-      const matchesStatus =
-        statusFilter === "todos" ||
-        (statusFilter === "pendente" && c.status !== "confirmado") ||
-        (statusFilter === "confirmado" && c.status === "confirmado");
-
-      // 2. Filtro de Busca
-      const search = searchTerm.toLowerCase().trim();
-      const matchesSearch =
-        !search ||
-        c.payer_name.toLowerCase().includes(search) ||
-        (c.member?.id_demolay && c.member.id_demolay.includes(search)) ||
-        (c.member?.masonic_lodge && c.member.masonic_lodge.toLowerCase().includes(search));
-
-      return matchesStatus && matchesSearch;
-    });
-  }, [charges, conselhoCharges, activeSheet, statusFilter, searchTerm]);
-
   // Se o usuário não for Tesoureiro nem Master, bloqueia visualização de dados financeiros
   if (isRoleChecked && effectiveRole !== "master" && effectiveRole !== "tesoureiro") {
     return (
@@ -545,7 +695,7 @@ export default function TesourariaPage() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in pb-20">
       {/* Header com Navegação e Ações Rápidas */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
         <div>
@@ -560,7 +710,7 @@ export default function TesourariaPage() {
             <span>Tesouraria Operacional Capitular</span>
           </h1>
           <p className="text-sm text-emerald-200/70 mt-1 font-light">
-            Controle de mensalidades do Conselho Consultivo, baixas, PIX, InfinitePay e declarações
+            Gestão unificada de mensalidades de DeMolays e Conselho Consultivo, baixas em lote, PIX e InfinitePay
           </p>
         </div>
 
@@ -573,7 +723,7 @@ export default function TesourariaPage() {
             className="btn-heraldico-ouro px-4 py-2.5 rounded-lg text-xs"
           >
             <Printer className="w-4 h-4" />
-            <span>Gerar Relatório Mensal</span>
+            <span>Gerar Relatório</span>
           </button>
 
           {/* Botão Alterar Valor da Mensalidade */}
@@ -617,11 +767,11 @@ export default function TesourariaPage() {
         </div>
       )}
 
-      {/* SELETOR DE MÊS E VENCIMENTO */}
+      {/* SELETOR DE COMPETÊNCIA / PERÍODO DE MENSALIDADE */}
       <div className="p-5 sm:p-6 rounded-xl bg-[#0C1D14] border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <span className="text-[10px] font-bold uppercase tracking-wider text-[#D9AA45] font-mono">
-            Exercício Financeiro Selecionado
+            Competência / Período
           </span>
           <div className="flex items-center gap-3 mt-1.5">
             <Calendar className="w-5 h-5 text-emerald-300 shrink-0" />
@@ -630,11 +780,12 @@ export default function TesourariaPage() {
               onChange={(e) => setSelectedPeriodId(e.target.value)}
               className="bg-[#064D32] border border-emerald-500/40 rounded-lg px-4 py-2 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
             >
+              <option value="all">Todas as Competências (Acervo Completo)</option>
               {periods.map((p) => {
                 const mesNome = new Date(p.year, p.month - 1).toLocaleString("pt-BR", { month: "long" });
                 return (
                   <option key={p.id} value={p.id}>
-                    {mesNome.toUpperCase()} de {p.year} {p.status === "aberto" ? "• Vigente" : "• Fechado"}
+                    {mesNome.toUpperCase()} de {p.year}
                   </option>
                 );
               })}
@@ -648,12 +799,12 @@ export default function TesourariaPage() {
             <span className="font-bold text-white font-mono">Todo dia 28</span>
           </div>
           <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
-            <span className="text-gray-400">Conselho Consultivo:</span>{" "}
-            <span className="font-bold text-[#D9AA45] font-mono tabular-nums">R$ 25,00</span>
+            <span className="text-gray-400">Mensalidade DeMolay:</span>{" "}
+            <span className="font-bold text-emerald-300 font-mono tabular-nums">R$ 22,00</span>
           </div>
           <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
-            <span className="text-gray-400">DeMolays e Sêniores:</span>{" "}
-            <span className="font-bold text-emerald-300 font-mono">Isentos de Mensalidade</span>
+            <span className="text-gray-400">Conselho Consultivo:</span>{" "}
+            <span className="font-bold text-[#D9AA45] font-mono tabular-nums">R$ 25,00</span>
           </div>
         </div>
       </div>
@@ -662,13 +813,13 @@ export default function TesourariaPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card-heraldico-dark p-5 rounded-xl space-y-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200/80 font-mono">
-            Previsão do Mês
+            Previsão do Período
           </span>
           <p className="text-2xl font-extrabold text-white font-mono tabular-nums">
             R$ {stats.totalPrevisto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
           <p className="text-[11px] text-emerald-200/60 font-mono tabular-nums">
-            {stats.qtdTotal} pagantes {activeSheet === "conselho" ? "(Conselho Consultivo)" : "(Acervo Histórico)"}
+            {stats.qtdTotal} pagantes {activeSheet === "demolay" ? "(DeMolays Ativos)" : activeSheet === "conselho" ? "(Conselho Consultivo)" : "(Geral)"}
           </p>
         </div>
 
@@ -710,14 +861,38 @@ export default function TesourariaPage() {
         </div>
       </div>
 
-      {/* ABAS DE PLANILHA: CONSELHO CONSULTIVO VS ACERVO HISTÓRICO */}
+      {/* ABAS DE PLANILHA: DEMOLAYS ATIVOS VS CONSELHO CONSULTIVO VS TODAS */}
       <div className="space-y-4">
         {/* Seletor de Planilha por Abas */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Aba 1: DeMolays Ativos */}
             <button
               type="button"
-              onClick={() => setActiveSheet("conselho")}
+              onClick={() => {
+                setActiveSheet("demolay");
+                setSelectedChargeIds([]);
+              }}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeSheet === "demolay"
+                  ? "bg-[#087443] text-white border border-[#D9AA45]/60 shadow-sm"
+                  : "bg-white/5 text-emerald-200/70 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <Users className="w-4 h-4 text-emerald-300" />
+              <span>DeMolays Ativos (R$ 22,00)</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/40 text-emerald-200 font-mono tabular-nums">
+                {demolayCharges.length}
+              </span>
+            </button>
+
+            {/* Aba 2: Conselho Consultivo */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveSheet("conselho");
+                setSelectedChargeIds([]);
+              }}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeSheet === "conselho"
                   ? "bg-[#087443] text-white border border-[#D9AA45]/60 shadow-sm"
@@ -725,25 +900,29 @@ export default function TesourariaPage() {
               }`}
             >
               <Building className="w-4 h-4 text-[#D9AA45]" />
-              <span>Conselho Consultivo (Mensalidades Vigentes)</span>
+              <span>Conselho Consultivo (R$ 25,00)</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/40 text-emerald-200 font-mono tabular-nums">
-                {conselhoCharges.length} • R$ {priceMacom},00
+                {conselhoCharges.length}
               </span>
             </button>
 
+            {/* Aba 3: Todas as Mensalidades */}
             <button
               type="button"
-              onClick={() => setActiveSheet("historico")}
+              onClick={() => {
+                setActiveSheet("todas");
+                setSelectedChargeIds([]);
+              }}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeSheet === "historico"
+                activeSheet === "todas"
                   ? "bg-[#087443] text-white border border-[#D9AA45]/60 shadow-sm"
                   : "bg-white/5 text-emerald-200/70 hover:bg-white/10 hover:text-white"
               }`}
             >
               <FileCheck className="w-4 h-4 text-emerald-300" />
-              <span>Acervo Geral / Auditoria Histórica</span>
+              <span>Todas as Mensalidades (Geral)</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/40 text-emerald-200 font-mono tabular-nums">
-                {charges.length} registros
+                {charges.length}
               </span>
             </button>
           </div>
@@ -755,45 +934,80 @@ export default function TesourariaPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={activeSheet === "conselho" ? "Buscar por nome do Conselheiro, CIM ou Loja..." : "Buscar no acervo histórico por nome, ID ou Loja..."}
+              placeholder="Buscar por nome, ID DeMolay ou Loja..."
               className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white text-xs placeholder:text-emerald-200/40 focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
             />
           </div>
         </div>
 
         {/* Linha de Filtros: Status de Pagamento */}
-        <div className="flex items-center gap-2 pt-1">
-          <span className="text-xs font-semibold text-gray-400 mr-1">Filtrar Situação:</span>
-          {[
-            { id: "todos", label: "Todos os Registros", count: filteredCharges.length },
-            { id: "pendente", label: "Pendentes (Em Aberto)", count: (activeSheet === "conselho" ? conselhoCharges : charges).filter((c) => c.status !== "confirmado").length },
-            { id: "confirmado", label: "Quitados (Baixados)", count: (activeSheet === "conselho" ? conselhoCharges : charges).filter((c) => c.status === "confirmado").length },
-          ].map((f) => (
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-400 mr-1">Filtrar Situação:</span>
+            {[
+              { id: "todos", label: "Todos", count: filteredCharges.length },
+              { id: "pendente", label: "Pendentes (Em Aberto)", count: activeBaseList.filter((c) => c.status !== "confirmado").length },
+              { id: "confirmado", label: "Quitados (Baixados)", count: activeBaseList.filter((c) => c.status === "confirmado").length },
+            ].map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setStatusFilter(f.id as "todos" | "confirmado" | "pendente")}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                  statusFilter === f.id
+                    ? "bg-[#087443] text-white border border-[#D9AA45]/50 shadow-sm"
+                    : "bg-white/5 text-gray-400 hover:text-white"
+                }`}
+              >
+                <span>{f.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Botão de Selecionar Todas Visíveis */}
+          {filteredCharges.length > 0 && (
             <button
-              key={f.id}
               type="button"
-              onClick={() => setStatusFilter(f.id as "todos" | "confirmado" | "pendente")}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                statusFilter === f.id
-                  ? "bg-[#087443] text-white border border-[#D9AA45]/50 shadow-sm"
-                  : "bg-white/5 text-gray-400 hover:text-white"
-              }`}
+              onClick={handleToggleSelectAll}
+              className="text-xs text-[#D9AA45] hover:underline flex items-center gap-1.5 cursor-pointer font-mono"
             >
-              <span>{f.label}</span>
+              {filteredCharges.every((c) => selectedChargeIds.includes(c.id)) ? (
+                <>
+                  <CheckSquare className="w-3.5 h-3.5" />
+                  <span>Desmarcar Todas da Lista</span>
+                </>
+              ) : (
+                <>
+                  <Square className="w-3.5 h-3.5" />
+                  <span>Selecionar Todas ({filteredCharges.length})</span>
+                </>
+              )}
             </button>
-          ))}
+          )}
         </div>
 
-        {/* TABELA / PLANILHA FINANCEIRA */}
+        {/* TABELA / PLANILHA FINANCEIRA COM CAIXAS DE SELEÇÃO */}
         <div className="rounded-xl bg-[#0C1D14] border border-white/10 overflow-hidden shadow-md">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-white">
               <thead className="bg-[#08140E] border-b border-white/10 text-emerald-300 uppercase tracking-wider text-[10px] font-bold font-mono">
                 <tr>
-                  <th className="py-3 px-4">{activeSheet === "conselho" ? "CIM / ID" : "ID"}</th>
-                  <th className="py-3 px-4">{activeSheet === "conselho" ? "Nome do Conselheiro" : "Nome do Membro / Pagador"}</th>
-                  <th className="py-3 px-4">{activeSheet === "conselho" ? "Loja Patrocinadora" : "Categoria / Origem"}</th>
-                  <th className="py-3 px-4">Vencimento</th>
+                  <th className="py-3 px-3 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      aria-label="Selecionar todas"
+                      checked={
+                        filteredCharges.length > 0 &&
+                        filteredCharges.every((c) => selectedChargeIds.includes(c.id))
+                      }
+                      onChange={handleToggleSelectAll}
+                      className="w-4 h-4 rounded text-[#D9AA45] bg-[#0C1D14] border-white/20 focus:ring-[#D9AA45] cursor-pointer"
+                    />
+                  </th>
+                  <th className="py-3 px-4">ID DeMolay / CIM</th>
+                  <th className="py-3 px-4">Nome do Membro / Pagador</th>
+                  <th className="py-3 px-4">Categoria / Origem</th>
+                  <th className="py-3 px-4">Competência / Vencimento</th>
                   <th className="py-3 px-4">Valor</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Ações do Tesoureiro</th>
@@ -802,22 +1016,36 @@ export default function TesourariaPage() {
               <tbody className="divide-y divide-white/5">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-emerald-200/50 font-mono">
+                    <td colSpan={8} className="py-8 text-center text-emerald-200/50 font-mono">
                       Carregando planilha de mensalidades...
                     </td>
                   </tr>
                 ) : filteredCharges.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-emerald-200/50">
+                    <td colSpan={8} className="py-8 text-center text-emerald-200/50">
                       Nenhum registro encontrado nesta planilha com os filtros selecionados.
                     </td>
                   </tr>
                 ) : (
                   filteredCharges.map((c) => {
                     const isPago = c.status === "confirmado";
+                    const isSelected = selectedChargeIds.includes(c.id);
 
                     return (
-                      <tr key={c.id} className="hover:bg-white/[0.03] transition-colors">
+                      <tr
+                        key={c.id}
+                        className={`transition-colors ${
+                          isSelected ? "bg-[#087443]/20" : "hover:bg-white/[0.03]"
+                        }`}
+                      >
+                        <td className="py-3 px-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectCharge(c.id)}
+                            className="w-4 h-4 rounded text-[#D9AA45] bg-[#0C1D14] border-white/20 focus:ring-[#D9AA45] cursor-pointer"
+                          />
+                        </td>
                         <td className="py-3 px-4 font-mono font-bold text-[#D9AA45] tabular-nums">
                           {c.member?.id_demolay || "—"}
                         </td>
@@ -830,14 +1058,19 @@ export default function TesourariaPage() {
                           )}
                         </td>
                         <td className="py-3 px-4">
-                          <span className="text-[11px] text-[#D9AA45] font-medium">
-                            {activeSheet === "conselho"
-                              ? (conselhoMembersMap.get(c.member_id)?.sponsoring_lodge || c.member?.masonic_lodge || "A∴R∴L∴S∴ Caridade II nº 135")
-                              : (c.payer_type === "demolay" ? "DeMolay (Histórico)" : "Tio Maçom")}
+                          <span className="text-[11px] font-medium text-emerald-100/90">
+                            {c.payer_type === "demolay"
+                              ? "DeMolay Ativo"
+                              : conselhoMembersMap.get(c.member_id)?.sponsoring_lodge || c.member?.masonic_lodge || "Conselho Consultivo"}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-emerald-100/70 font-mono tabular-nums">
-                          {c.due_date ? new Date(c.due_date).toLocaleDateString("pt-BR") : "28/11/2026"}
+                          {c.description ? (
+                            <span className="block text-[11px] text-white/90 font-sans font-semibold">
+                              {c.description}
+                            </span>
+                          ) : null}
+                          <span>Venc: {c.due_date ? new Date(c.due_date).toLocaleDateString("pt-BR") : "28/11/2026"}</span>
                         </td>
                         <td className="py-3 px-4 font-bold text-white font-mono tabular-nums">
                           R$ {Number(c.amount).toFixed(2).replace(".", ",")}
@@ -890,6 +1123,248 @@ export default function TesourariaPage() {
           </div>
         </div>
       </div>
+
+      {/* ========================================================= */}
+      {/* BARRA FLUTUANTE DE OPERAÇÕES EM LOTE PARA O TESOUREIRO    */}
+      {/* ========================================================= */}
+      {selectedChargeIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#0C1D14]/95 backdrop-blur-md border border-[#D9AA45]/50 rounded-2xl shadow-2xl p-4 sm:px-6 sm:py-3.5 flex flex-col sm:flex-row items-center gap-4 text-xs animate-in slide-in-from-bottom duration-200">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#D9AA45] animate-ping" />
+            <span className="font-bold text-white font-mono">
+              {selectedChargeIds.length} mensalidade(s) selecionada(s)
+            </span>
+            <span className="text-white/40">•</span>
+            <span className="font-extrabold text-[#D9AA45] text-sm font-mono tabular-nums">
+              Total: R$ {selectedTotalAmount.toFixed(2).replace(".", ",")}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsBatchConfirmModalOpen(true)}
+              className="btn-heraldico-esmeralda px-4 py-2 rounded-xl text-xs font-bold shadow-md cursor-pointer flex items-center gap-1.5"
+            >
+              <CheckCircle2 className="w-4 h-4 text-[#D9AA45]" />
+              <span>Dar Baixa em Lote</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleGenerateBatchPayLink}
+              disabled={isGeneratingBatchPay}
+              className="btn-heraldico-ouro px-4 py-2 rounded-xl text-xs font-bold shadow-md cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+            >
+              <QrCode className="w-4 h-4" />
+              <span>{isGeneratingBatchPay ? "Gerando..." : "Gerar PIX em Lote"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedChargeIds([])}
+              className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 cursor-pointer"
+              title="Limpar seleção"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CONFIRMAÇÃO DE BAIXA EM LOTE PELO TESOUREIRO */}
+      {isBatchConfirmModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-lg p-6 sm:p-7 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/40 shadow-2xl space-y-5 text-white animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-base font-bold">Confirmar Baixa de Pagamento em Lote</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBatchConfirmModalOpen(false)}
+                className="text-gray-400 hover:text-white cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <p className="text-gray-300">
+                Você está confirmando o recebimento de{" "}
+                <strong className="text-white">{selectedChargeIds.length} mensalidades</strong> totalizando{" "}
+                <strong className="text-[#D9AA45] text-sm font-mono">
+                  R$ {selectedTotalAmount.toFixed(2).replace(".", ",")}
+                </strong>
+                .
+              </p>
+
+              {/* Lista resumida das cobranças */}
+              <div className="max-h-44 overflow-y-auto space-y-1.5 p-3 rounded-xl bg-black/40 border border-white/10">
+                {selectedChargesList.map((c) => (
+                  <div key={c.id} className="flex items-center justify-between text-[11px] text-gray-300">
+                    <span className="truncate max-w-[240px]">
+                      {c.payer_name} — {c.description || "Mensalidade"}
+                    </span>
+                    <span className="font-mono font-bold text-white">
+                      R$ {Number(c.amount).toFixed(2).replace(".", ",")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Forma de Pagamento */}
+              <div className="space-y-1">
+                <label className="font-bold text-emerald-200">Forma de Pagamento Confirmada:</label>
+                <select
+                  value={batchPaymentMethod}
+                  onChange={(e) => setBatchPaymentMethod(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-[#08140E] border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                >
+                  <option value="baixa_manual">Baixa Manual Tesouraria</option>
+                  <option value="pix">PIX Capitular</option>
+                  <option value="dinheiro">Dinheiro em Mãos</option>
+                  <option value="transferencia">Transferência Bancária</option>
+                  <option value="infinitepay">InfinitePay / Cartão</option>
+                </select>
+              </div>
+
+              {/* Observações Opcionais */}
+              <div className="space-y-1">
+                <label className="font-bold text-emerald-200">Observações Contábeis (Opcional):</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Recebido em reunião pelo Irmão Tesoureiro"
+                  value={batchNotes}
+                  onChange={(e) => setBatchNotes(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-[#08140E] border border-white/20 text-white placeholder-emerald-100/30 focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setIsBatchConfirmModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleBatchConfirm}
+                disabled={isBatchConfirming}
+                className="btn-heraldico-esmeralda px-5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {isBatchConfirming ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Check className="w-3.5 h-3.5" />
+                )}
+                <span>{isBatchConfirming ? "Confirmando..." : "Confirmar Baixas"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: PIX & LINK EM LOTE GERADO PARA COBRANÇA */}
+      {isBatchPayModalOpen && batchPayData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-md p-6 sm:p-7 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/40 shadow-2xl space-y-4 text-white animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-[#D9AA45]" />
+                <h3 className="text-base font-bold">Cobrança Consolidada Gerada</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBatchPayModalOpen(false)}
+                className="text-gray-400 hover:text-white cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs text-center">
+              <p className="text-gray-300">
+                Cobrança de <strong>{batchPayData.count} mensalidade(s)</strong> no valor total de{" "}
+                <strong className="text-lg text-[#D9AA45] font-mono block mt-1">
+                  R$ {batchPayData.totalAmount.toFixed(2).replace(".", ",")}
+                </strong>
+              </p>
+
+              {/* QR Code PIX */}
+              {batchPayData.pixQrCodeUrl && (
+                <div className="flex justify-center p-4 bg-white rounded-2xl max-w-[200px] mx-auto shadow-lg">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={batchPayData.pixQrCodeUrl}
+                    alt="QR Code PIX em Lote"
+                    className="w-40 h-40 object-contain"
+                  />
+                </div>
+              )}
+
+              {/* Código Pix Copia e Cola */}
+              <div className="space-y-1.5 text-left">
+                <label className="text-[11px] font-bold text-emerald-200 uppercase font-mono">
+                  Código Pix Copia e Cola:
+                </label>
+                <div className="flex items-center gap-2 bg-black/50 p-2.5 rounded-xl border border-white/10">
+                  <input
+                    type="text"
+                    readOnly
+                    value={batchPayData.pixPayload}
+                    className="w-full bg-transparent font-mono text-[11px] text-emerald-300 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(batchPayData.pixPayload);
+                      setPixBatchCopied(true);
+                      setTimeout(() => setPixBatchCopied(false), 2500);
+                    }}
+                    className="p-1.5 rounded-lg bg-[#D9AA45] text-black font-bold shrink-0 cursor-pointer"
+                    title="Copiar Pix"
+                  >
+                    {pixBatchCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                {pixBatchCopied && (
+                  <p className="text-[10px] text-emerald-400 font-bold font-mono">✓ Pix copiado!</p>
+                )}
+              </div>
+
+              {/* Botão para Compartilhar / Enviar via WhatsApp */}
+              <div className="pt-2">
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(
+                    `Olá! Segue o Pix para pagamento consolidado de ${batchPayData.count} mensalidade(s) do Capítulo Carvalho Neves nº 500 no valor de R$ ${batchPayData.totalAmount.toFixed(2).replace(".", ",")}:\n\n${batchPayData.pixPayload}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-heraldico-esmeralda w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                >
+                  <Send className="w-4 h-4 text-[#D9AA45]" />
+                  <span>Enviar Pix via WhatsApp</span>
+                </a>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setIsBatchPayModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL: PIX & INFINITEPAY AUTOMÁTICO */}
       {isPixModalOpen && (
@@ -997,7 +1472,7 @@ export default function TesourariaPage() {
               <h3 className="text-lg font-bold">Gerar Mensalidades em Lote</h3>
             </div>
             <p className="text-xs text-emerald-200/80 leading-relaxed font-light">
-              O sistema lançará automaticamente a cobrança de <strong>R$ 22,00</strong> para os 35 DeMolays Ativos e <strong>R$ 25,00</strong> para os 27 Tios Maçons, com vencimento padronizado no <strong>dia 28 (final do mês)</strong>.
+              O sistema lançará a cobrança de <strong>R$ 25,00</strong> para os integrantes ativos do Conselho Consultivo, com vencimento no <strong>dia 28</strong>.
             </p>
 
             <form onSubmit={handleGenerateMonthlyCharges} className="space-y-3.5 text-xs">
@@ -1078,7 +1553,7 @@ export default function TesourariaPage() {
                 <strong>
                   {selectedPeriod
                     ? `${new Date(selectedPeriod.year, selectedPeriod.month - 1).toLocaleString("pt-BR", { month: "long" }).toUpperCase()} DE ${selectedPeriod.year}`
-                    : "MÊS CORRENTE"}
+                    : "TODAS AS COMPETÊNCIAS / ACERVO COMPLETO"}
                 </strong>{" "}
                 • Vencimento Base: Dia 28
               </p>
@@ -1090,11 +1565,11 @@ export default function TesourariaPage() {
             {/* Quatro Indicadores Chave */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3.5 rounded-lg bg-black/30 border border-white/10 text-center">
-                <span className="text-[10px] uppercase font-bold text-gray-300 font-mono">Total Esperado</span>
+                <span className="text-[10px] uppercase font-bold text-gray-300 font-mono">Total Previsto</span>
                 <p className="text-lg font-bold text-white mt-1 font-mono tabular-nums">
                   R$ {stats.totalPrevisto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </p>
-                <p className="text-[10px] text-gray-400 font-mono tabular-nums">{stats.qtdTotal} mensalidades</p>
+                <p className="text-[10px] text-gray-400 font-mono tabular-nums">{stats.qtdTotal} registros</p>
               </div>
 
               <div className="p-3.5 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-center">
@@ -1122,7 +1597,6 @@ export default function TesourariaPage() {
 
             {/* Detalhamento por Categoria */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              {/* Conselho Consultivo (Maçons Pagantes) */}
               <div className="p-4 rounded-lg bg-black/30 border border-amber-500/30 space-y-2">
                 <div className="flex items-center justify-between pb-2 border-b border-white/10">
                   <span className="font-bold text-[#D9AA45]">Conselho Consultivo (R$ {priceMacom},00)</span>
@@ -1143,26 +1617,29 @@ export default function TesourariaPage() {
                       R$ {(stats.qtdConselho * priceMacom).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </strong>
                   </p>
-                  <p className="flex justify-between">
-                    <span>Pendente:</span>
-                    <strong className="text-amber-300">
-                      R$ {((stats.qtdConselho - stats.pagoConselho) * priceMacom).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                    </strong>
-                  </p>
                 </div>
               </div>
 
-              {/* DeMolays e Demais Membros */}
-              <div className="p-4 rounded-lg bg-black/30 border border-emerald-500/30 space-y-2 flex flex-col justify-between">
+              <div className="p-4 rounded-lg bg-black/30 border border-emerald-500/30 space-y-2">
                 <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                  <span className="font-bold text-emerald-300">DeMolays e Sêniores</span>
-                  <span className="font-mono text-[10px] text-emerald-300 uppercase">Isentos de Mensalidade</span>
+                  <span className="font-bold text-emerald-300">DeMolays Ativos (R$ 22,00)</span>
+                  <span className="font-mono text-[11px] text-emerald-300 tabular-nums">
+                    {stats.pagoDemolay} / {stats.qtdDemolay} quitadas
+                  </span>
                 </div>
-                <p className="text-[11px] text-emerald-100/70 leading-relaxed font-light">
-                  De acordo com as normas institucionais, somente os Maçons que integram o Conselho Consultivo possuem mensalidade vinculada ao Capítulo.
-                </p>
-                <div className="p-2 rounded bg-black/40 border border-white/5 text-[10px] text-gray-400 font-mono">
-                  Contribuição fixada exclusivamente para conselheiros ativos.
+                <div className="space-y-1 text-gray-300 font-mono tabular-nums">
+                  <p className="flex justify-between">
+                    <span>Arrecadado:</span>
+                    <strong className="text-white">
+                      R$ {(stats.pagoDemolay * 22).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </strong>
+                  </p>
+                  <p className="flex justify-between">
+                    <span>Esperado Total:</span>
+                    <strong className="text-white">
+                      R$ {(stats.qtdDemolay * 22).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </strong>
+                  </p>
                 </div>
               </div>
             </div>
@@ -1170,7 +1647,7 @@ export default function TesourariaPage() {
             {/* Observações da Tesouraria */}
             <div className="p-3.5 rounded-lg bg-black/20 border border-white/10 text-xs text-emerald-100/80 leading-relaxed font-light">
               <p>
-                O presente relatório consolida os lançamentos contábeis e as baixas de pagamentos efetuadas via PIX, InfinitePay ou dinheiro em mãos, atestando a regularidade financeira e a transparência perante o Conselho Consultivo e o Capítulo.
+                O presente relatório consolida os lançamentos contábeis e as baixas de pagamentos efetuadas via PIX, InfinitePay ou baixa manual em mãos, atestando a regularidade financeira e a transparência perante o Conselho Consultivo e o Capítulo.
               </p>
             </div>
 
@@ -1236,20 +1713,8 @@ export default function TesourariaPage() {
                       className="w-full pl-10 pr-3 py-2 rounded-lg bg-[#08140E] border border-white/20 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#D9AA45] font-mono tabular-nums"
                     />
                   </div>
-                  <span className="text-[10px] text-emerald-300/70 mt-1 block font-mono">Valor padrão vigente: R$ 25,00</span>
+                  <span className="text-[10px] text-emerald-300/70 mt-1 block font-mono">Valor padrão: R$ 25,00</span>
                 </div>
-
-                <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-[11px] text-emerald-200">
-                  <p>
-                    <strong>Regra Institucional:</strong> DeMolays e Sêniores são isentos de mensalidade capitular. Somente os Maçons que pertencem ao Conselho Consultivo pagam a mensalidade.
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-lg bg-black/20 border border-white/10 text-[11px] text-gray-300">
-                <p>
-                  <strong>Vencimento:</strong> Todo dia 28 do mês. A atualização recalculará os saldos previstos e pendentes.
-                </p>
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
@@ -1277,7 +1742,6 @@ export default function TesourariaPage() {
       {quitacaoMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
           <div className="w-full max-w-2xl p-6 sm:p-8 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/40 text-white shadow-2xl space-y-6 relative print:border-none print:shadow-none print:p-0 animate-in zoom-in-95">
-            {/* Botão de Fechar */}
             <button
               type="button"
               onClick={() => setQuitacaoMember(null)}
@@ -1286,7 +1750,6 @@ export default function TesourariaPage() {
               ✕
             </button>
 
-            {/* Cabeçalho Oficial Timbrado */}
             <div className="text-center space-y-2 border-b border-[#D9AA45]/40 pb-5">
               <span className="text-[10px] font-bold uppercase tracking-widest text-[#D9AA45] font-mono">
                 Ordem DeMolay • Capítulo Professor Carvalho Neves Nº 500
@@ -1299,10 +1762,9 @@ export default function TesourariaPage() {
               </p>
             </div>
 
-            {/* Texto da Declaração */}
             <div className="space-y-4 text-sm leading-relaxed text-emerald-100/90 text-justify font-light">
               <p>
-                A Tesouraria do <strong>Capítulo Professor Carvalho Neves Nº 500</strong>, no uso de suas atribuições estatutárias e regimentais, declara para os devidos fins de comprovação e regularidade capitular que o {quitacaoMember.type === "macom" ? "Tio Maçom" : "Irmão DeMolay"}:
+                A Tesouraria do <strong>Capítulo Professor Carvalho Neves Nº 500</strong> declara para os devidos fins de comprovação e regularidade capitular que o {quitacaoMember.type === "macom" ? "Tio Maçom" : "Irmão DeMolay"}:
               </p>
 
               <div className="p-4 rounded-lg bg-black/40 border border-white/10 space-y-1">
@@ -1315,15 +1777,14 @@ export default function TesourariaPage() {
               </div>
 
               <p>
-                Encontra-se devidamente <strong>QUITADO E ADIMPLENTE</strong> com suas obrigações financeiras e mensalidades regimentais perante esta Instituição referente ao período de <strong>{quitacaoMember.period}</strong>.
+                Encontra-se devidamente <strong>QUITADO E ADIMPLENTE</strong> com suas obrigações financeiras perante esta Instituição referente ao período de <strong>{quitacaoMember.period}</strong>.
               </p>
 
               <p className="text-xs text-emerald-200/60">
-                A presente declaração possui validade legal e fraternal de 90 (noventa) dias a contar de sua data de emissão.
+                A presente declaração possui validade de 90 (noventa) dias a contar de sua data de emissão.
               </p>
             </div>
 
-            {/* Rodapé e Autenticação */}
             <div className="pt-6 border-t border-[#D9AA45]/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
               <div>
                 <span className="block text-[10px] text-gray-400">Código de Verificação de Autenticidade:</span>

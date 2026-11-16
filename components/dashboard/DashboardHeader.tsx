@@ -131,11 +131,6 @@ export function DashboardHeader() {
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider bg-[#087443]/25 text-emerald-300 border border-[#087443]/40">
             Gestão XXV (2026.2)
           </span>
-
-          <span className="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold text-emerald-300/80 bg-white/[0.03]">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span>Sistema Ativo</span>
-          </span>
         </div>
       </div>
 
@@ -155,9 +150,9 @@ export function DashboardHeader() {
 
         {/* Chip do Usuário Logado */}
         <Link
-          href="/dashboard/membro"
+          href="/dashboard/perfil"
           className="flex items-center gap-2.5 p-1 sm:px-2.5 sm:py-1 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C59B3F]"
-          title="Acessar Meu Autoatendimento"
+          title="Acessar Meu Perfil"
         >
           <div className="w-8 h-8 rounded-full bg-[#087443] border border-[#C59B3F]/60 flex items-center justify-center text-xs font-bold text-white overflow-hidden shrink-0">
             {avatarPath ? (

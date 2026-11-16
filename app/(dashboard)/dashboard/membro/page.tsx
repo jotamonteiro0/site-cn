@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ProfilePhotoCropper } from "@/components/ui/ProfilePhotoCropper";
 import {
@@ -22,6 +23,7 @@ import {
   Check,
   CalendarCheck,
   UserCheck,
+  User,
   Camera,
   Users,
   Download,
@@ -340,7 +342,7 @@ export default function MemberSelfServicePage() {
         const memId = member.id;
 
         // Executa as consultas do membro em paralelo
-        const [attRes, chgRes, reqRes, declRes, conselhoRes] = await Promise.all([
+        const [attRes, chgRes, reqRes, declRes] = await Promise.all([
           supabase
             .from("meeting_attendance")
             .select("id, meeting_id, status, rsvp_status, rsvp_notes")
@@ -360,12 +362,6 @@ export default function MemberSelfServicePage() {
             .select("id, declaration_type, verification_code, valid_until, created_at, period_start, period_end, content_data")
             .eq("member_id", memId)
             .order("created_at", { ascending: false }),
-          supabase
-            .from("conselho_membros")
-            .select("id")
-            .eq("member_id", memId)
-            .eq("is_active", true)
-            .maybeSingle(),
         ]);
 
         // A. Frequência / Presença
@@ -379,17 +375,12 @@ export default function MemberSelfServicePage() {
 
         // B. Mensalidades / Cobranças
         if (chgRes.data) {
-          // Regra Institucional Definitiva: Todo integrante ativo do Conselho Consultivo deve pagar mensalidade (R$ 25,00).
-          // DeMolays ativos, Sêniores fora do Conselho e José Airton (102836) são isentos de cobrança.
+          // Regra Institucional: José Airton (102836) não possui cobranças ativas
           if (member.id_demolay === "102836" || member.full_name?.toLowerCase().includes("airton")) {
             setCharges([]);
           } else {
-            const isConselhoAtivo = !!conselhoRes.data;
-            if (!isConselhoAtivo) {
-              setCharges([]);
-            } else {
-              setCharges(chgRes.data as ChargeItem[]);
-            }
+            // Membros elegíveis (DeMolays ativos e integrantes do Conselho) visualizam suas respectivas cobranças
+            setCharges((chgRes.data as ChargeItem[]) || []);
           }
         }
 
@@ -861,6 +852,14 @@ export default function MemberSelfServicePage() {
                   <Camera className="w-3 h-3" />
                   <span>{currentMember?.photo_url ? "Trocar foto de perfil" : "Adicionar foto de perfil"}</span>
                 </label>
+                <span className="text-white/30">•</span>
+                <Link
+                  href="/dashboard/perfil"
+                  className="inline-flex items-center gap-1.5 text-[#D9AA45] hover:text-amber-200 font-medium hover:underline transition-colors"
+                >
+                  <User className="w-3 h-3" />
+                  <span>Editar Perfil Completo (SISDM)</span>
+                </Link>
               </div>
             </div>
           </div>
@@ -953,7 +952,7 @@ export default function MemberSelfServicePage() {
           }`}
         >
           <CalendarCheck className="w-4 h-4" />
-          Assiduidade & Frequência
+          Frequência
         </button>
 
         <button
