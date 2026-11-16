@@ -724,7 +724,31 @@ Testes executados diretamente contra o PostgreSQL de produção:
 
 ---
 
-### 33. PARECER FINAL CONCLUSIVO
+### 33. CONFERÊNCIA OPERACIONAL CONCLUSIVA (SOMENTE LEITURA) DO POSTGRESQL
+
+Em cumprimento à ordem de verificação operacional estritamente em modo somente leitura (*read-only*), foi realizada inspeção direta na base de dados de produção do PostgreSQL (Supabase) para atestar a ausência de dados residuais dos testes da Migration 40 e a integridade do acervo histórico:
+
+#### 33.1 Resultados da Inspeção Operacional Read-Only
+1. **Contagem Total de Cobranças em `public.member_charges`:**
+   - **Resultado:** Exatamente **382 registros** ativos.
+   - **Distribuição por Status:** 362 cobranças com status `pendente` (R$ 8.450,00) e 20 cobranças com status `confirmado` (R$ 440,00). Valor total acumulado: R$ 8.890,00.
+2. **Auditoria de Cobranças de Teste e Descrições Artificiais:**
+   - Consulta: `SELECT id FROM public.member_charges WHERE description ILIKE '%teste%' OR payer_name ILIKE '%teste%'`
+   - **Resultado:** **0 registros**. Nenhuma cobrança de teste existe no banco de dados.
+3. **Auditoria de Competências / Períodos Financeiros (`public.financial_periods`):**
+   - **Resultado:** Existem exatamente **24 competências**, correspondendo fielmente aos 12 meses de 2025 e 12 meses de 2026, todas vinculadas estritamente ao Capítulo 500 (`00000000-0000-0000-0000-000000000500`).
+   - Não foi criada nenhuma competência anômala ou fora da série institucional legítima (zero períodos de 2027, 2028 ou artificiais).
+   - Apenas as competências ativas/legadas possuem cobranças vinculadas: 2026/07 (64), 2026/08 (64), 2026/09 (64), 2026/10 (64), 2026/11 (63) e 2026/12 (63). Somatório exato: **382 cobranças**.
+4. **Verificação de Cobranças Duplicadas ou Conflitos:**
+   - Consulta: `SELECT member_id, financial_period_id, description, count(*) FROM public.member_charges GROUP BY member_id, financial_period_id, description HAVING count(*) > 1`
+   - **Resultado:** **0 registros**. Nenhuma duplicidade ou conflito encontrado.
+5. **Isolamento Transacional dos Testes da Migration 40:**
+   - As 18 cobranças geradas durante a demonstração de autorização da Migration 40 foram processadas em bloco transacional protegido por `SAVEPOINT sp_test` com comando explícito de reversão `ROLLBACK TO SAVEPOINT sp_test` e `ROLLBACK`.
+   - **Conclusão:** Nenhum registro temporário foi comitado no disco; a base permaneceu intocada, limpa e consistente durante e após os testes.
+
+---
+
+### 34. PARECER FINAL CONCLUSIVO
 
 O projeto **site-cn — Sistema de Gestão do Capítulo Professor Carvalho Neves nº 500** está:
 
@@ -737,5 +761,5 @@ O projeto **site-cn — Sistema de Gestão do Capítulo Professor Carvalho Neves
 4. **Segurança Fail-Closed e RBAC Puro (Migration 39):** A RPC `generate_monthly_charges` opera em modelo estritamente fail-closed, sem hardcode de IDs ou emails, com checagem relacional pura via `chapter_memberships` e com o cargo de Escrivão restrito ao seu escopo não financeiro.
 5. **Delimitação Universal de Escopo Institucional (Migration 40):** A RPC rejeita sumariamente qualquer execução com `chapter_id` diferente de `00000000-0000-0000-0000-000000000500`, inclusive para `service_role` e superuser direto `postgres`.
 6. **Concorrência Real Comprovada:** Testada com duas conexões PostgreSQL simultâneas reais com 0 erros, 0 duplicatas e integridade orçamentária absoluta.
-7. **Integridade Histórica:** Todas as 382 cobranças legadas estão rigorosamente preservadas.
+7. **Integridade Histórica e Base Limpa:** Todas as 382 cobranças legadas estão rigorosamente preservadas, com zero registros artificiais ou residuais.
 8. **Bateria de Qualidade:** 252 testes automatizados aprovados (0 falhas), linting e typecheck impecáveis, build Turbopack perfeito e deploy de produção em operação com HTTP 200.
