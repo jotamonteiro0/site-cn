@@ -560,7 +560,112 @@ Em atendimento à ordem de auditoria conclusiva, foi realizada a verificação e
 
 ---
 
-### 29. PARECER FINAL CONCLUSIVO
+### 30. VERIFICAÇÃO FINAL DE SEGURANÇA E AUTORIZAÇÃO DA RPC (MIGRATION 39)
+
+Em atendimento à determinação de auditoria de segurança aprofundada da RPC `public.generate_monthly_charges(uuid, smallint, smallint)`, foi implementada e aplicada em produção a **Migration 39** (`20261116000039_conselho_rpc_fail_closed_security.sql`).
+
+#### 30.1 Diagnóstico do Risco de Fail-Open e Solução Arquitetural
+Na Migration 38, o bloco de autorização utilizava:
+```sql
+IF coalesce((auth.jwt() ->> 'role'), '') IN ('authenticated', 'anon') THEN
+  -- checagens de permissão
+END IF;
+```
+Esse formato apresentava potencial fragilidade de *fail-open*: se a requisição chegasse com contexto JWT ausente (`NULL`), claim `role` inexistente ou valor não previsto, a condição `IN ('authenticated', 'anon')` avaliava para falso e o fluxo ultrapassaria o bloco sem executar nenhuma validação de permissão.
+
+**Correção Implementada (Fail-Closed Absoluto):**
+A Migration 39 implementou inspeção de role em duas camadas com terminação explícita em exceção:
+1. **Detecção do Contexto de Execução:**
+   ```sql
+   v_req_role := coalesce(nullif(current_setting('role', true), 'none'), (auth.jwt() ->> 'role'), '');
+   ```
+2. **Branch Superuser / Service Role (Ambiente Interno e Jobs Automatizados):**
+   ```sql
+   IF v_req_role = 'service_role' OR (session_user = 'postgres' AND v_req_role = '') THEN
+     -- Acesso administrativo de sistema autorizado
+     NULL;
+   ```
+3. **Branch Authenticated (Usuários Web PostgREST):**
+   ```sql
+   ELSIF v_req_role = 'authenticated' AND auth.uid() IS NOT NULL THEN
+     -- Validação estrita de RBAC e vinculação ao p_chapter_id
+     ...
+     IF NOT v_is_authorized THEN
+       RAISE EXCEPTION 'Acesso negado: Somente administradores da Tesouraria e Masters podem gerar cobranças para este capítulo.';
+     END IF;
+   ```
+4. **Branch Fail-Closed (Bloqueio Mandatório para Qualquer Outro Cenário):**
+   ```sql
+   ELSE
+     RAISE EXCEPTION 'Acesso negado: Somente administradores da Tesouraria e Masters podem gerar cobranças para este capítulo.';
+   END IF;
+   ```
+Dessa forma, qualquer contexto sem JWT válido, com `auth.uid() IS NULL`, role desconhecido ou manipulado cai imediatamente no `ELSE` com recusa formal da transação.
+
+#### 30.2 Eliminação de Hardcode e Integração Estrita ao RBAC
+Foram eliminados todos os identificadores fixos e endereços de email que constavam no código SQL (`127738`, `102836`, `joaomonteiro0@icloud.com`, `airton@carvalhoneves500.org.br`).
+- A autorização agora decorre exclusivamente da consulta relacional à tabela canônica de RBAC:
+  ```sql
+  SELECT EXISTS (
+    SELECT 1 FROM public.chapter_memberships cm
+    JOIN public.members m ON m.id = cm.member_id
+    WHERE cm.chapter_id = p_chapter_id
+      AND cm.is_active = true
+      AND m.auth_user_id = auth.uid()
+      AND cm.role_code IN ('master', 'admin', 'tesoureiro')
+  ) OR EXISTS (
+    SELECT 1 FROM public.member_management_positions mmp
+    JOIN public.management_positions mp ON mp.id = mmp.management_position_id
+    JOIN public.managements mg ON mg.id = mp.management_id
+    JOIN public.members m ON m.id = mmp.member_id
+    WHERE mg.chapter_id = p_chapter_id
+      AND mg.status = 'ativa'
+      AND mmp.is_active = true
+      AND m.auth_user_id = auth.uid()
+      AND mp.name IN ('Tesoureiro', 'Mestre Conselheiro')
+  ) INTO v_is_authorized;
+  ```
+- **Confirmação dos Masters no RBAC:**
+  - **João Guilherme Martins Lopes Monteiro (ID 127738):** Possui registro ativo em `public.chapter_memberships` com `chapter_id = '00000000-0000-0000-0000-000000000500'`, `role_code = 'master'` e `is_active = true`. Autorizado via RBAC.
+  - **José Airton de Carvalho (ID 102836):** Possui registro ativo em `public.chapter_memberships` com `chapter_id = '00000000-0000-0000-0000-000000000500'`, `role_code = 'master'` e `is_active = true`. Autorizado via RBAC.
+
+#### 30.3 Restrição de Competência: Exclusão do Cargo de Escrivão
+Conforme o regulamento capitular e a arquitetura de segurança do sistema:
+- O cargo de Escrivão possui atribuição exclusivamente secretarial e notarial (atas, presenças, nominatas e correspondências), não possuindo competência financeira.
+- As políticas de Row Level Security (RLS) das tabelas `public.member_charges` e `public.financial_periods`, bem como a rota `/dashboard/tesouraria`, restringem o acesso a `master` e `tesoureiro`.
+- Em estrito respeito ao **Princípio do Menor Privilégio**, a Migration 39 revogou qualquer concessão de geração de cobranças para o cargo de Escrivão.
+
+#### 30.4 Preservação e Revisão das Demais Regras da Migration 38
+- **Índice Único Parcial:** `uq_conselho_membros_mgmt_member_active ON (management_id, member_id) WHERE is_active = true` plenamente ativo.
+- **Histórico Temporal:** Afastamentos e retornos mantidos na tabela `conselho_membros` com datas `starts_at` e `ended_at` auditáveis.
+- **Cobranças de Múltiplas Modalidades:** Garantida a coexistência de taxas extraordinárias através da chave canônica `(member_id, financial_period_id, description)`.
+- **Criação Atômica de Períodos:** `INSERT INTO financial_periods ... ON CONFLICT DO NOTHING` assegura concorrência idempotente.
+- **Previsão de Mensalidades:** 18 integrantes ativos do Conselho Consultivo geram R$ 450,00 mensais (R$ 25,00 por membro).
+- **Carlos André (ID 134106):** Classificado com `payer_type = 'demolay'` (Sênior DeMolay não Maçom pagante).
+- **José Airton (ID 102836):** Isento por critério relacional (ausente de `conselho_membros`), com zero pendências financeiras e Acesso Master preservado.
+- **Cobranças Históricas:** Exatamente **382** cobranças legadas preservadas sem alteração.
+
+#### 30.5 Comprovação Prática dos 10 Cenários de Autorização e Falha
+Foi executada bateria de testes automatizados diretamente contra o PostgreSQL de produção simulando cada contexto de conexão PostgREST e SQL:
+
+| Nº | Cenário Testado | Contexto / Identidade Simulada | Resultado Esperado | Resultado Real | Exceção Retornada / Observação |
+|:---:|:---|:---|:---:|:---:|:---|
+| **1** | Chamada Direta Superuser | Sessão direta PostgreSQL (`session_user = 'postgres'`) | Permitida | **PERMITIDO** | Sucesso: Executou geração com retorno de 18 registros (ou 0 idempotente). |
+| **2** | Chamada PostgREST service_role | PostgREST com `role = 'service_role'` | Permitida | **PERMITIDO** | Sucesso: Executou com retorno idempotente (0 novas cobranças geradas). |
+| **3** | PostgREST com JWT Nulo | Contexto web autenticado com JWT ausente | Bloqueada | **BLOQUEADO** | `error: Acesso negado: Somente administradores da Tesouraria e Masters podem gerar cobranças para este capítulo.` |
+| **4** | PostgREST com Role Inesperado | JWT contendo claim `role = 'unknown_role'` | Bloqueada | **BLOQUEADO** | `error: Acesso negado: Somente administradores da Tesouraria e Masters podem gerar cobranças para este capítulo.` |
+| **5** | PostgREST com auth.uid() IS NULL | Contexto autenticado sem identificador de usuário | Bloqueada | **BLOQUEADO** | `error: Acesso negado: Somente administradores da Tesouraria e Masters podem gerar cobranças para este capítulo.` |
+| **6** | Membro Comum sem Função Financeira | Membro autenticado sem cargo na Tesouraria | Bloqueada | **BLOQUEADO** | `error: Acesso negado: Somente administradores da Tesouraria e Masters podem gerar cobranças para este capítulo.` |
+| **7** | Tentativa por Escrivão | Usuário autenticado ocupando cargo de Escrivão | Bloqueada | **BLOQUEADO** | `error: Acesso negado: Somente administradores da Tesouraria e Masters podem gerar cobranças para este capítulo.` |
+| **8** | Manipulação de Capítulo Arbitrário | Master tentando gerar cobrança para capítulo externo | Bloqueada | **BLOQUEADO** | `error: Acesso negado: Somente administradores da Tesouraria e Masters podem gerar cobranças para este capítulo.` |
+| **9** | Master João Guilherme (ID 127738) | Autenticado como João Guilherme via RBAC | Permitida | **PERMITIDO** | Sucesso: Autorizado via registro ativo em `chapter_memberships` (`role_code = 'master'`). |
+| **10** | Master José Airton (ID 102836) | Autenticado como José Airton via RBAC | Permitida | **PERMITIDO** | Sucesso: Autorizado via registro ativo em `chapter_memberships` (`role_code = 'master'`). |
+
+**Contagem Final de Cobranças Históricas Preservadas:** Exatamente **382** cobranças em `public.member_charges`.
+
+---
+
+### 31. PARECER FINAL CONCLUSIVO
 
 O projeto **site-cn — Sistema de Gestão do Capítulo Professor Carvalho Neves nº 500** está:
 
@@ -570,7 +675,7 @@ O projeto **site-cn — Sistema de Gestão do Capítulo Professor Carvalho Neves
 1. **Regra de Mensalidades 100% Homologada:** Todo integrante de `public.conselho_membros` é cobrado em R$ 25,00 mensais (18 membros ativos = R$ 450,00/mês). Carlos André (ID 134106) paga como DeMolay (`payer_type = 'demolay'`), preservando sua condição de Sênior DeMolay não Maçom. José Airton (ID 102836) está excluído estritamente por via relacional (zero cobranças, zero pendências, Acesso Master mantido).
 2. **Histórico Temporal Pleno:** A modelagem de `conselho_membros` com índice parcial ativo permite afastamentos e reingressos ilimitados na mesma gestão sem perda de memória institucional.
 3. **Multi-Modalidade Financeira Garantida:** A unicidade por `(member_id, financial_period_id, description)` protege contra duplicidades da mesma mensalidade sem bloquear taxas legítimas adicionais.
-4. **Segurança Criptográfica e RBAC Estrito:** A RPC `SECURITY DEFINER` valida a identidade PostgREST e impede manipulação de capítulos externos.
+4. **Segurança Fail-Closed e RBAC Puro (Migration 39):** A RPC `generate_monthly_charges` opera em modelo estritamente fail-closed, sem hardcode de IDs ou emails, com checagem relacional pura via `chapter_memberships` e com o cargo de Escrivão restrito ao seu escopo não financeiro.
 5. **Concorrência Real Comprovada:** Testada com duas conexões PostgreSQL simultâneas reais com 0 erros, 0 duplicatas e integridade orçamentária absoluta.
 6. **Integridade Histórica:** Todas as 382 cobranças legadas estão rigorosamente preservadas.
 7. **Bateria de Qualidade:** 252 testes automatizados aprovados (0 falhas), linting e typecheck impecáveis, build Turbopack perfeito e deploy de produção em operação com HTTP 200.
