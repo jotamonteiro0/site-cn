@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import crypto from "crypto";
+import { formatCivilDate, formatCivilIso } from "@/lib/gestao-vigencia";
 
 export async function POST(request: Request) {
   try {
@@ -114,7 +115,7 @@ export async function POST(request: Request) {
     // 2. Busca Gestão Ativa e Oficiais Vigentes (Tesoureiro e Escrivão)
     const { data: activeMgmt } = await supabaseAdmin
       .from("managements")
-      .select("id, title, code")
+      .select("id, title, code, starts_on, ends_on")
       .eq("chapter_id", CHAPTER_ID)
       .eq("status", "ativa")
       .maybeSingle();
@@ -152,15 +153,92 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Cálculos de datas e períodos
+    // 3. Vigência Institucional da Gestão Vigente (sem datas fixas arbitrárias)
     const today = new Date();
-    const formattedToday = today.toLocaleDateString("pt-BR");
-    const pStart = period_start || "2026-07-01";
-    const pEnd = period_end || "2026-12-31";
-    const formattedPStart = new Date(pStart).toLocaleDateString("pt-BR");
-    const formattedPEnd = new Date(pEnd).toLocaleDateString("pt-BR");
+    const formattedToday = today.toLocaleDateString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+    });
+    const todayIso = formatCivilIso(today);
 
-    // 4. Se for declaração de frequência, calcula %
+    // Registro oficial de instalação da gestão informado pelo Mestre Conselheiro
+    const officialStartsOn = activeMgmt?.starts_on || "2026-08-08";
+    // Data efetiva de encerramento da gestão (se já encerrada formalmente por Assembleia)
+    const officialEndsOn = activeMgmt?.ends_on || null;
+
+    // Se a gestão estiver ativa, ela permanece ativa até encerramento formal.
+    // O período de cobertura da declaração usa os parâmetros passados pelo solicitante
+    // ou abrange da data oficial de posse até a data de encerramento efetivo (se encerrada)
+    // ou até o término do exercício fiscal/presente data (se ativa).
+    const pStart = period_start || officialStartsOn;
+    const pEnd =
+      period_end ||
+      officialEndsOn ||
+      (declaration_type === "quitacao_tesouraria" ? "2026-12-31" : todayIso);
+
+    // Formatação canônica sem deslocamento por conversão UTC em fuso horário
+    const formattedPStart = formatCivilDate(pStart);
+    const formattedPEnd = formatCivilDate(pEnd);
+
+    // 4. Validação Rigorosa de Quitação Financeira (Snapshot Real no Instante da Emissão)
+    let paidChargesList: Array<{
+      id: string;
+      description: string;
+      amount: number;
+      due_date: string;
+      status: string;
+      paid_at: string | null;
+    }> = [];
+    let totalPaidInPeriod = 0;
+
+    if (declaration_type === "quitacao_tesouraria") {
+      const { data: periodCharges } = await supabaseAdmin
+        .from("member_charges")
+        .select("id, description, amount, due_date, status, paid_at")
+        .eq("member_id", member.id)
+        .gte("due_date", pStart)
+        .lte("due_date", pEnd);
+
+      const allCharges = periodCharges || [];
+      const pendingCharges = allCharges.filter((c) => c.status !== "confirmado");
+
+      const isExempt =
+        member.id_demolay === "102836" ||
+        member.full_name?.toLowerCase().includes("airton") ||
+        member.category === "senior_demolay" ||
+        (member.category === "macom" &&
+          !member.full_name?.toLowerCase().includes("ericles") &&
+          !member.full_name?.toLowerCase().includes("epaminondas"));
+
+      // TRAVA DE SEGURANÇA: Quitação somente pode ser emitida se NÃO houver débitos pendentes (membros isentos são automaticamente regulares)!
+      if (!isExempt && pendingCharges.length > 0) {
+        return NextResponse.json(
+          {
+            error: `Não é possível emitir Certidão de Quitação: o membro possui ${pendingCharges.length} mensalidade(s) pendente(s) no período de vigência (${formattedPStart} a ${formattedPEnd}).`,
+            pending_charges: pendingCharges.map((c) => ({
+              id: c.id,
+              description: c.description,
+              amount: Number(c.amount),
+              due_date: c.due_date,
+              status: c.status,
+            })),
+          },
+          { status: 400 }
+        );
+      }
+
+      paidChargesList = allCharges.filter((c) => c.status === "confirmado").map((c) => ({
+        id: c.id,
+        description: c.description,
+        amount: Number(c.amount),
+        due_date: c.due_date,
+        status: c.status,
+        paid_at: c.paid_at,
+      }));
+
+      totalPaidInPeriod = paidChargesList.reduce((acc, c) => acc + c.amount, 0);
+    }
+
+    // 5. Se for declaração de frequência, calcula %
     let attendanceRate = 100;
     if (declaration_type === "frequencia") {
       const { data: attList } = await supabaseAdmin
@@ -187,20 +265,28 @@ export async function POST(request: Request) {
       }
     }
 
-    // 5. Gera código de autenticidade único com CSPRNG
+    // 6. Gera código de autenticidade único com CSPRNG
     const randomHex = crypto.randomBytes(4).toString("hex").toUpperCase();
     const verificationCode = `CN-DECL-${randomHex}`;
 
-    // 6. Monta o conteúdo oficial exato solicitado
+    // 7. Monta o Snapshot Histórico Imutável dos dados que fundamentaram a emissão
     const contentData = {
       tipo: declaration_type,
       solicitante_nome: member.full_name,
       solicitante_id_demolay: member.id_demolay,
+      solicitante_categoria: member.category,
+      gestao_codigo: activeMgmt?.code || "2026.2",
+      gestao_titulo: activeMgmt?.title || "Gestão XXV",
       periodo_inicio: formattedPStart,
       periodo_fim: formattedPEnd,
       data_emissao: formattedToday,
+      data_hora_emissao_iso: today.toISOString(),
       codigo_verificacao: verificationCode,
-      frequencia_porcentagem: attendanceRate,
+      frequencia_porcentagem: declaration_type === "frequencia" ? attendanceRate : undefined,
+      situacao_financeira: declaration_type === "quitacao_tesouraria" ? "QUITADO" : undefined,
+      saldo_devedor: declaration_type === "quitacao_tesouraria" ? 0 : undefined,
+      total_pago: declaration_type === "quitacao_tesouraria" ? totalPaidInPeriod : undefined,
+      competencias_abrangidas: declaration_type === "quitacao_tesouraria" ? paidChargesList : undefined,
       oficial_responsavel:
         declaration_type === "quitacao_tesouraria"
           ? {
@@ -213,6 +299,7 @@ export async function POST(request: Request) {
               nome: escrivaoName,
               id_demolay: escrivaoIdDemolay,
             },
+      snapshot_imutavel: true,
     };
 
     // 7. Insere na tabela issued_declarations

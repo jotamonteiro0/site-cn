@@ -21,15 +21,13 @@ import {
   Copy,
   Check,
   CalendarCheck,
-  Heart,
-  Share2,
   UserCheck,
-  Info,
   Camera,
   Users,
   Download,
   MapPin,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles
 } from "lucide-react";
 import { HISTORICAL_MEETINGS } from "@/lib/data/historicalMeetings";
 import {
@@ -61,6 +59,7 @@ interface MeetingItem {
   location: string;
   status: string;
   description?: string;
+  management?: string;
   ata_pdf_url?: string | null;
   ata_num?: string;
   livro_demolay_page?: string;
@@ -70,6 +69,18 @@ interface MeetingItem {
   total_quorum?: number;
   demolays_present?: string[];
   masons_present?: string[];
+}
+
+function deriveManagementFromDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  if (year === 2026 && month >= 7) return "Gestão XXV (2026.2)";
+  if (year === 2026 && month < 7) return "Gestão XXIV (2026.1)";
+  if (year === 2025 && month >= 7) return "Gestão XXIII (2025.2)";
+  if (year === 2025 && month < 7) return "Gestão XXII (2025.1)";
+  if (year >= 2027) return "Gestão XXVI (2027.1)";
+  return "Gestão XXV (2026.2)";
 }
 
 interface AttendanceItem {
@@ -125,15 +136,6 @@ interface IssuedDeclarationItem {
   content_data?: DeclarationContentData;
 }
 
-interface BirthdayItem {
-  member_id: string;
-  full_name: string;
-  id_demolay: string;
-  birthday_formatted: string;
-  birth_day: number;
-  birth_month: number;
-}
-
 export default function MemberSelfServicePage() {
   const [currentMember, setCurrentMember] = useState<MemberData | null>(null);
   const [allMembers, setAllMembers] = useState<MemberData[]>([]);
@@ -142,16 +144,31 @@ export default function MemberSelfServicePage() {
   const [charges, setCharges] = useState<ChargeItem[]>([]);
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [declarations, setDeclarations] = useState<IssuedDeclarationItem[]>([]);
-  const [birthdays, setBirthdays] = useState<BirthdayItem[]>([]);
   const [selectedMeetingForQuorum, setSelectedMeetingForQuorum] = useState<MeetingItem | null>(null);
 
-  // Filtros de Data de Assiduidade
-  const [dateFilterStart, setDateFilterStart] = useState("2026-01-01");
+  // Filtros de Data de Assiduidade e Gestão Ativa (Instalação Oficial: 08/08/2026)
+  const [dateFilterStart, setDateFilterStart] = useState("2026-08-08");
   const [dateFilterEnd, setDateFilterEnd] = useState("2026-12-31");
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
 
+  // Múltiplas Mensalidades / Pagamento em Lote
+  const [selectedChargeIds, setSelectedChargeIds] = useState<string[]>([]);
+  const [isBatchPaying, setIsBatchPaying] = useState(false);
+  const [batchPaymentData, setBatchPaymentData] = useState<{
+    totalAmount: number;
+    count: number;
+    chargeIds: string[];
+    descriptions: string[];
+    pixPayload: string;
+    pixQrCodeUrl: string;
+    infinitePayUrl: string;
+    txid: string;
+  } | null>(null);
+  const [isBatchPayModalOpen, setIsBatchPayModalOpen] = useState(false);
+  const [batchPixCopied, setBatchPixCopied] = useState(false);
+
   // Estado da UI
-  const [activeTab, setActiveTab] = useState<"frequencia" | "reunioes" | "mensalidades" | "solicitacoes" | "aniversarios">("frequencia");
+  const [activeTab, setActiveTab] = useState<"frequencia" | "mensalidades" | "solicitacoes">("frequencia");
   const [isLoading, setIsLoading] = useState(true);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isCroppingPhoto, setIsCroppingPhoto] = useState(false);
@@ -181,6 +198,29 @@ export default function MemberSelfServicePage() {
   // Modal de Visualização de Declaração Emitida
   const [viewDeclaration, setViewDeclaration] = useState<IssuedDeclarationItem | null>(null);
 
+  // Sincronização de Aba com a URL (?tab=frequencia|mensalidades|solicitacoes)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const timer = setTimeout(() => {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get("tab");
+        if (tabParam && ["frequencia", "mensalidades", "solicitacoes"].includes(tabParam)) {
+          setActiveTab(tabParam as "frequencia" | "mensalidades" | "solicitacoes");
+        }
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleTabChange = (newTab: "frequencia" | "mensalidades" | "solicitacoes") => {
+    setActiveTab(newTab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", newTab);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
+
   // 1. Carrega Dados
   useEffect(() => {
     requestAnimationFrame(() => {
@@ -191,8 +231,8 @@ export default function MemberSelfServicePage() {
       try {
         const supabase = createClient();
 
-        // 1. Carrega usuário, membros, reuniões e aniversariantes em paralelo
-        const [authRes, memRes, meetRes, bRes] = await Promise.all([
+        // 1. Carrega usuário, membros e reuniões em paralelo
+        const [authRes, memRes, meetRes] = await Promise.all([
           supabase.auth.getUser(),
           supabase
             .from("members")
@@ -202,18 +242,27 @@ export default function MemberSelfServicePage() {
             .from("meetings")
             .select("id, title, starts_at, location, status, description")
             .order("starts_at", { ascending: true }),
-          supabase
-            .from("view_member_birthdays")
-            .select("member_id, full_name, id_demolay, birthday_formatted, birth_day, birth_month")
-            .order("birth_month", { ascending: true })
-            .order("birth_day", { ascending: true }),
         ]);
 
         const user = authRes.data?.user;
         const memData = memRes.data;
 
         if (memData && memData.length > 0) {
-          const typedMembers = memData as MemberData[];
+          const typedMembers: MemberData[] = (memData as MemberData[]).map((m) => {
+            if (m.id_demolay === "102836" || m.full_name === "Airton" || (m.full_name && m.full_name.toLowerCase().includes("airton"))) {
+              return {
+                ...m,
+                id_demolay: "102836",
+                full_name: "José Airton Rodrigues Galdino Júnior",
+                category: "senior_demolay" as const,
+                regularity: "Sênior DeMolay e Maçom",
+                masonic_lodge: "A∴R∴L∴S∴ Grande Mestre Alberto Mansur nº 4591",
+                email: "jarodriguesj1@gmail.com",
+                birth_date: "2002-04-29",
+              };
+            }
+            return m;
+          });
           setAllMembers(typedMembers);
 
           // Tenta encontrar o membro vinculado ao usuário logado
@@ -254,6 +303,7 @@ export default function MemberSelfServicePage() {
           );
           return {
             ...m,
+            management: hist?.management || deriveManagementFromDate(m.starts_at),
             status: m.status || hist?.status || "realizada",
             description: m.description || hist?.description,
             ata_pdf_url: hist?.ata_pdf_url || null,
@@ -269,10 +319,6 @@ export default function MemberSelfServicePage() {
         });
 
         setMeetings(enrichedMeetings);
-
-        // 3. Processa Aniversariantes
-        if (bRes.data) setBirthdays(bRes.data as BirthdayItem[]);
-
       } catch (err) {
         console.error("Erro ao carregar dados do membro:", err);
       } finally {
@@ -287,12 +333,14 @@ export default function MemberSelfServicePage() {
     if (!currentMember) return;
 
     async function loadMemberDetails() {
+      const member = currentMember;
+      if (!member) return;
       try {
         const supabase = createClient();
-        const memId = currentMember!.id;
+        const memId = member.id;
 
-        // Executa as 4 consultas do membro em paralelo
-        const [attRes, chgRes, reqRes, declRes] = await Promise.all([
+        // Executa as consultas do membro em paralelo
+        const [attRes, chgRes, reqRes, declRes, conselhoRes] = await Promise.all([
           supabase
             .from("meeting_attendance")
             .select("id, meeting_id, status, rsvp_status, rsvp_notes")
@@ -312,6 +360,12 @@ export default function MemberSelfServicePage() {
             .select("id, declaration_type, verification_code, valid_until, created_at, period_start, period_end, content_data")
             .eq("member_id", memId)
             .order("created_at", { ascending: false }),
+          supabase
+            .from("conselho_membros")
+            .select("id")
+            .eq("member_id", memId)
+            .eq("is_active", true)
+            .maybeSingle(),
         ]);
 
         // A. Frequência / Presença
@@ -325,7 +379,18 @@ export default function MemberSelfServicePage() {
 
         // B. Mensalidades / Cobranças
         if (chgRes.data) {
-          setCharges(chgRes.data as ChargeItem[]);
+          // Regra Institucional Definitiva: Todo integrante ativo do Conselho Consultivo deve pagar mensalidade (R$ 25,00).
+          // DeMolays ativos, Sêniores fora do Conselho e José Airton (102836) são isentos de cobrança.
+          if (member.id_demolay === "102836" || member.full_name?.toLowerCase().includes("airton")) {
+            setCharges([]);
+          } else {
+            const isConselhoAtivo = !!conselhoRes.data;
+            if (!isConselhoAtivo) {
+              setCharges([]);
+            } else {
+              setCharges(chgRes.data as ChargeItem[]);
+            }
+          }
         }
 
         // C. Solicitações
@@ -407,65 +472,20 @@ export default function MemberSelfServicePage() {
     };
   }, [filteredMeetings, attendances]);
 
+  // Mensalidades Pendentes e Cálculo Dinâmico de Lote
+  const pendingCharges = useMemo(() => charges.filter((c) => c.status !== "confirmado"), [charges]);
+
+  const selectedTotalAmount = useMemo(() => {
+    return charges
+      .filter((c) => selectedChargeIds.includes(c.id))
+      .reduce((acc, c) => acc + Number(c.amount || 0), 0);
+  }, [charges, selectedChargeIds]);
+
   // Próxima Reunião
   const nextMeeting = useMemo(() => {
     const today = currentDate ? currentDate.toISOString().substring(0, 10) : "2026-01-01";
     return meetings.find((m) => m.starts_at.substring(0, 10) >= today) || meetings[0] || null;
   }, [meetings, currentDate]);
-
-  // RSVP da Próxima Reunião
-  const nextMeetingAttendance = useMemo(() => {
-    if (!nextMeeting) return null;
-    return attendances[nextMeeting.id] || null;
-  }, [nextMeeting, attendances]);
-
-  // Handler: Confirmar Presença (RSVP)
-  const handleConfirmPresence = async () => {
-    if (!nextMeeting || !currentMember) return;
-    setIsSubmittingRsvp(true);
-    try {
-      const supabase = createClient();
-      const existing = attendances[nextMeeting.id];
-
-      if (existing?.id) {
-        await supabase
-          .from("meeting_attendance")
-          .update({
-            rsvp_status: "confirmado",
-            rsvp_at: new Date().toISOString(),
-          })
-          .eq("id", existing.id);
-      } else {
-        await supabase
-          .from("meeting_attendance")
-          .insert({
-            meeting_id: nextMeeting.id,
-            member_id: currentMember.id,
-            rsvp_status: "confirmado",
-            rsvp_at: new Date().toISOString(),
-            status: "ausente",
-          });
-      }
-
-      setAttendances((prev) => ({
-        ...prev,
-        [nextMeeting.id]: {
-          id: existing?.id || "temp",
-          meeting_id: nextMeeting.id,
-          status: existing?.status || "ausente",
-          rsvp_status: "confirmado",
-        },
-      }));
-
-      setFeedbackMsg("Presença confirmada com sucesso! O Capítulo conta com seu brilho na Coluna da Harmonia.");
-      setTimeout(() => setFeedbackMsg(""), 5000);
-    } catch (err) {
-      console.error("Erro ao confirmar presença:", err);
-      alert("Erro ao confirmar presença. Tente novamente.");
-    } finally {
-      setIsSubmittingRsvp(false);
-    }
-  };
 
   // Handler: Justificar Ausência (RSVP)
   const handleJustifyPresence = async () => {
@@ -556,7 +576,7 @@ export default function MemberSelfServicePage() {
     }
   };
 
-  // Handler: Emissão Instantânea de Declaração Oficial (PDF Automático)
+  // Handler: Emissão Instantânea de Declaração Oficial (PDF Automático com validação de quitação)
   const handleGenerateDeclaration = async (type: "quitacao_tesouraria" | "frequencia") => {
     if (!currentMember) return;
     setIsEmittingDecl(true);
@@ -567,14 +587,17 @@ export default function MemberSelfServicePage() {
         body: JSON.stringify({
           member_id: currentMember.id,
           declaration_type: type,
-          period_start: type === "frequencia" ? dateFilterStart : "2026-07-01",
-          period_end: type === "frequencia" ? dateFilterEnd : "2026-12-31",
+          period_start: type === "frequencia" ? dateFilterStart : undefined,
+          period_end: type === "frequencia" ? dateFilterEnd : undefined,
         }),
       });
 
       const data = await res.json();
       if (!res.ok || data.error) {
-        alert("Erro ao emitir declaração: " + (data.error || "Tente novamente"));
+        const errorMsg = data.error || "Erro ao emitir declaração. Tente novamente.";
+        alert(errorMsg);
+        setFeedbackMsg(`Aviso: ${errorMsg}`);
+        setTimeout(() => setFeedbackMsg(""), 7000);
         return;
       }
 
@@ -593,6 +616,43 @@ export default function MemberSelfServicePage() {
       alert("Falha de conexão ao emitir declaração.");
     } finally {
       setIsEmittingDecl(false);
+    }
+  };
+
+  // Handler: Pagamento em Lote de Múltiplas Mensalidades
+  const handleInitiateBatchPayment = async () => {
+    if (selectedChargeIds.length === 0 || !currentMember) return;
+    setIsBatchPaying(true);
+    try {
+      const res = await fetch("/api/charges/batch-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          member_id: currentMember.id,
+          charge_ids: selectedChargeIds,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        alert("Erro ao gerar pagamento em lote: " + (data.error || "Tente novamente"));
+        return;
+      }
+      setBatchPaymentData({
+        totalAmount: data.total_amount,
+        count: data.count,
+        chargeIds: data.charge_ids,
+        descriptions: data.descriptions,
+        pixPayload: data.pix_copia_cola,
+        pixQrCodeUrl: data.pix_qrcode_url,
+        infinitePayUrl: data.infinitepay_url,
+        txid: data.txid,
+      });
+      setIsBatchPayModalOpen(true);
+    } catch (err) {
+      console.error("Erro ao processar pagamento em lote:", err);
+      alert("Falha de conexão ao gerar pagamento consolidado.");
+    } finally {
+      setIsBatchPaying(false);
     }
   };
 
@@ -686,33 +746,6 @@ export default function MemberSelfServicePage() {
     } finally {
       setIsUploadingPhoto(false);
     }
-  };
-
-  // Link para Adicionar ao Google Calendar
-  const getGoogleCalendarUrl = (m?: MeetingItem | null) => {
-    if (!m) return "#";
-    const startDate = new Date(m.starts_at);
-    const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
-    const formatGDate = (d: Date) => d.toISOString().replace(/-|:|\.\d\d\d/g, "");
-    const datesStr = `${formatGDate(startDate)}/${formatGDate(endDate)}`;
-    const text = encodeURIComponent(m.title);
-    const details = encodeURIComponent("Sessão Oficial do Capítulo Professor Carvalho Neves Nº 500.\nLocal: A∴R∴L∴S∴ Caridade II nº 135.");
-    const location = encodeURIComponent(m.location || "A∴R∴L∴S∴ Caridade II nº 135");
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${datesStr}&details=${details}&location=${location}`;
-  };
-
-  // Link para Compartilhar RSVP no WhatsApp
-  const getWhatsAppShareUrl = () => {
-    if (!nextMeeting || !currentMember) return "#";
-    const msg = encodeURIComponent(
-      `*Capítulo Professor Carvalho Neves Nº 500*\n` +
-      `Irmão *${currentMember.full_name}* (ID ${currentMember.id_demolay}) confirmou presença na Sessão:\n` +
-      `📅 *${new Date(nextMeeting.starts_at).toLocaleDateString("pt-BR")}*\n` +
-      `🏛️ *${nextMeeting.title}*\n` +
-      `📍 ${nextMeeting.location || "A∴R∴L∴S∴ Caridade II nº 135"}\n\n` +
-      `Nos vemos no Templo!`
-    );
-    return `https://api.whatsapp.com/send?text=${msg}`;
   };
 
   // Copiar PIX Oficial com valor exato da mensalidade e padrão Banco Central
@@ -912,7 +945,7 @@ export default function MemberSelfServicePage() {
       {/* 3. Navegação por Abas */}
       <div className="flex items-center gap-2 border-b border-white/10 overflow-x-auto pb-1 scrollbar-none">
         <button
-          onClick={() => setActiveTab("frequencia")}
+          onClick={() => handleTabChange("frequencia")}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all whitespace-nowrap ${
             activeTab === "frequencia"
               ? "bg-[#064D32] text-[#D9AA45] border-t-2 border-[#D9AA45]"
@@ -924,19 +957,7 @@ export default function MemberSelfServicePage() {
         </button>
 
         <button
-          onClick={() => setActiveTab("reunioes")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all whitespace-nowrap ${
-            activeTab === "reunioes"
-              ? "bg-[#064D32] text-[#D9AA45] border-t-2 border-[#D9AA45]"
-              : "text-gray-400 hover:text-white hover:bg-white/5"
-          }`}
-        >
-          <Clock className="w-4 h-4" />
-          Próxima Reunião
-        </button>
-
-        <button
-          onClick={() => setActiveTab("mensalidades")}
+          onClick={() => handleTabChange("mensalidades")}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all whitespace-nowrap ${
             activeTab === "mensalidades"
               ? "bg-[#064D32] text-[#D9AA45] border-t-2 border-[#D9AA45]"
@@ -948,7 +969,7 @@ export default function MemberSelfServicePage() {
         </button>
 
         <button
-          onClick={() => setActiveTab("solicitacoes")}
+          onClick={() => handleTabChange("solicitacoes")}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all whitespace-nowrap ${
             activeTab === "solicitacoes"
               ? "bg-[#064D32] text-[#D9AA45] border-t-2 border-[#D9AA45]"
@@ -957,18 +978,6 @@ export default function MemberSelfServicePage() {
         >
           <MessageSquare className="w-4 h-4" />
           Solicitações & Ouvidoria
-        </button>
-
-        <button
-          onClick={() => setActiveTab("aniversarios")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all whitespace-nowrap ${
-            activeTab === "aniversarios"
-              ? "bg-[#064D32] text-[#D9AA45] border-t-2 border-[#D9AA45]"
-              : "text-gray-400 hover:text-white hover:bg-white/5"
-          }`}
-        >
-          <Heart className="w-4 h-4" />
-          Aniversários do Capítulo
         </button>
       </div>
 
@@ -1010,12 +1019,12 @@ export default function MemberSelfServicePage() {
 
               <button
                 onClick={() => {
-                  setDateFilterStart("2026-07-01");
+                  setDateFilterStart("2026-08-08");
                   setDateFilterEnd("2026-12-31");
                 }}
                 className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-gray-300 font-medium transition-all"
               >
-                Gestão 2026/2
+                Gestão XXV (Vigente)
               </button>
             </div>
           </div>
@@ -1158,221 +1167,7 @@ export default function MemberSelfServicePage() {
         </div>
       )}
 
-      {/* ABA 2: PRÓXIMA REUNIÃO & RSVP */}
-      {activeTab === "reunioes" && (
-        <div className="space-y-6 animate-fade-in">
-          {nextMeeting ? (
-            <div className="bg-[#04281A]/90 border border-[#D9AA45]/30 rounded-2xl p-6 md:p-8 backdrop-blur-md shadow-2xl relative overflow-hidden">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/40">
-                      Próxima Sessão Capitular
-                    </span>
-                    <span className="text-xs text-gray-400 font-mono">
-                      {new Date(nextMeeting.starts_at).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
-                    </span>
-                  </div>
-
-                  <h2 className="text-2xl md:text-3xl font-extrabold text-white">
-                    {nextMeeting.title}
-                  </h2>
-                  <p className="text-sm text-gray-300 mt-2 max-w-2xl">
-                    {nextMeeting.description || "Sessão ordinária do Capítulo Professor Carvalho Neves Nº 500."}
-                  </p>
-
-                  <div className="flex flex-wrap items-center gap-4 mt-4 text-xs text-gray-300">
-                    <span className="flex items-center gap-1.5 bg-black/30 px-3 py-1.5 rounded-lg border border-white/10">
-                      <Clock className="w-3.5 h-3.5 text-[#D9AA45]" />
-                      {new Date(nextMeeting.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                    <span className="flex items-center gap-1.5 bg-black/30 px-3 py-1.5 rounded-lg border border-white/10">
-                      <Shield className="w-3.5 h-3.5 text-emerald-400" />
-                      {nextMeeting.location || "A∴R∴L∴S∴ Caridade II nº 135"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Status e Ações de Confirmação (RSVP) */}
-                <div className="w-full md:w-auto bg-black/40 border border-white/10 rounded-2xl p-5 flex flex-col items-center justify-center gap-3">
-                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
-                    Sua Confirmação de Presença
-                  </p>
-
-                  {nextMeetingAttendance?.rsvp_status === "confirmado" ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <span className="px-4 py-2 rounded-xl text-sm font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                        Presença Confirmada!
-                      </span>
-                      <a
-                        href={getWhatsAppShareUrl()}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-[#D9AA45] hover:underline flex items-center gap-1"
-                      >
-                        <Share2 className="w-3 h-3" />
-                        Avisar no Grupo do WhatsApp
-                      </a>
-                    </div>
-                  ) : nextMeetingAttendance?.rsvp_status === "justificado" ? (
-                    <div className="flex flex-col items-center gap-1 text-center">
-                      <span className="px-4 py-2 rounded-xl text-sm font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-2">
-                        <AlertCircle className="w-5 h-5 text-amber-400" />
-                        Ausência Justificada
-                      </span>
-                      <p className="text-xs text-gray-400 italic max-w-xs mt-1">
-                        &ldquo;{nextMeetingAttendance.rsvp_notes}&rdquo;
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
-                      <button
-                        onClick={handleConfirmPresence}
-                        disabled={isSubmittingRsvp}
-                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs font-bold shadow-lg transition-all flex items-center justify-center gap-2"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        Confirmar Presença
-                      </button>
-
-                      <button
-                        onClick={() => setIsRsvpModalOpen(true)}
-                        disabled={isSubmittingRsvp}
-                        className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-xs font-semibold transition-all flex items-center justify-center gap-2"
-                      >
-                        <AlertCircle className="w-4 h-4 text-amber-400" />
-                        Justificar Ausência
-                      </button>
-                    </div>
-                  )}
-
-                  <a
-                    href={getGoogleCalendarUrl(nextMeeting)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-gray-400 hover:text-white flex items-center gap-1.5 mt-2 transition-colors"
-                  >
-                    <Calendar className="w-3.5 h-3.5 text-[#D9AA45]" />
-                    Adicionar ao Google Agenda
-                  </a>
-                </div>
-              </div>
-
-              {/* Informação sobre Notificações */}
-              <div className="mt-6 pt-6 border-t border-white/10 flex items-center gap-3 text-xs text-gray-400">
-                <Info className="w-4 h-4 text-[#D9AA45] flex-shrink-0" />
-                <span>
-                  Lembrete automático enviado previamente via e-mail e nos canais oficiais do Capítulo para que todos os irmãos organizem seus paramentos.
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-[#04281A]/90 border border-white/10 rounded-2xl p-8 text-center text-gray-400">
-              Nenhuma reunião cadastrada no calendário capitular no momento.
-            </div>
-          )}
-
-          {/* Todas as Sessões do Calendário */}
-          <div className="bg-[#04281A]/90 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-white">Calendário Capitular de Sessões</h3>
-              <span className="text-xs text-gray-400">Total: {meetings.length} sessões oficiais</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {meetings.map((m) => {
-                const att = attendances[m.id];
-                const isPresent = att?.status === "presente";
-
-                return (
-                  <div key={m.id} className="bg-black/30 border border-white/10 rounded-2xl p-4 flex flex-col justify-between gap-3 hover:border-emerald-500/40 transition-all">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-[#D9AA45]">
-                            {new Date(m.starts_at).toLocaleDateString("pt-BR")} às {new Date(m.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                          {m.status === "realizada" ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                              Realizada
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                              Agendada
-                            </span>
-                          )}
-                        </div>
-                        <h4 className="text-sm font-bold text-white mt-1.5">{m.title}</h4>
-                        <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
-                          <MapPin className="w-3 h-3 text-emerald-400" />
-                          <span>{m.location || "A∴R∴L∴S∴ Caridade II nº 135"}</span>
-                        </p>
-                      </div>
-
-                      <a
-                        href={getGoogleCalendarUrl(m)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-colors"
-                        title="Adicionar à Google Agenda"
-                      >
-                        <Calendar className="w-4 h-4" />
-                      </a>
-                    </div>
-
-                    {/* Rodapé com Ata e Quórum */}
-                    <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
-                      <div className="flex items-center gap-2">
-                        {isPresent ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Você Compareceu
-                          </span>
-                        ) : m.status === "realizada" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-white/5 text-gray-400">
-                            Ausente
-                          </span>
-                        ) : null}
-
-                        {m.total_quorum ? (
-                          <span className="text-[11px] text-gray-300 font-mono">
-                            Quórum: <strong>{m.total_quorum}</strong>
-                          </span>
-                        ) : null}
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        {m.ata_pdf_url && (
-                          <a
-                            href={m.ata_pdf_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#D9AA45]/20 hover:bg-[#D9AA45]/30 text-[#D9AA45] border border-[#D9AA45]/40 transition-colors shadow-sm"
-                            title="Abrir Ata Oficial assinada (PDF)"
-                          >
-                            <FileText className="w-3 h-3" />
-                            <span>Ata (PDF)</span>
-                          </a>
-                        )}
-
-                        <button
-                          onClick={() => setSelectedMeetingForQuorum(m)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/10 hover:bg-white/20 text-gray-200 border border-white/20 transition-colors cursor-pointer"
-                        >
-                          <Users className="w-3 h-3 text-emerald-400" />
-                          <span>Ver Frequência</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ABA 3: MINHAS MENSALIDADES */}
+      {/* ABA 2: MINHAS MENSALIDADES */}
       {activeTab === "mensalidades" && (
         <div className="space-y-6 animate-fade-in">
           {/* Status Geral das Mensalidades */}
@@ -1395,16 +1190,27 @@ export default function MemberSelfServicePage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => {
-                  setSelectedCharge(charges.find(c => c.status !== "confirmado") || charges[0] || null);
-                  setIsPayModalOpen(true);
-                }}
-                className="btn-heraldico-ouro px-5 py-2.5 rounded-xl text-xs"
-              >
-                <QrCode className="w-4 h-4" />
-                <span>Pagar com PIX / Cartão InfinitePay</span>
-              </button>
+              {selectedChargeIds.length > 1 ? (
+                <button
+                  onClick={handleInitiateBatchPayment}
+                  disabled={isBatchPaying}
+                  className="btn-heraldico-ouro px-5 py-2.5 rounded-xl text-xs cursor-pointer shadow-lg active:scale-95"
+                >
+                  <QrCode className="w-4 h-4" />
+                  <span>Pagar {selectedChargeIds.length} em Lote (R$ {selectedTotalAmount.toFixed(2).replace(".", ",")})</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setSelectedCharge(charges.find(c => c.status !== "confirmado") || charges[0] || null);
+                    setIsPayModalOpen(true);
+                  }}
+                  className="btn-heraldico-ouro px-5 py-2.5 rounded-xl text-xs"
+                >
+                  <QrCode className="w-4 h-4" />
+                  <span>Pagar com PIX / Cartão InfinitePay</span>
+                </button>
+              )}
 
               <button
                 onClick={() => handleGenerateDeclaration("quitacao_tesouraria")}
@@ -1416,6 +1222,49 @@ export default function MemberSelfServicePage() {
               </button>
             </div>
           </div>
+
+          {/* Lembrete / Alerta Chamativo para Pagamento em Lote */}
+          {pendingCharges.length > 1 && (
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-[#04281A] to-emerald-950/40 border border-[#D9AA45]/50 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3.5">
+                <div className="p-3 rounded-xl bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/30 flex-shrink-0">
+                  <Sparkles className="w-5 h-5 text-[#D9AA45]" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white flex flex-wrap items-center gap-2">
+                    <span>💡 Pagamento em Lote Recomendado</span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#D9AA45] text-black">
+                      {pendingCharges.length} mensalidades pendentes
+                    </span>
+                  </h4>
+                  <p className="text-xs text-amber-200/90 mt-1">
+                    Você possui <strong>{pendingCharges.length} mensalidades pendentes</strong>. Selecione várias competências através das caixas de seleção na tabela abaixo para pagar tudo de uma única vez via Pix ou InfinitePay!
+                  </p>
+                </div>
+              </div>
+              {selectedChargeIds.length > 0 ? (
+                <button
+                  onClick={handleInitiateBatchPayment}
+                  disabled={isBatchPaying}
+                  className="btn-heraldico-ouro px-5 py-2.5 rounded-xl text-xs whitespace-nowrap cursor-pointer shadow-lg active:scale-95 flex-shrink-0"
+                >
+                  <QrCode className="w-4 h-4" />
+                  <span>
+                    {isBatchPaying
+                      ? "Gerando Lote..."
+                      : `Pagar ${selectedChargeIds.length} Selecionada(s) (R$ ${selectedTotalAmount.toFixed(2).replace(".", ",")})`}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setSelectedChargeIds(pendingCharges.map((c) => c.id))}
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-[#D9AA45] border border-[#D9AA45]/30 text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
+                >
+                  Selecionar Todas ({pendingCharges.length})
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Cards de Métricas: Quais já paguei vs Pendentes (Estilo Heráldico Dark) */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1532,6 +1381,24 @@ export default function MemberSelfServicePage() {
                 <table className="w-full text-left text-sm">
                   <thead className="text-xs uppercase bg-black/30 text-gray-400 border-b border-white/10">
                     <tr>
+                      <th className="py-3 px-3 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={
+                            pendingCharges.length > 0 &&
+                            pendingCharges.every((c) => selectedChargeIds.includes(c.id))
+                          }
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedChargeIds(pendingCharges.map((c) => c.id));
+                            } else {
+                              setSelectedChargeIds([]);
+                            }
+                          }}
+                          aria-label="Selecionar todas as pendentes"
+                          className="rounded border-white/20 bg-black/40 text-[#D9AA45] focus:ring-[#D9AA45] cursor-pointer"
+                        />
+                      </th>
                       <th className="py-3 px-4">Descrição da Mensalidade</th>
                       <th className="py-3 px-4">Vencimento</th>
                       <th className="py-3 px-4">Valor</th>
@@ -1550,9 +1417,34 @@ export default function MemberSelfServicePage() {
                       )
                       .map((c) => {
                         const isPaid = c.status === "confirmado";
+                        const isSelected = selectedChargeIds.includes(c.id);
 
                         return (
-                          <tr key={c.id} className="hover:bg-white/5 transition-colors">
+                          <tr
+                            key={c.id}
+                            className={`transition-colors ${
+                              isSelected ? "bg-[#D9AA45]/10 hover:bg-[#D9AA45]/15" : "hover:bg-white/5"
+                            }`}
+                          >
+                            <td className="py-3.5 px-3 text-center">
+                              {!isPaid ? (
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedChargeIds((prev) => [...prev, c.id]);
+                                    } else {
+                                      setSelectedChargeIds((prev) => prev.filter((id) => id !== c.id));
+                                    }
+                                  }}
+                                  aria-label={`Selecionar ${c.description}`}
+                                  className="rounded border-white/20 bg-black/40 text-[#D9AA45] focus:ring-[#D9AA45] cursor-pointer"
+                                />
+                              ) : (
+                                <Check className="w-3.5 h-3.5 text-emerald-400 mx-auto" />
+                              )}
+                            </td>
                             <td className="py-3.5 px-4 font-semibold text-white">
                               {c.description}
                               {isPaid && (
@@ -1609,6 +1501,37 @@ export default function MemberSelfServicePage() {
                       })}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Barra de Ação de Pagamento em Lote */}
+            {selectedChargeIds.length > 0 && (
+              <div className="mt-4 p-4 rounded-xl bg-black/60 border border-[#D9AA45]/40 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+                <div className="flex items-center gap-2 text-xs text-gray-200">
+                  <span className="font-bold text-[#D9AA45]">
+                    {selectedChargeIds.length} mensalidade(s) selecionada(s)
+                  </span>
+                  <span>•</span>
+                  <span className="font-extrabold text-white text-sm">
+                    Total: R$ {selectedTotalAmount.toFixed(2).replace(".", ",")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedChargeIds([])}
+                    className="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    Limpar Seleção
+                  </button>
+                  <button
+                    onClick={handleInitiateBatchPayment}
+                    disabled={isBatchPaying}
+                    className="btn-heraldico-ouro px-5 py-2 rounded-xl text-xs font-bold shadow-md cursor-pointer active:scale-95 flex items-center gap-1.5"
+                  >
+                    <QrCode className="w-4 h-4" />
+                    <span>{isBatchPaying ? "Processando..." : "Pagar Selecionadas em Lote"}</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1810,45 +1733,6 @@ export default function MemberSelfServicePage() {
         </div>
       )}
 
-      {/* ABA 5: CALENDÁRIO DE ANIVERSÁRIOS */}
-      {activeTab === "aniversarios" && (
-        <div className="space-y-6 animate-fade-in">
-          <div className="bg-[#04281A]/90 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-rose-400" />
-                  Aniversariantes do Capítulo
-                </h2>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Celebre a vida e o laço fraternal de cada irmão e tio maçom do Capítulo 500.
-                </p>
-              </div>
-
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#D9AA45]/20 text-[#D9AA45] border border-[#D9AA45]/40">
-                {birthdays.length} datas cadastradas
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {birthdays.map((b) => (
-                <div key={b.member_id} className="bg-black/30 border border-white/10 rounded-xl p-3.5 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#064D32] to-[#087443] border border-[#D9AA45]/40 flex items-center justify-center font-mono font-bold text-xs text-[#D9AA45]">
-                      {b.birthday_formatted}
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-white line-clamp-1">{b.full_name}</p>
-                      <p className="text-[10px] text-gray-400">ID {b.id_demolay}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* MODAL: JUSTIFICAR AUSÊNCIA */}
       {isRsvpModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
@@ -2016,6 +1900,112 @@ export default function MemberSelfServicePage() {
             <p className="text-[10px] text-emerald-200/70 text-center mt-3">
               Ao pagar pelo PIX ou InfinitePay, a conciliação é automática. O Tesoureiro acompanha todas as quitações no painel.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: PAGAMENTO EM LOTE CONSOLIDADO (PIX / INFINITEPAY) */}
+      {isBatchPayModalOpen && batchPaymentData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="ios-glass-card rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-[#D9AA45]" />
+                Quitação em Lote ({batchPaymentData.count} mensalidades)
+              </h3>
+              <button
+                onClick={() => setIsBatchPayModalOpen(false)}
+                className="text-gray-400 hover:text-white text-xs cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-3.5 space-y-3">
+              <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-xs">
+                <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold mb-1">
+                  Competências Selecionadas:
+                </span>
+                <ul className="space-y-1 text-emerald-200 max-h-28 overflow-y-auto pr-1">
+                  {batchPaymentData.descriptions.map((desc, idx) => (
+                    <li key={idx} className="flex items-center gap-1.5 text-[11px]">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#D9AA45] flex-shrink-0" />
+                      <span>{desc}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="text-center pt-1">
+                <p className="text-xs text-gray-300 font-medium">Valor Total Consolidado</p>
+                <p className="text-3xl font-extrabold text-[#D9AA45] mt-0.5">
+                  R$ {batchPaymentData.totalAmount.toFixed(2).replace(".", ",")}
+                </p>
+                <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                  {batchPaymentData.count} mensalidades agrupadas
+                </span>
+              </div>
+
+              {/* QR Code Container */}
+              <div className="my-2 p-3 rounded-2xl bg-white flex flex-col items-center justify-center mx-auto w-44 h-44 shadow-xl">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={batchPaymentData.pixQrCodeUrl}
+                  alt="QR Code PIX Lote"
+                  className="w-36 h-36 object-contain rounded-lg"
+                />
+              </div>
+
+              {/* Chave PIX Oficial */}
+              <div className="p-2.5 rounded-xl bg-black/40 border border-white/10 flex items-center justify-between gap-2 text-xs">
+                <div className="truncate">
+                  <span className="text-[10px] text-gray-400 block">Chave PIX Oficial (E-mail):</span>
+                  <span className="font-mono text-emerald-300 text-[11px] truncate block select-all">
+                    {OFFICIAL_CHAPTER_PIX_KEY}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(OFFICIAL_CHAPTER_PIX_KEY);
+                    setPixKeyCopied(true);
+                    setTimeout(() => setPixKeyCopied(false), 2500);
+                  }}
+                  className="shrink-0 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#D9AA45] text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  {pixKeyCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{pixKeyCopied ? "Copiada!" : "Copiar Chave"}</span>
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(batchPaymentData.pixPayload);
+                    setBatchPixCopied(true);
+                    setTimeout(() => setBatchPixCopied(false), 3000);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-[#D9AA45] hover:bg-amber-400 text-black text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+                >
+                  {batchPixCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {batchPixCopied ? "Código PIX Copiado!" : "Copiar PIX Copia e Cola Consolidado"}
+                </button>
+
+                <a
+                  href={batchPaymentData.infinitePayUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-2.5 rounded-xl bg-black/40 hover:bg-black/60 border border-white/10 text-white text-xs font-semibold transition-all flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4 text-[#D9AA45]" />
+                  Pagar Lote via Cartão / Checkout InfinitePay
+                </a>
+              </div>
+
+              <p className="text-[10px] text-emerald-200/70 text-center mt-2">
+                Após a confirmação da transação pelo banco, todas as mensalidades selecionadas receberão baixa simultânea.
+              </p>
+            </div>
           </div>
         </div>
       )}

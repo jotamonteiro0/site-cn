@@ -12,7 +12,6 @@ export function Header() {
     { label: "História", href: "/#historia" },
     { label: "Ordem DeMolay", href: "/#virtudes" },
     { label: "Galeria de MC's", href: "/gestoes" },
-    { label: "Documentos", href: "/documentos" },
     { label: "Contato", href: "/#contato" },
   ];
 

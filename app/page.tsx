@@ -1,9 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { ContactForm } from "@/components/site/ContactForm";
 import { SeteVirtudes } from "@/components/site/SeteVirtudes";
+import { EncontrosAtividades } from "@/components/site/EncontrosAtividades";
+import { AniversariantesSecao } from "@/components/site/AniversariantesSecao";
 import Image from "next/image";
 import { 
   ShieldCheck, 
@@ -12,7 +15,6 @@ import {
   Lock,
   Mail,
   MapPin,
-  FileText,
   Crown
 } from "lucide-react";
 import Link from "next/link";
@@ -57,75 +59,40 @@ const marcosHistoricos = [
   }
 ];
 
-// Vitrine Gráfica de Documentos Oficiais
-const vitrineDocumentos = [
-  {
-    titulo: "Regimento Interno do Capítulo 500",
-    descricao: "Estatuto normativo local chancelado pelo Conselho Consultivo e Lojas Patrocinadoras.",
-    categoria: "Regimento Local",
-    formato: "PDF",
-    tamanho: "1.2 MB",
-  },
-  {
-    titulo: "Regulamento Geral DeMolay (RGD)",
-    descricao: "Diretrizes e normas nacionais promulgadas pelo Supremo Conselho DeMolay Brasil.",
-    categoria: "Legislação SCDB",
-    formato: "PDF",
-    tamanho: "2.4 MB",
-  },
-  {
-    titulo: "Código de Ética & Conduta Juvenil",
-    descricao: "Preceitos de honra, companheirismo e integridade aplicados a todos os membros.",
-    categoria: "Diretriz Moral",
-    formato: "PDF",
-    tamanho: "980 KB",
-  },
-  {
-    titulo: "Manual de Cerimonial & Ritualística",
-    descricao: "Instruções oficiais sobre a liturgia sagrada, paramentos e trabalhos capitulares.",
-    categoria: "Ritualística",
-    formato: "PDF",
-    tamanho: "3.1 MB",
-  },
-];
-
-// Encontros e Atividades Capitulares
-const encontros = [
-  {
-    id: 1,
-    tag: "Sessão Magna",
-    title: "Instalação e Posse da Gestão Capitular",
-    date: "Aos Domingos, às 09:00",
-    local: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    descricao: "Cerimônia solene de posse da diretoria capitular com a presença dos tios do Conselho Consultivo, tias e familiares, celebrando a renovação e liderança dos jovens.",
-  },
-  {
-    id: 2,
-    tag: "Instrução & Ritualística",
-    title: "Sessão Ordinária do Grau Iniciático",
-    date: "Aos Domingos, às 09:00",
-    local: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    descricao: "Estudo ritualístico e apresentação de trabalhos filosóficos pelos novos irmãos, aprofundando o simbolismo das Sete Virtudes Cardeais sob a mentoria dos consultores.",
-  },
-  {
-    id: 3,
-    tag: "Ação Social",
-    title: "Campanha Filantrópica e Solidariedade Comunitária",
-    date: "Atividade Externa",
-    local: "Comunidade Teresina - PI",
-    descricao: "Arrecadação e distribuição de alimentos e donativos promovida pelos DeMolays ativos e sêniores, cumprindo nosso dever cívico e amor ao próximo.",
-  },
-  {
-    id: 4,
-    tag: "Conselho Consultivo",
-    title: "Encontro com as 4 Lojas Patrocinadoras",
-    date: "Alinhamento Capitular",
-    local: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-    descricao: "Reunião de alinhamento com as lojas mantenedoras (Abolição nº 4199, Adonhiran nº 2782, Caridade II nº 135 - GOB-PI e Mansur nº 4591) para fortalecimento das metas do Capítulo.",
-  },
-];
-
 export default function Home() {
+  const [gestoesPhotos, setGestoesPhotos] = useState<Record<string, { photo_url: string; member_name: string }>>({
+    "2026.1": { photo_url: "/gestoes/jose-keltton.2026.1.jpg", member_name: "José Keltton da Silva Cardoso Viana" },
+    "2026.2": { photo_url: "/gestoes/rafael-inacio.2026.2.jpg", member_name: "Rafael Inácio do Nascimento de Morais" },
+    "2027.1": { photo_url: "", member_name: "A definir" },
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadMCPhotos() {
+      try {
+        const res = await fetch("/api/mc-photos");
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.items && Array.isArray(data.items) && isMounted) {
+            const map: Record<string, { photo_url: string; member_name: string }> = {};
+            data.items.forEach((p: { management_code: string; photo_url: string; member_name: string }) => {
+              if (p.management_code && p.photo_url) {
+                map[p.management_code] = { photo_url: p.photo_url, member_name: p.member_name || "" };
+              }
+            });
+            setGestoesPhotos((prev) => ({ ...prev, ...map }));
+          }
+        }
+      } catch (err) {
+        console.warn("Aviso ao carregar fotos de MC na Home:", err);
+      }
+    }
+    loadMCPhotos();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAF8] text-gray-900 selection:bg-[#C59B3F] selection:text-[#06140D]">
       <Header />
@@ -309,7 +276,7 @@ export default function Home() {
                   <span className="text-[9px] font-mono uppercase tracking-widest text-[#C59B3F]/50">Foto Oficial</span>
                 </div>
                 <Image
-                  src="/gestoes/jose-keltton.2026.1.jpg"
+                  src={gestoesPhotos["2026.1"]?.photo_url || "/gestoes/jose-keltton.2026.1.jpg"}
                   alt="Foto oficial de José Keltton Cardoso da Silva Viana"
                   fill
                   priority
@@ -330,7 +297,7 @@ export default function Home() {
                 <div>
                   <span className="text-xs font-semibold text-[#087443]">Gestão XXIV</span>
                   <h4 className="font-bold text-gray-900 text-base mt-1">
-                    MC José Keltton Cardoso da Silva Viana
+                    MC {gestoesPhotos["2026.1"]?.member_name || "José Keltton Cardoso da Silva Viana"}
                   </h4>
                   <p className="text-xs text-gray-500 font-medium">Past MC</p>
                 </div>
@@ -345,7 +312,7 @@ export default function Home() {
                   <span className="text-[9px] font-mono uppercase tracking-widest text-[#C59B3F]/60">MC em Exercício</span>
                 </div>
                 <Image
-                  src="/gestoes/rafael-inacio.2026.2.jpg"
+                  src={gestoesPhotos["2026.2"]?.photo_url || "/gestoes/rafael-inacio.2026.2.jpg"}
                   alt="Foto oficial de Rafael Inácio do Nascimento de Morais"
                   fill
                   priority
@@ -366,45 +333,48 @@ export default function Home() {
                 <div>
                   <span className="text-xs font-bold text-[#C59B3F]">Gestão XXV</span>
                   <h4 className="font-bold text-gray-900 text-base mt-1">
-                    MC Rafael Inácio do Nascimento de Morais
+                    MC {gestoesPhotos["2026.2"]?.member_name || "Rafael Inácio do Nascimento de Morais"}
                   </h4>
                   <p className="text-xs text-[#087443] font-semibold">Mestre Conselheiro em Exercício</p>
                 </div>
               </div>
             </div>
 
-            {/* GESTÃO XXVI — ELEITA */}
+            {/* GESTÃO XXVI — PLANEJADA / EM DEFINIÇÃO */}
             <div className="bg-white rounded-2xl overflow-hidden border border-gray-200/80 shadow-sm hover:shadow-md transition-all flex flex-col group">
               <div className="relative w-full aspect-[4/3] bg-[#052E1D] flex flex-col items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-emerald-300/30 z-0">
                   <Crown className="w-10 h-10 mb-1" />
-                  <span className="text-[9px] font-mono uppercase tracking-widest text-[#C59B3F]/50">MC Eleito</span>
+                  <span className="text-[9px] font-mono uppercase tracking-widest text-[#C59B3F]/50">Gestão Futura</span>
                 </div>
-                <Image
-                  src="/gestoes/joao-guilherme.2027.1.jpg"
-                  alt="Foto oficial de João Guilherme Martins Lopes Monteiro"
-                  fill
-                  priority
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover z-[1]"
-                  onError={(event) => {
-                    event.currentTarget.style.display = "none";
-                  }}
-                />
+                {gestoesPhotos["2027.1"]?.photo_url && (
+                  <Image
+                    src={gestoesPhotos["2027.1"].photo_url}
+                    alt="Foto oficial da Gestão XXVI"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover z-[1]"
+                    onError={(event) => {
+                      event.currentTarget.style.display = "none";
+                    }}
+                  />
+                )}
                 <span className="absolute top-3 left-3 z-10 px-2.5 py-0.5 rounded text-[10px] font-bold bg-white/20 text-white backdrop-blur-md font-mono">
                   XXVI
                 </span>
                 <span className="absolute top-3 right-3 z-10 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#087443]/90 text-white border border-white/20 font-mono">
-                  Eleita • 2027.1
+                  Planejada • 2027.1
                 </span>
               </div>
               <div className="p-5 flex-1 flex flex-col justify-between">
                 <div>
                   <span className="text-xs font-semibold text-[#087443]">Gestão XXVI</span>
                   <h4 className="font-bold text-gray-900 text-base mt-1">
-                    MC João Guilherme Martins Lopes Monteiro
+                    {gestoesPhotos["2027.1"]?.member_name && gestoesPhotos["2027.1"].member_name !== "A definir"
+                      ? `MC ${gestoesPhotos["2027.1"].member_name}`
+                      : "Aguardando confirmação oficial"}
                   </h4>
-                  <p className="text-xs text-gray-500 font-medium">Mestre Conselheiro Eleito</p>
+                  <p className="text-xs text-gray-500 font-medium">Gestão Subsequente (2027.1)</p>
                 </div>
               </div>
             </div>
@@ -422,150 +392,14 @@ export default function Home() {
         </section>
 
         {/* ======================================================== */}
-        {/* VITRINE GRÁFICA DE DOCUMENTOS OFICIAIS                   */}
+        {/* ATIVIDADES REALIZADAS (REFERÊNCIA PRIORADO 156)          */}
         {/* ======================================================== */}
-        <section id="documentos-oficiais" className="py-20 bg-white border-y border-gray-200/80 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center max-w-2xl mx-auto mb-16">
-              <span className="text-xs uppercase tracking-widest text-[#087443] font-bold">
-                Transparência & Governança
-              </span>
-              <h2 className="text-3xl font-bold tracking-tight text-gray-900 mt-2 sm:text-4xl">
-                Acervo & Documentos Oficiais
-              </h2>
-              <DivisorHeraldico />
-              <p className="mt-2 text-base text-gray-600 leading-relaxed">
-                Acesso público aos atos constitutivos, regulamentos e diretrizes que garantem a regularidade e tradição capitular.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {vitrineDocumentos.map((doc, idx) => (
-                <div
-                  key={idx}
-                  className="card-heraldico rounded-2xl p-5 shadow-sm flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#087443]/10 text-[#087443] border border-[#087443]/20">
-                        {doc.categoria}
-                      </span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-amber-50 text-amber-800 border border-amber-200">
-                        {doc.formato}
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-gray-900 text-sm mb-2 leading-snug">
-                      {doc.titulo}
-                    </h3>
-                    <p className="text-xs text-gray-600 leading-relaxed">
-                      {doc.descricao}
-                    </p>
-                  </div>
-
-                  <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
-                    <span className="text-gray-400 font-mono">{doc.tamanho}</span>
-                    <Link
-                      href="/documentos"
-                      className="inline-flex items-center gap-1 font-semibold text-[#087443] hover:text-[#065F36] transition-colors"
-                    >
-                      <span>Consultar</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-10 text-center">
-              <Link
-                href="/documentos"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#F8FAF8] hover:bg-emerald-50 text-[#087443] font-semibold text-sm shadow-sm hover:shadow transition-all border border-[#087443]/20 group cursor-pointer"
-              >
-                <FileText className="w-4 h-4 text-[#C59B3F]" />
-                <span>Acessar Acervo Documental Completo do Capítulo</span>
-                <ArrowRight className="w-4 h-4 text-[#087443]" />
-              </Link>
-            </div>
-          </div>
-        </section>
+        <EncontrosAtividades />
 
         {/* ======================================================== */}
-        {/* NOSSOS ENCONTROS E ATIVIDADES                            */}
+        {/* ANIVERSARIANTES DO CAPÍTULO (FRATERNIDADE & CELEBRAÇÃO)  */}
         {/* ======================================================== */}
-        <section id="encontros" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-              <div>
-                <span className="text-xs uppercase tracking-widest text-[#087443] font-bold">
-                  Vida Capitular em Ação
-                </span>
-                <h2 className="text-3xl font-bold tracking-tight text-gray-900 mt-2 sm:text-4xl">
-                  Nossos Encontros & Atividades
-                </h2>
-                <div className="w-16 h-1 bg-[#C59B3F] mt-4 rounded-full" />
-                <p className="mt-3 text-sm text-gray-600 max-w-xl">
-                  Registros de nossas sessões, trabalhos ritualísticos e filantropia no Capítulo 500. Deslize para o lado para ver mais.
-                </p>
-              </div>
-
-              {/* Indicador de Scroll */}
-              <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400 font-semibold">
-                <span>Deslize para o lado</span>
-                <ArrowRight className="w-4 h-4 text-[#087443]" />
-              </div>
-            </div>
-
-            {/* SCROLL HORIZONTAL (SNAP CAROUSEL) COM CARDS HERÁLDICOS */}
-            <div className="flex gap-4 sm:gap-5 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-[#087443]/30 px-1 -mx-4 sm:mx-0 px-4 sm:px-0">
-              {encontros.map((item) => (
-                <div
-                  key={item.id}
-                  className="w-[82vw] max-w-[320px] sm:w-[340px] sm:max-w-[340px] snap-center card-heraldico rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col justify-between shrink-0"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#087443]/10 text-[#087443] border border-[#087443]/20">
-                        {item.tag}
-                      </span>
-                      <span className="text-[11px] text-gray-500 font-medium">
-                        {item.date}
-                      </span>
-                    </div>
-
-                    <h3 className="font-semibold text-base text-gray-900 leading-snug">
-                      {item.title}
-                    </h3>
-
-                    <p className="text-xs text-gray-600 leading-relaxed">
-                      {item.descricao}
-                    </p>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-1.5 text-[11px] text-gray-500">
-                    <MapPin className="w-3.5 h-3.5 text-[#087443] shrink-0" />
-                    <span className="truncate">{item.local}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* INSTAGRAM INSTITUCIONAL */}
-            <div className="pt-4 text-center">
-              <a
-                href="https://instagram.com/cap.carvalhoneves500"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-white hover:bg-gray-50 border border-gray-200 text-xs text-gray-700 hover:text-gray-900 transition-colors shadow-sm max-w-full"
-              >
-                <svg className="w-4 h-4 text-[#087443] shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                </svg>
-                <span>Acompanhe no Instagram</span>
-                <span className="font-bold text-[#087443]">@cap.carvalhoneves500</span>
-              </a>
-            </div>
-          </div>
-        </section>
+        <AniversariantesSecao />
 
         {/* ======================================================== */}
         {/* CONTATO                                                  */}

@@ -1,0 +1,5 @@
+# Ignore manual reference PDFs that exceed Vercel file upload limit (100 MB)
+exemplo/
+.git
+.next
+node_modules

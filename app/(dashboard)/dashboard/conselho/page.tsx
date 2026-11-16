@@ -108,7 +108,7 @@ export default function ConselhoPage() {
   const [viewAsMember, setViewAsMember] = useState(false);
 
   // Filtros e Abas
-  const [activeTab, setActiveTab] = useState<"lojas" | "quadro" | "lideranca">("lojas");
+  const [activeTab, setActiveTab] = useState<"lojas" | "quadro">("lojas");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLodgeFilter, setSelectedLodgeFilter] = useState<string>("todos");
   const [selectedRegularityFilter, setSelectedRegularityFilter] = useState<string>("todos");
@@ -175,26 +175,49 @@ export default function ConselhoPage() {
       try {
         const supabase = createClient();
 
+        // Consulta membros vinculados à tabela relacional conselho_membros
+        const { data: conselhoLinks } = await supabase
+          .from("conselho_membros")
+          .select("member_id, sponsoring_lodge, role_name")
+          .eq("chapter_id", CHAPTER_ID)
+          .eq("is_active", true);
+
+        const conselhoMap = new Map(
+          (conselhoLinks || []).map((cl) => [cl.member_id, cl.sponsoring_lodge])
+        );
+        const conselhoMemberIds = Array.from(conselhoMap.keys());
+
         // Consulta de membros: se canManage, consulta base members; senão, consulta members_public
-        const { data: membersData, error: memErr } = canManage
-          ? await supabase
+        let query = canManage
+          ? supabase
               .from("members")
               .select("id, chapter_id, id_demolay, full_name, category, regularity, masonic_lodge, photo_url, created_at, email, phone")
               .eq("chapter_id", CHAPTER_ID)
               .eq("is_active", true)
-              .eq("category", "macom")
-              .order("full_name", { ascending: true })
-          : await supabase
+          : supabase
               .from("members_public")
               .select("id, chapter_id, id_demolay, full_name, category, regularity, masonic_lodge, photo_url, created_at")
-              .eq("chapter_id", CHAPTER_ID)
-              .eq("category", "macom")
-              .order("full_name", { ascending: true });
+              .eq("chapter_id", CHAPTER_ID);
+
+        if (conselhoMemberIds.length > 0) {
+          query = query.or(`category.eq.macom,id.in.(${conselhoMemberIds.join(",")})`);
+        } else {
+          query = query.eq("category", "macom");
+        }
+
+        const { data: membersData, error: memErr } = await query.order("full_name", { ascending: true });
 
         if (memErr) {
           console.error("Erro ao carregar membros do conselho:", memErr);
         } else if (membersData && !ignore) {
-          setMembers(membersData as MemberRecord[]);
+          const enriched = (membersData as MemberRecord[]).map((m) => {
+            const assignedLodge = conselhoMap.get(m.id);
+            return {
+              ...m,
+              masonic_lodge: assignedLodge || m.masonic_lodge,
+            };
+          });
+          setMembers(enriched);
         }
 
         // Consulta de gestão ativa e liderança do conselho
@@ -295,15 +318,14 @@ export default function ConselhoPage() {
     return map;
   }, [members]);
 
-  // Consultores com loja pendente de alocação
-  const unallocatedMembers = useMemo(() => {
-    return members.filter((m) => !m.masonic_lodge || !lodgeMap[m.masonic_lodge]);
-  }, [members, lodgeMap]);
-
   // Total de consultores alocados em lojas patrocinadoras
   const totalAllocated = useMemo(() => {
     return Object.values(lodgeMap).reduce((acc, list) => acc + list.length, 0);
   }, [lodgeMap]);
+
+  // Consultores aguardando alocação preservados no modelo de dados (sem exibição na interface visual)
+  const unallocatedMembers = useMemo(() => members.filter((m) => !m.masonic_lodge), [members]);
+  void unallocatedMembers;
 
   // Filtragem para o Quadro Completo
   const filteredMembers = useMemo(() => {
@@ -361,6 +383,14 @@ export default function ConselhoPage() {
 
       if (error) {
         throw new Error(error.message);
+      }
+
+      if (updatedLodge) {
+        await supabase
+          .from("conselho_membros")
+          .update({ sponsoring_lodge: updatedLodge, updated_at: new Date().toISOString() })
+          .eq("member_id", memberToEditLodge.id)
+          .eq("chapter_id", CHAPTER_ID);
       }
 
       setSaveSuccessMsg(
@@ -485,27 +515,8 @@ export default function ConselhoPage() {
         </div>
       )}
 
-      {/* BANNER INSTITUCIONAL E CARDS DE LIDERANÇA DO CONSELHO */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Banner Institucional */}
-        <div className="lg:col-span-1 bg-[#0D1815] border border-[#1B2F28] p-5 sm:p-6 rounded-2xl flex flex-col justify-between shadow-lg">
-          <div>
-            <div className="flex items-center gap-2.5 text-[#D9AA45] text-xs font-bold uppercase tracking-wider mb-2">
-              <Building2 className="w-4 h-4" />
-              <span>Apoio Institucional Maçônico</span>
-            </div>
-            <h3 className="text-lg font-bold text-white">Guardiões & Mantenedores</h3>
-            <p className="text-xs text-emerald-200/70 mt-2 leading-relaxed">
-              O Capítulo é supervisionado por Tios Maçons Mestres e Seniores DeMolay regulares, organizados em torno das 4 Augustas e Respeitáveis Lojas Maçônicas de Teresina/PI. A sede das sessões e cerimônias oficiais situa-se na <strong>A∴R∴L∴S∴ Caridade II nº 135</strong>.
-            </p>
-          </div>
-
-          <div className="mt-5 pt-4 border-t border-[#172B23] flex items-center justify-between text-xs text-emerald-300/80">
-            <span>Jurisdição Oficial</span>
-            <span className="font-semibold text-[#D9AA45]">GOB-PI • SCDB</span>
-          </div>
-        </div>
-
+      {/* CARDS DE LIDERANÇA DO CONSELHO */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Liderança: Presidente do Conselho Consultivo (PCC) */}
         {(() => {
           const pcc = officers.find((o) => o.position_name === "Presidente do Conselho Consultivo");
@@ -647,29 +658,7 @@ export default function ConselhoPage() {
               {members.length}
             </span>
           </button>
-
-          <button
-            onClick={() => setActiveTab("lideranca")}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 ${
-              activeTab === "lideranca"
-                ? "bg-[#142822] text-[#D9AA45] shadow-sm border border-[#234237]"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            <Crown className="w-3.5 h-3.5" />
-            <span>Estrutura e Competências</span>
-          </button>
         </div>
-
-        {/* ALERTA DE MEMBROS SEM LOJA ATRIBUÍDA */}
-        {unallocatedMembers.length > 0 && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-[#1C170A] border border-[#423315] text-[#FBBF24] text-xs font-medium flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-[#D9AA45] shrink-0" />
-            <span>
-              <strong className="font-mono tabular-nums">{unallocatedMembers.length}</strong> consultores aguardando alocação de loja
-            </span>
-          </div>
-        )}
       </div>
 
       {/* ABA 1: VISÃO PELAS 4 LOJAS PATROCINADORAS */}
@@ -773,47 +762,6 @@ export default function ConselhoPage() {
                   );
                 })}
               </div>
-
-              {/* SEÇÃO DE MEMBROS SEM LOJA (AGUARDANDO ALOCAÇÃO) */}
-              {unallocatedMembers.length > 0 && (
-                <div className="bg-[#0D1815] border border-[#2B2412] p-6 rounded-2xl shadow-lg space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#2B2412]">
-                    <div>
-                      <h3 className="text-sm font-bold text-[#FBBF24] flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-[#D9AA45]" />
-                        <span>Consultores Aguardando Alocação de Loja ({unallocatedMembers.length})</span>
-                      </h3>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        Estes tios consultores constam como regulares no Capítulo Carvalho Neves, mas ainda não tiveram sua Loja Patrocinadora designada.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {unallocatedMembers.map((m) => (
-                      <div
-                        key={m.id}
-                        className="bg-[#09110F] border border-[#1D2B26] p-3 rounded-xl flex items-center justify-between gap-2"
-                      >
-                        <div>
-                          <p className="text-xs font-bold text-white">{m.full_name}</p>
-                          <p className="text-[11px] text-gray-400 font-mono">
-                            ID: {m.id_demolay} • {m.regularity || "Consultor"}
-                          </p>
-                        </div>
-                        {canManage && (
-                          <button
-                            onClick={() => handleOpenEditLodge(m)}
-                            className="px-2.5 py-1 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-[11px] transition-colors shrink-0 cursor-pointer"
-                          >
-                            Alocar Loja
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </>
           )}
         </div>
@@ -941,50 +889,6 @@ export default function ConselhoPage() {
             <div className="py-3 px-4 border-t border-[#172B23] bg-[#0A1310] flex items-center justify-between text-[11px] text-gray-400 font-mono">
               <span>Total exibido: {filteredMembers.length} de {members.length} consultores</span>
               <span className="text-emerald-400">100% Censo Conforme SCDB</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ABA 3: ESTRUTURA E COMPETÊNCIAS REGULAMENTARES DO CONSELHO */}
-      {activeTab === "lideranca" && (
-        <div className="space-y-6">
-          <div className="bg-[#0D1815] border border-[#1A2E26] p-6 rounded-2xl shadow-lg space-y-4">
-            <div className="flex items-center gap-2 text-[#D9AA45] text-xs font-bold uppercase tracking-wider">
-              <Crown className="w-4 h-4" />
-              <span>Normas Canônicas e Estatuto SCDB</span>
-            </div>
-            <h3 className="text-lg font-bold text-white">Função e Competências do Conselho Consultivo</h3>
-            <p className="text-xs text-gray-300 leading-relaxed max-w-4xl">
-              Em consonância com as Normas do <strong>Supremo Conselho DeMolay Brasil (SCDB)</strong> e do Grande Conselho Estadual do Piauí, o Conselho Consultivo é o órgão colegiado responsável por orientar, tutelar e resguardar a regularidade legal, financeira, moral e ritualística do Capítulo Professor Carvalho Neves Nº 500 perante as potências maçônicas e as autoridades civis.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-              <div className="bg-[#0A1411] border border-[#182C25] p-4 rounded-xl space-y-2">
-                <h4 className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-[#D9AA45]" />
-                  <span>Competências do Presidente do Conselho (PCC)</span>
-                </h4>
-                <ul className="text-xs text-gray-400 space-y-1.5 list-disc list-inside">
-                  <li>Representar legalmente o Capítulo perante a Maçonaria e a Sociedade.</li>
-                  <li>Assinar atos de regularidade, cartas de recomendação e termos de compromisso.</li>
-                  <li>Supervisionar o patrimônio físico e a integridade da Sede Capitular.</li>
-                  <li>Acompanhar as votações do Conselho Consultivo e zelar pelo Vade Mecum.</li>
-                </ul>
-              </div>
-
-              <div className="bg-[#0A1411] border border-[#182C25] p-4 rounded-xl space-y-2">
-                <h4 className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                  <Award className="w-4 h-4 text-emerald-400" />
-                  <span>Competências do Consultor da Organização</span>
-                </h4>
-                <ul className="text-xs text-gray-400 space-y-1.5 list-disc list-inside">
-                  <li>Prestar mentoria e tutoria contínua aos Oficiais da Gestão Ativa.</li>
-                  <li>Orientar o Mestre Conselheiro na montagem de cronogramas e comissões.</li>
-                  <li>Garantir a execução dos planos de gestão e relatórios de atividades.</li>
-                  <li>Avaliar o desempenho ritualístico e a disciplina dos DeMolays Ativos.</li>
-                </ul>
-              </div>
             </div>
           </div>
         </div>

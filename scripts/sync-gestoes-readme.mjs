@@ -7,9 +7,9 @@ const gestoesDir = path.resolve(__dirname, "../public/gestoes");
 const readmePath = path.resolve(gestoesDir, "README.md");
 
 const gestaoData = [
-  { numero: "XXVI", periodo: "2027.1", mc: "João Guilherme Martins Lopes Monteiro", file: "joao-guilherme.2027.1.jpg" },
+  { numero: "XXVI", periodo: "2027.1", mc: "A definir", file: "pendente" },
   { numero: "XXV", periodo: "2026.2", mc: "Rafael Inácio do Nascimento de Morais", file: "rafael-inacio.2026.2.jpg" },
-  { numero: "XXIV", periodo: "2026.1", mc: "José Keltton Cardoso da Silva Viana", file: "jose-keltton.2026.1.jpg" },
+  { numero: "XXIV", periodo: "2026.1", mc: "José Keltton da Silva Cardoso Viana", file: "jose-keltton.2026.1.jpg" },
   { numero: "XXIII", periodo: "2025.2", mc: "João Guilherme Martins Lopes Monteiro", file: "joao-guilherme.2025.2.jpg" },
   { numero: "XXII", periodo: "2025.1", mc: "Epaminondas Coutinho Feitosa Júnior", file: "epaminondas-junior.2025.1.jpg" },
   { numero: "XXI", periodo: "2024.2", mc: "Fábio Anicácio Brito Correia", file: "fabio-anicacio.2024.2.jpg" },

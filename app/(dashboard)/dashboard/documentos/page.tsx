@@ -567,9 +567,8 @@ export default function DashboardDocumentosPage() {
 
       {/* FILTROS POR ABA E BUSCA */}
       <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Abas */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        {/* Linha 1: Abas de Categorias */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none w-full">
             <button
               onClick={() => setActiveTab("todos")}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
@@ -620,16 +619,28 @@ export default function DashboardDocumentosPage() {
             >
               Atas Capitulares ({atasDocuments.length})
             </button>
+        </div>
+
+        {/* Linha 2: Busca e Filtro de Gestão (Perfeitamente alinhados e sem estrangular abas) */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-300" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por nome da cerimônia, manual, gestão ou nome do MC..."
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs placeholder:text-emerald-200/40 focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+            />
           </div>
 
-          {/* Filtro específico de gestão quando em gestões, atas ou todos */}
           {(activeTab === "gestoes" || activeTab === "atas" || activeTab === "todos") && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0">
               <span className="text-xs text-gray-400 font-medium whitespace-nowrap">Gestão / MC:</span>
               <select
                 value={selectedManagement}
                 onChange={(e) => setSelectedManagement(e.target.value)}
-                className="bg-[#064D32] border border-emerald-500/40 rounded-xl px-3 py-1.5 text-white text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
+                className="w-full sm:w-auto min-w-[240px] bg-[#064D32] border border-emerald-500/40 rounded-xl px-3 py-2 text-white text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer shadow-sm"
               >
                 <option value="todas">Todas as Gestões</option>
                 <option value="Gestão XXV (2026.2)">Gestão XXV (2026.2) — MC Rafael Inácio</option>
@@ -638,18 +649,6 @@ export default function DashboardDocumentosPage() {
               </select>
             </div>
           )}
-        </div>
-
-        {/* Campo de Busca */}
-        <div className="relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-300" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por nome da cerimônia, manual, gestão ou nome do MC..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs placeholder:text-emerald-200/40 focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
-          />
         </div>
       </div>
 

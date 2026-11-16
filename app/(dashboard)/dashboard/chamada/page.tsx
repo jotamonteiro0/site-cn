@@ -25,9 +25,16 @@ import {
   Printer,
   ShieldCheck,
   BookOpen,
-  Download
+  Download,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  RefreshCw,
+  AlertTriangle
 } from "lucide-react";
 import { HISTORICAL_MEETINGS } from "@/lib/data/historicalMeetings";
+import { parseMeetingCategory, deriveManagementFromDate } from "@/lib/repositories/meetings-repository";
 
 interface MemberRecord {
   id: string;
@@ -42,15 +49,19 @@ interface MeetingRecord {
   id: string;
   title: string;
   starts_at: string;
+  ends_at?: string | null;
   location: string;
   status: string;
   description?: string;
+  category?: string;
+  management?: string;
+  mc_name?: string;
+  complementary_info?: string | null;
   ata_pdf_url?: string | null;
   ata_num?: string;
   livro_demolay_page?: string;
   livro_macom_page?: string;
-  management?: string;
-  mc_name?: string;
+  cancelled_at?: string | null;
 }
 
 interface VisitingMasonRecord {
@@ -184,11 +195,41 @@ export default function ChamadaPage() {
   const [visitingMasons, setVisitingMasons] = useState<VisitingMasonRecord[]>([]);
   const [visitingDemolays, setVisitingDemolays] = useState<VisitingDemolayRecord[]>([]);
 
-  // Abas de visualização unificada (Ata vs Chamada)
-  const [sessionSection, setSessionSection] = useState<"chamada" | "ata">("chamada");
+  // Abas de visualização unificada (Ata vs Chamada vs Calendário)
+  const [sessionSection, setSessionSection] = useState<"chamada" | "ata" | "calendario">("chamada");
 
   // Abas dentro da Chamada
   const [activeTab, setActiveTab] = useState<"demolay" | "macom" | "visitantes_demolay" | "visitantes_macom">("demolay");
+
+  // Estado do Gerenciamento do Calendário (Tab 3)
+  const [calendarViewMode, setCalendarViewMode] = useState<"grade" | "lista">("grade");
+  const [calendarMonth, setCalendarMonth] = useState<number>(11); // Novembro (1-12)
+  const [calendarYear, setCalendarYear] = useState<number>(2026);
+  const [calendarCategory, setCalendarCategory] = useState<string>("todas");
+  const [calendarManagement, setCalendarManagement] = useState<string>("todas");
+  const [calendarStatus, setCalendarStatus] = useState<string>("todas");
+  const [calendarSearch, setCalendarSearch] = useState<string>("");
+  const [viewingMeeting, setViewingMeeting] = useState<MeetingRecord | null>(null);
+  const [cancellingMeeting, setCancellingMeeting] = useState<MeetingRecord | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  // Leitura de parâmetros de busca (?tab=calendario)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const timer = setTimeout(() => {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get("tab");
+        if (tabParam === "calendario" || tabParam === "agenda") {
+          setSessionSection("calendario");
+        } else if (tabParam === "ata") {
+          setSessionSection("ata");
+        } else if (tabParam === "chamada") {
+          setSessionSection("chamada");
+        }
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // Estado da Ata da Reunião
   const [minuteData, setMinuteData] = useState<{
@@ -214,7 +255,13 @@ export default function ChamadaPage() {
     title: string;
     date: string;
     time: string;
+    endTime?: string;
     location: string;
+    category?: string;
+    management?: string;
+    status?: string;
+    description?: string;
+    complementary_info?: string;
   } | null>(null);
 
   // Modal Maçom Visitante
@@ -238,7 +285,14 @@ export default function ChamadaPage() {
   const [convocationCopied, setConvocationCopied] = useState(false);
 
   // Permissões e Perfis (RBAC Guard)
-  const [userRole, setUserRole] = useState<string>("membro");
+  const [userRole, setUserRole] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      if (localStorage.getItem("cn_audit_master") === "true" || localStorage.getItem("cn_user_role") === "master") {
+        return "master";
+      }
+    }
+    return "membro";
+  });
   const [viewAsMember, setViewAsMember] = useState(false);
 
   // Checa Permissão do Usuário Logado
@@ -300,6 +354,7 @@ export default function ChamadaPage() {
   const effectiveRole = viewAsMember ? "membro" : userRole;
   const isMaster = effectiveRole === "master" || effectiveRole === "admin";
   const canManageAttendance = isMaster || effectiveRole === "escrivao";
+  const canManageCalendar = isMaster || effectiveRole === "escrivao";
 
   // 1. Carregar Reuniões e Membros em Paralelo
   useEffect(() => {
@@ -327,11 +382,12 @@ export default function ChamadaPage() {
           );
           return {
             ...m,
+            category: parseMeetingCategory(m.title),
+            management: hist?.management || deriveManagementFromDate(m.starts_at),
             ata_pdf_url: hist?.ata_pdf_url || null,
             ata_num: hist?.ata_num || "Ata Oficial",
             livro_demolay_page: hist?.livro_demolay_page,
             livro_macom_page: hist?.livro_macom_page,
-            management: hist?.management,
             mc_name: hist?.mc_name,
           };
         });
@@ -579,58 +635,321 @@ export default function ChamadaPage() {
     }
   };
 
+  // Navegação de Mês do Calendário
+  const handlePrevCalendarMonth = () => {
+    if (calendarMonth === 1) {
+      setCalendarMonth(12);
+      setCalendarYear((y) => y - 1);
+    } else {
+      setCalendarMonth((m) => m - 1);
+    }
+  };
+
+  const handleNextCalendarMonth = () => {
+    if (calendarMonth === 12) {
+      setCalendarMonth(1);
+      setCalendarYear((y) => y + 1);
+    } else {
+      setCalendarMonth((m) => m + 1);
+    }
+  };
+
+  const calendarMonthLabel = useMemo(() => {
+    const months = [
+      "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ];
+    return `${months[calendarMonth - 1]} de ${calendarYear}`;
+  }, [calendarMonth, calendarYear]);
+
+  // Métricas do Calendário
+  const calendarMetrics = useMemo(() => {
+    const total = meetings.length;
+    const agendadas = meetings.filter((m) => m.status === "agendada").length;
+    const realizadas = meetings.filter((m) => m.status === "realizada").length;
+    const canceladas = meetings.filter((m) => m.status === "cancelada").length;
+    return { total, agendadas, realizadas, canceladas };
+  }, [meetings]);
+
+  // Estrutura de dados para a Grade Mensal
+  const calendarGridData = useMemo(() => {
+    const firstDayIndex = new Date(calendarYear, calendarMonth - 1, 1).getDay(); // 0 = Dom
+    const totalDays = new Date(calendarYear, calendarMonth, 0).getDate();
+
+    const meetingsByDay: Record<number, MeetingRecord[]> = {};
+    meetings.forEach((m) => {
+      const d = new Date(m.starts_at);
+      if (d.getFullYear() === calendarYear && d.getMonth() + 1 === calendarMonth) {
+        const day = d.getDate();
+        if (!meetingsByDay[day]) meetingsByDay[day] = [];
+        meetingsByDay[day].push(m);
+      }
+    });
+
+    return { firstDayIndex, totalDays, meetingsByDay };
+  }, [meetings, calendarYear, calendarMonth]);
+
+  // Lista Filtrada para visualização cronológica
+  const filteredCalendarMeetings = useMemo(() => {
+    return meetings
+      .filter((m) => {
+        if (calendarCategory !== "todas") {
+          const cat = (m.category || parseMeetingCategory(m.title)).toLowerCase();
+          if (!cat.includes(calendarCategory.toLowerCase())) return false;
+        }
+        if (calendarManagement !== "todas") {
+          const mgmt = (m.management || deriveManagementFromDate(m.starts_at)).toLowerCase();
+          if (!mgmt.includes(calendarManagement.toLowerCase())) return false;
+        }
+        if (calendarStatus !== "todas") {
+          if (m.status !== calendarStatus) return false;
+        }
+        if (calendarSearch.trim()) {
+          const q = calendarSearch.toLowerCase().trim();
+          const matchesTitle = m.title.toLowerCase().includes(q);
+          const matchesLoc = (m.location || "").toLowerCase().includes(q);
+          const matchesDesc = (m.description || "").toLowerCase().includes(q);
+          const matchesCat = (m.category || "").toLowerCase().includes(q);
+          if (!matchesTitle && !matchesLoc && !matchesDesc && !matchesCat) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+  }, [meetings, calendarCategory, calendarManagement, calendarStatus, calendarSearch]);
+
+  // Cancelamento de Reunião com Preservação de Histórico
+  const handleCancelMeeting = async (meetingId: string) => {
+    if (!canManageCalendar) {
+      alert("Acesso restrito ao perfil Master ou Escrivão para gerenciar reuniões.");
+      return;
+    }
+    setIsCancelling(true);
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const res = await fetch(`/api/meetings/${meetingId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!res.ok) {
+        const { error } = await supabase
+          .from("meetings")
+          .update({ status: "cancelada", cancelled_at: new Date().toISOString() })
+          .eq("id", meetingId);
+        if (error) throw error;
+      }
+
+      setMeetings((prev) =>
+        prev.map((m) =>
+          m.id === meetingId
+            ? { ...m, status: "cancelada", cancelled_at: new Date().toISOString() }
+            : m
+        )
+      );
+
+      setSaveSuccessMsg("Sessão cancelada com sucesso no calendário oficial. Histórico preservado.");
+      setTimeout(() => setSaveSuccessMsg(""), 4000);
+      setCancellingMeeting(null);
+    } catch (err) {
+      console.error("Erro ao cancelar reunião:", err);
+      alert("Erro ao cancelar reunião.");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  // Reativação de Reunião Cancelada
+  const handleReactivateMeeting = async (meetingId: string) => {
+    if (!canManageCalendar) {
+      alert("Acesso restrito ao perfil Master ou Escrivão para gerenciar reuniões.");
+      return;
+    }
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const res = await fetch(`/api/meetings/${meetingId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ status: "agendada" }),
+      });
+
+      if (!res.ok) {
+        const { error } = await supabase
+          .from("meetings")
+          .update({ status: "agendada", cancelled_at: null })
+          .eq("id", meetingId);
+        if (error) throw error;
+      }
+
+      setMeetings((prev) =>
+        prev.map((m) =>
+          m.id === meetingId
+            ? { ...m, status: "agendada", cancelled_at: null }
+            : m
+        )
+      );
+
+      setSaveSuccessMsg("Sessão reativada com sucesso no calendário oficial.");
+      setTimeout(() => setSaveSuccessMsg(""), 4000);
+    } catch (err) {
+      console.error("Erro ao reativar reunião:", err);
+      alert("Erro ao reativar reunião.");
+    }
+  };
+
   // Salvar / Editar Reunião
   const handleSaveMeeting = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingMeeting) return;
     if (!isMaster) {
-      alert("Acesso restrito ao Mestre Conselheiro/Master para cadastrar ou editar reuniões.");
-      return;
+      if (!canManageCalendar) {
+        alert("Acesso restrito ao Mestre Conselheiro/Master para cadastrar ou editar reuniões.");
+        return;
+      }
     }
 
     try {
       const supabase = createClient();
       const startsAt = new Date(`${editingMeeting.date}T${editingMeeting.time || "16:00"}:00-03:00`).toISOString();
+      let endsAt: string | null = null;
+      if (editingMeeting.endTime) {
+        endsAt = new Date(`${editingMeeting.date}T${editingMeeting.endTime}:00-03:00`).toISOString();
+        if (new Date(endsAt).getTime() < new Date(startsAt).getTime()) {
+          alert("O horário de término não pode ser anterior ao horário de início.");
+          return;
+        }
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const category = editingMeeting.category || parseMeetingCategory(editingMeeting.title);
+      const management = editingMeeting.management || deriveManagementFromDate(startsAt);
+      const status = editingMeeting.status || "agendada";
+
+      const payload = {
+        title: editingMeeting.title.trim(),
+        starts_at: startsAt,
+        ends_at: endsAt,
+        location: editingMeeting.location?.trim() || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+        category,
+        management,
+        status,
+        description: editingMeeting.description?.trim() || "",
+        complementary_info: editingMeeting.complementary_info?.trim() || null,
+      };
 
       if (editingMeeting.id) {
         // Atualiza
-        await supabase
-          .from("meetings")
-          .update({
-            title: editingMeeting.title,
-            starts_at: startsAt,
-            location: editingMeeting.location,
-          })
-          .eq("id", editingMeeting.id);
+        const res = await fetch(`/api/meetings/${editingMeeting.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          if (res.status === 403) {
+            alert(errData.error || "Ação não permitida: Apenas reuniões da Gestão XXV (2026.2) podem ser alteradas.");
+            return;
+          }
+          await supabase
+            .from("meetings")
+            .update({
+              title: payload.title,
+              starts_at: startsAt,
+              location: payload.location,
+              status: payload.status,
+              description: payload.description,
+            })
+            .eq("id", editingMeeting.id);
+        }
 
         setMeetings((prev) =>
           prev.map((m) =>
             m.id === editingMeeting.id
-              ? { ...m, title: editingMeeting.title, starts_at: startsAt, location: editingMeeting.location }
+              ? {
+                  ...m,
+                  title: payload.title,
+                  starts_at: startsAt,
+                  ends_at: payload.ends_at,
+                  location: payload.location,
+                  status: payload.status,
+                  category: payload.category,
+                  management: payload.management,
+                  description: payload.description,
+                  complementary_info: payload.complementary_info,
+                }
               : m
           )
         );
+        setSaveSuccessMsg("Reunião capitular atualizada com sucesso no calendário oficial!");
       } else {
         // Cria
-        const { data, error } = await supabase
-          .from("meetings")
-          .insert({
-            chapter_id: "00000000-0000-0000-0000-000000000500",
-            title: editingMeeting.title,
-            starts_at: startsAt,
-            location: editingMeeting.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
-            status: "agendada",
-          })
-          .select()
-          .single();
+        const res = await fetch("/api/meetings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(payload),
+        });
 
-        if (error) throw error;
-        if (data) {
-          setMeetings((prev) => [...prev, data as MeetingRecord]);
-          setSelectedMeetingId(data.id);
+        if (res.ok) {
+          const json = await res.json();
+          const created = json.item;
+          setMeetings((prev) => [...prev, created]);
+          setSelectedMeetingId(created.id);
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          if (res.status === 403) {
+            alert(errData.error || "Ação não permitida: Apenas reuniões da Gestão XXV (2026.2) podem ser criadas.");
+            return;
+          }
+          const { data, error } = await supabase
+            .from("meetings")
+            .insert({
+              chapter_id: "00000000-0000-0000-0000-000000000500",
+              title: payload.title,
+              starts_at: startsAt,
+              location: payload.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+              status: payload.status,
+              description: payload.description,
+            })
+            .select()
+            .single();
+
+          if (error) throw error;
+          if (data) {
+            const enriched: MeetingRecord = {
+              ...data,
+              category: payload.category,
+              management: payload.management,
+              ends_at: payload.ends_at,
+              complementary_info: payload.complementary_info,
+            };
+            setMeetings((prev) => [...prev, enriched]);
+            setSelectedMeetingId(data.id);
+          }
         }
+        setSaveSuccessMsg("Nova reunião capitular cadastrada com sucesso no calendário oficial!");
       }
 
+      setTimeout(() => setSaveSuccessMsg(""), 4000);
       setIsMeetingModalOpen(false);
       setEditingMeeting(null);
     } catch (err) {
@@ -1036,6 +1355,18 @@ export default function ChamadaPage() {
         >
           <FileText className="w-4 h-4 text-[#D9AA45]" />
           <span>2. Ata da Reunião</span>
+        </button>
+
+        <button
+          onClick={() => setSessionSection("calendario")}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            sessionSection === "calendario"
+              ? "bg-[#087443] text-white border border-[#D9AA45]/40 shadow-sm"
+              : "text-gray-400 hover:text-white"
+          }`}
+        >
+          <CalendarIcon className="w-4 h-4 text-[#D9AA45]" />
+          <span>3. Gerenciamento do Calendário & Agenda</span>
         </button>
       </div>
 
@@ -1686,17 +2017,724 @@ export default function ChamadaPage() {
         </div>
       )}
 
-      {/* MODAL: ADICIONAR / EDITAR REUNIÃO */}
-      {isMeetingModalOpen && isMaster && editingMeeting && (
+      {/* SEÇÃO 3: GERENCIAMENTO DO CALENDÁRIO & AGENDA CAPITULAR */}
+      {sessionSection === "calendario" && (
+        <div className="space-y-6">
+          {/* Top Banner */}
+          <div className="p-6 rounded-2xl bg-[#0C1D14] border border-white/10 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-[#D9AA45] bg-[#D9AA45]/15 border border-[#D9AA45]/30 uppercase tracking-wider font-mono">
+                  Gestão Administrativa do Calendário
+                </span>
+                <span className="text-[11px] text-gray-400 font-mono">Fonte: PostgreSQL (public.meetings)</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+                <CalendarIcon className="w-6 h-6 text-[#D9AA45]" />
+                <span>Agenda Capitular & Controle de Sessões</span>
+              </h2>
+              <p className="text-xs text-gray-400 mt-1 max-w-2xl">
+                Administre as reuniões ritualísticas, sessões magnas, públicas e encontros capitulares. Qualquer alteração reflete imediatamente na Visão Geral e no Calendário de Atividades.
+              </p>
+            </div>
+
+            {canManageCalendar && (
+              <button
+                onClick={() => {
+                  setEditingMeeting({
+                    title: "Sessão Ordinária",
+                    date: new Date().toISOString().split("T")[0],
+                    time: "16:00",
+                    endTime: "18:00",
+                    location: "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+                    category: "Sessão Ordinária",
+                    management: "Gestão XXV (2026.2)",
+                    status: "agendada",
+                    description: "",
+                    complementary_info: "",
+                  });
+                  setIsMeetingModalOpen(true);
+                }}
+                className="px-4 py-2.5 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs transition-colors flex items-center gap-2 cursor-pointer shadow-sm shrink-0"
+              >
+                <PlusCircle className="w-4 h-4 text-[#04281A]" />
+                <span>+ Nova Reunião</span>
+              </button>
+            )}
+          </div>
+
+          {/* Cards de Métricas */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl bg-[#0E2218] border border-white/10 space-y-1 shadow-sm">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">
+                Total de Sessões
+              </span>
+              <p className="text-2xl font-bold text-white font-mono tabular-nums">{calendarMetrics.total}</p>
+              <p className="text-[10px] text-gray-400">Capítulo nº 500</p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#0E2218] border border-emerald-500/20 space-y-1 shadow-sm">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 font-mono">
+                Agendadas
+              </span>
+              <p className="text-2xl font-bold text-emerald-400 font-mono tabular-nums">{calendarMetrics.agendadas}</p>
+              <p className="text-[10px] text-emerald-300/70">Ativas no calendário</p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#0E2218] border border-blue-500/20 space-y-1 shadow-sm">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300 font-mono">
+                Realizadas
+              </span>
+              <p className="text-2xl font-bold text-blue-400 font-mono tabular-nums">{calendarMetrics.realizadas}</p>
+              <p className="text-[10px] text-blue-300/70">Com chamada e ata</p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#0E2218] border border-red-500/20 space-y-1 shadow-sm">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-red-300 font-mono">
+                Canceladas
+              </span>
+              <p className="text-2xl font-bold text-red-400 font-mono tabular-nums">{calendarMetrics.canceladas}</p>
+              <p className="text-[10px] text-red-300/70">Histórico preservado</p>
+            </div>
+          </div>
+
+          {/* Barra de Filtros e Alternância de Visualização */}
+          <div className="p-4 rounded-xl bg-[#0C1D14] border border-white/10 shadow-sm space-y-3">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              {/* Seletor Mês / Ano */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePrevCalendarMonth}
+                  className="p-1.5 rounded-lg bg-[#08140E] border border-white/10 text-gray-300 hover:text-white hover:border-[#D9AA45]/40 transition-colors cursor-pointer"
+                  title="Mês anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-xs font-bold text-white font-mono px-3 py-1.5 rounded-lg bg-[#08140E] border border-white/10 min-w-[160px] text-center">
+                  {calendarMonthLabel}
+                </span>
+                <button
+                  onClick={handleNextCalendarMonth}
+                  className="p-1.5 rounded-lg bg-[#08140E] border border-white/10 text-gray-300 hover:text-white hover:border-[#D9AA45]/40 transition-colors cursor-pointer"
+                  title="Próximo mês"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Alternador Grade vs Lista */}
+              <div className="flex items-center gap-1.5 p-1 rounded-lg bg-[#08140E] border border-white/10">
+                <button
+                  onClick={() => setCalendarViewMode("grade")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    calendarViewMode === "grade"
+                      ? "bg-[#087443] text-white border border-[#D9AA45]/40 shadow-sm"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <CalendarIcon className="w-3.5 h-3.5 text-[#D9AA45]" />
+                  <span>Grade Mensal</span>
+                </button>
+                <button
+                  onClick={() => setCalendarViewMode("lista")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    calendarViewMode === "lista"
+                      ? "bg-[#087443] text-white border border-[#D9AA45]/40 shadow-sm"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5 text-[#D9AA45]" />
+                  <span>Lista Cronológica</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Linha de Filtros Adicionais */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-2 border-t border-white/10">
+              {/* Filtro de Categoria */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono mb-1">
+                  Categoria
+                </label>
+                <select
+                  value={calendarCategory}
+                  onChange={(e) => setCalendarCategory(e.target.value)}
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-[#08140E] border border-white/15 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#D9AA45] cursor-pointer"
+                >
+                  <option value="todas">Todas as Categorias</option>
+                  <option value="Sessão Ordinária">Sessão Ordinária</option>
+                  <option value="Sessão Magna de Iniciação">Sessão Magna de Iniciação</option>
+                  <option value="Sessão Magna de Elevação">Sessão Magna de Elevação</option>
+                  <option value="Cerimônia Pública">Cerimônia Pública</option>
+                  <option value="Reunião do Conselho Consultivo">Reunião do Conselho</option>
+                  <option value="Assembleia Geral">Assembleia Geral</option>
+                  <option value="Ação Filantrópica">Ação Filantrópica</option>
+                  <option value="Entretenimento">Entretenimento</option>
+                </select>
+              </div>
+
+              {/* Filtro de Gestão */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono mb-1">
+                  Gestão
+                </label>
+                <select
+                  value={calendarManagement}
+                  onChange={(e) => setCalendarManagement(e.target.value)}
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-[#08140E] border border-white/15 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#D9AA45] cursor-pointer"
+                >
+                  <option value="todas">Todas as Gestões</option>
+                  <option value="Gestão XXV (2026.2)">Gestão XXV (2026.2)</option>
+                  <option value="Gestão XXIV (2026.1)">Gestão XXIV (2026.1)</option>
+                  <option value="Gestão XXIII (2025.2)">Gestão XXIII (2025.2)</option>
+                  <option value="Gestão XXVI (2027.1)">Gestão XXVI (2027.1)</option>
+                </select>
+              </div>
+
+              {/* Filtro de Status */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono mb-1">
+                  Status
+                </label>
+                <select
+                  value={calendarStatus}
+                  onChange={(e) => setCalendarStatus(e.target.value)}
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-[#08140E] border border-white/15 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#D9AA45] cursor-pointer"
+                >
+                  <option value="todas">Todos os Status</option>
+                  <option value="agendada">Agendadas</option>
+                  <option value="realizada">Realizadas</option>
+                  <option value="cancelada">Canceladas</option>
+                </select>
+              </div>
+
+              {/* Campo de Busca */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono mb-1">
+                  Pesquisar Pauta / Local
+                </label>
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" />
+                  <input
+                    type="text"
+                    value={calendarSearch}
+                    onChange={(e) => setCalendarSearch(e.target.value)}
+                    placeholder="Filtrar eventos..."
+                    className="w-full pl-8 pr-2.5 py-1.5 rounded-lg bg-[#08140E] border border-white/15 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#D9AA45]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* VISUALIZAÇÃO: GRADE MENSAL */}
+          {calendarViewMode === "grade" && (
+            <div className="p-5 sm:p-6 rounded-2xl bg-[#0C1D14] border border-white/10 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2 font-mono">
+                  <CalendarIcon className="w-4 h-4 text-[#D9AA45]" />
+                  <span>Calendário Litúrgico — {calendarMonthLabel}</span>
+                </h3>
+                <span className="text-[11px] text-gray-400 font-mono">
+                  Clique na reunião para ver pauta e opções
+                </span>
+              </div>
+
+              {/* Cabeçalho dos Dias da Semana */}
+              <div className="grid grid-cols-7 gap-1 text-center font-mono text-[11px] font-bold text-[#D9AA45] border-b border-white/10 pb-2">
+                <span>DOM</span>
+                <span>SEG</span>
+                <span>TER</span>
+                <span>QUA</span>
+                <span>QUI</span>
+                <span>SEX</span>
+                <span>SÁB</span>
+              </div>
+
+              {/* Células da Grade */}
+              <div className="grid grid-cols-7 gap-1.5 text-xs">
+                {Array.from({ length: calendarGridData.firstDayIndex }).map((_, idx) => (
+                  <div key={`empty-${idx}`} className="min-h-[90px] rounded-lg bg-black/10 border border-transparent" />
+                ))}
+
+                {Array.from({ length: calendarGridData.totalDays }).map((_, idx) => {
+                  const dayNum = idx + 1;
+                  const dayMeetings = calendarGridData.meetingsByDay[dayNum] || [];
+                  const dayOfWeek = (calendarGridData.firstDayIndex + idx) % 7;
+                  const isSun = dayOfWeek === 0;
+
+                  return (
+                    <div
+                      key={`day-${dayNum}`}
+                      className={`min-h-[90px] p-2 rounded-lg border transition-colors flex flex-col justify-between ${
+                        dayMeetings.length > 0
+                          ? "bg-[#0E2218] border-[#D9AA45]/40 shadow-sm"
+                          : isSun
+                          ? "bg-[#08140E]/80 border-white/10"
+                          : "bg-[#08140E]/40 border-white/5"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`font-mono font-bold text-xs ${
+                            isSun ? "text-[#D9AA45]" : "text-gray-300"
+                          }`}
+                        >
+                          {dayNum}
+                        </span>
+                        {dayMeetings.length > 0 && (
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            {dayMeetings.length}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-1 mt-1">
+                        {dayMeetings.map((meet) => {
+                          const timeStr = new Date(meet.starts_at).toLocaleTimeString("pt-BR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          });
+
+                          let statusDot = "bg-emerald-400";
+                          if (meet.status === "realizada") statusDot = "bg-blue-400";
+                          if (meet.status === "cancelada") statusDot = "bg-red-400";
+
+                          return (
+                            <button
+                              key={meet.id}
+                              onClick={() => setViewingMeeting(meet)}
+                              className={`w-full text-left p-1 rounded text-[10px] font-medium truncate cursor-pointer transition-colors block border ${
+                                meet.status === "cancelada"
+                                  ? "bg-red-950/40 text-red-300 border-red-500/30 hover:bg-red-950/70"
+                                  : meet.status === "realizada"
+                                  ? "bg-blue-950/40 text-blue-300 border-blue-500/30 hover:bg-blue-950/70"
+                                  : "bg-[#08140E] text-white border-white/10 hover:border-[#D9AA45]/50"
+                              }`}
+                              title={`${meet.title} (${timeStr})`}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span className={`w-1.5 h-1.5 rounded-full ${statusDot} shrink-0`} />
+                                <span className="font-mono text-[9px] text-[#D9AA45] shrink-0">{timeStr}</span>
+                                <span className="truncate">{meet.title}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* VISUALIZAÇÃO: LISTA CRONOLÓGICA */}
+          {calendarViewMode === "lista" && (
+            <div className="space-y-3">
+              {filteredCalendarMeetings.length === 0 ? (
+                <div className="p-8 text-center text-xs text-gray-400 rounded-xl bg-[#0C1D14] border border-white/10">
+                  Nenhuma reunião encontrada para os filtros selecionados.
+                </div>
+              ) : (
+                filteredCalendarMeetings.map((m) => {
+                  const d = new Date(m.starts_at);
+                  const dataFormatada = d.toLocaleDateString("pt-BR", {
+                    weekday: "long",
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                  });
+                  const horaFormatada = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+                  let statusBadge = (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">
+                      ● Agendada
+                    </span>
+                  );
+                  if (m.status === "realizada") {
+                    statusBadge = (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase bg-blue-950/80 text-blue-300 border border-blue-500/30">
+                        ● Realizada
+                      </span>
+                    );
+                  } else if (m.status === "cancelada") {
+                    statusBadge = (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase bg-red-950/80 text-red-300 border border-red-500/30">
+                        ● Cancelada
+                      </span>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={m.id}
+                      className={`p-4 sm:p-5 rounded-xl bg-[#0C1D14] border transition-all space-y-3 shadow-sm ${
+                        m.status === "cancelada"
+                          ? "border-red-500/30 opacity-80"
+                          : "border-white/10 hover:border-[#D9AA45]/40"
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {statusBadge}
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono text-[#D9AA45] bg-[#D9AA45]/15 border border-[#D9AA45]/30">
+                            {m.category || parseMeetingCategory(m.title)}
+                          </span>
+                          <span className="text-[11px] text-gray-400 font-mono">
+                            {m.management || deriveManagementFromDate(m.starts_at)}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-xs text-emerald-300 font-mono font-medium">
+                          <Clock className="w-3.5 h-3.5 text-[#D9AA45]" />
+                          <span className="capitalize">{dataFormatada} às {horaFormatada}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                        <div className="space-y-1.5 flex-1">
+                          <h4 className="text-base font-bold text-white tracking-tight">
+                            {m.title}
+                          </h4>
+                          <div className="flex items-center gap-2 text-xs text-gray-300">
+                            <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            <span>{m.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"}</span>
+                          </div>
+                          {m.description && (
+                            <p className="text-xs text-gray-300/80 line-clamp-2 mt-1">
+                              {m.description}
+                            </p>
+                          )}
+                          {m.cancelled_at && (
+                            <p className="text-[11px] text-red-400 font-mono mt-1">
+                              ⚠️ Sessão cancelada em {new Date(m.cancelled_at).toLocaleDateString("pt-BR")}. O histórico capitular foi preservado no PostgreSQL.
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Ações da Sessão */}
+                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => setViewingMeeting(m)}
+                            className="px-3 py-1.5 rounded-lg bg-[#0E2218] hover:bg-[#132E20] border border-white/10 text-gray-200 hover:text-white text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-[#D9AA45]" />
+                            <span>Ver Detalhes</span>
+                          </button>
+
+                          {canManageCalendar && (
+                            <>
+                              {(m.management || deriveManagementFromDate(m.starts_at)) === "Gestão XXV (2026.2)" ? (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      const dObj = new Date(m.starts_at);
+                                      setEditingMeeting({
+                                        id: m.id,
+                                        title: m.title,
+                                        date: dObj.toISOString().split("T")[0],
+                                        time: dObj.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+                                        endTime: m.ends_at ? new Date(m.ends_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "",
+                                        location: m.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+                                        category: m.category || parseMeetingCategory(m.title),
+                                        management: m.management || deriveManagementFromDate(m.starts_at),
+                                        status: m.status,
+                                        description: m.description || "",
+                                        complementary_info: m.complementary_info || "",
+                                      });
+                                      setIsMeetingModalOpen(true);
+                                    }}
+                                    className="px-3 py-1.5 rounded-lg bg-[#0E2218] hover:bg-[#132E20] border border-white/10 hover:border-[#D9AA45]/40 text-gray-200 hover:text-white text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5 text-[#D9AA45]" />
+                                    <span>Editar</span>
+                                  </button>
+
+                                  {m.status !== "cancelada" ? (
+                                    <button
+                                      onClick={() => setCancellingMeeting(m)}
+                                      className="px-3 py-1.5 rounded-lg bg-red-950/40 hover:bg-red-950/70 border border-red-500/30 text-red-300 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                    >
+                                      <XCircle className="w-3.5 h-3.5 text-red-400" />
+                                      <span>Cancelar Sessão</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleReactivateMeeting(m.id)}
+                                      className="px-3 py-1.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-950/70 border border-emerald-500/30 text-emerald-300 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                    >
+                                      <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+                                      <span>Reativar Sessão</span>
+                                    </button>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="px-2.5 py-1 rounded-lg text-[10px] text-gray-400 bg-white/5 border border-white/10 font-mono">
+                                  Gestão Arquivada (Somente Leitura)
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* MODAL: VER DETALHES DA SESSÃO */}
+      {viewingMeeting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
-          <div className="w-full max-w-md p-6 sm:p-7 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/30 shadow-2xl space-y-4 text-white animate-in zoom-in-95">
-            <h3 className="text-lg font-bold">
-              {editingMeeting.id ? "Editar Dados da Reunião" : "Cadastrar Nova Reunião"}
-            </h3>
+          <div className="w-full max-w-lg p-6 sm:p-7 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/30 shadow-2xl space-y-4 text-white animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="w-5 h-5 text-[#D9AA45]" />
+                <h3 className="text-base font-bold">Detalhes da Sessão Oficial</h3>
+              </div>
+              <button
+                onClick={() => setViewingMeeting(null)}
+                className="text-gray-400 hover:text-white text-xs cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">
+                  Título da Reunião
+                </span>
+                <p className="text-base font-bold text-white mt-0.5">{viewingMeeting.title}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-[#08140E] border border-white/10">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">
+                    Categoria
+                  </span>
+                  <p className="text-xs font-semibold text-[#D9AA45] mt-0.5">
+                    {viewingMeeting.category || parseMeetingCategory(viewingMeeting.title)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">
+                    Gestão
+                  </span>
+                  <p className="text-xs font-semibold text-white mt-0.5">
+                    {viewingMeeting.management || deriveManagementFromDate(viewingMeeting.starts_at)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-[#08140E] border border-white/10">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">
+                    Data & Horário
+                  </span>
+                  <p className="text-xs text-white mt-0.5">
+                    {new Date(viewingMeeting.starts_at).toLocaleDateString("pt-BR", {
+                      weekday: "short",
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}{" "}
+                    às{" "}
+                    {new Date(viewingMeeting.starts_at).toLocaleTimeString("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">
+                    Status
+                  </span>
+                  <p className="text-xs font-semibold uppercase mt-0.5">
+                    {viewingMeeting.status === "agendada" && <span className="text-emerald-400">● Agendada</span>}
+                    {viewingMeeting.status === "realizada" && <span className="text-blue-400">● Realizada</span>}
+                    {viewingMeeting.status === "cancelada" && <span className="text-red-400">● Cancelada</span>}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-[#08140E] border border-white/10">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">
+                  Local da Sessão
+                </span>
+                <p className="text-xs text-white mt-0.5">
+                  {viewingMeeting.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"}
+                </p>
+              </div>
+
+              {viewingMeeting.description && (
+                <div className="p-3 rounded-lg bg-[#08140E] border border-white/10">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">
+                    Pauta / Ordem dos Trabalhos
+                  </span>
+                  <p className="text-xs text-gray-300 mt-0.5 whitespace-pre-wrap">{viewingMeeting.description}</p>
+                </div>
+              )}
+
+              {viewingMeeting.complementary_info && (
+                <div className="p-3 rounded-lg bg-[#08140E] border border-white/10">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">
+                    Orientações Complementares
+                  </span>
+                  <p className="text-xs text-emerald-200/80 mt-0.5 whitespace-pre-wrap">{viewingMeeting.complementary_info}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-white/10">
+              <a
+                href={getGoogleCalendarUrl(viewingMeeting)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2 rounded-lg bg-[#0E2218] hover:bg-[#132E20] border border-white/10 text-gray-200 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <CalendarCheck className="w-3.5 h-3.5 text-[#D9AA45]" />
+                <span>Google Agenda</span>
+              </a>
+
+              <div className="flex items-center gap-2">
+                {canManageCalendar && (
+                  <>
+                    {(viewingMeeting.management || deriveManagementFromDate(viewingMeeting.starts_at)) === "Gestão XXV (2026.2)" ? (
+                      <>
+                        {viewingMeeting.status !== "cancelada" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const target = viewingMeeting;
+                              setViewingMeeting(null);
+                              setCancellingMeeting(target);
+                            }}
+                            className="px-3 py-2 rounded-lg bg-red-950/50 hover:bg-red-950 border border-red-500/40 text-red-300 text-xs font-semibold cursor-pointer transition-colors flex items-center gap-1.5"
+                          >
+                            <XCircle className="w-3.5 h-3.5 text-red-400" />
+                            <span>Cancelar Sessão</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            const m = viewingMeeting;
+                            const dObj = new Date(m.starts_at);
+                            setEditingMeeting({
+                              id: m.id,
+                              title: m.title,
+                              date: dObj.toISOString().split("T")[0],
+                              time: dObj.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+                              endTime: m.ends_at ? new Date(m.ends_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "",
+                              location: m.location || "A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)",
+                              category: m.category || parseMeetingCategory(m.title),
+                              management: m.management || deriveManagementFromDate(m.starts_at),
+                              status: m.status,
+                              description: m.description || "",
+                              complementary_info: m.complementary_info || "",
+                            });
+                            setViewingMeeting(null);
+                            setIsMeetingModalOpen(true);
+                          }}
+                          className="px-3.5 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold text-xs cursor-pointer shadow-sm transition-colors flex items-center gap-1.5"
+                        >
+                          <Edit2 className="w-3.5 h-3.5 text-[#04281A]" />
+                          <span>Editar</span>
+                        </button>
+                      </>
+                    ) : (
+                      <span className="px-2.5 py-1.5 rounded-lg text-xs text-gray-400 bg-white/5 border border-white/10 font-mono">
+                        Gestão Arquivada (Somente Leitura)
+                      </span>
+                    )}
+                  </>
+                )}
+                <button
+                  onClick={() => setViewingMeeting(null)}
+                  className="px-3.5 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs cursor-pointer transition-colors"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CONFIRMAÇÃO DE CANCELAMENTO */}
+      {cancellingMeeting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-md p-6 sm:p-7 rounded-2xl bg-[#0C1D14] border border-red-500/40 shadow-2xl space-y-4 text-white animate-in zoom-in-95">
+            <div className="flex items-center gap-2 text-red-400">
+              <AlertTriangle className="w-5 h-5 shrink-0" />
+              <h3 className="text-base font-bold">Confirmar Cancelamento de Sessão</h3>
+            </div>
+
+            <p className="text-xs text-gray-300 leading-relaxed">
+              Você está prestes a cancelar a sessão <strong className="text-white">&ldquo;{cancellingMeeting.title}&rdquo;</strong> agendada para{" "}
+              <strong className="text-white">
+                {new Date(cancellingMeeting.starts_at).toLocaleDateString("pt-BR")}
+              </strong>.
+            </p>
+
+            <div className="p-3 rounded-lg bg-[#08140E] border border-white/10 text-[11px] text-gray-400 space-y-1">
+              <p className="font-semibold text-emerald-400">✓ Preservação Histórica Garantida:</p>
+              <p>O registro não será apagado do banco de dados PostgreSQL. Ele permanecerá arquivado com status <code className="text-[#D9AA45]">&apos;cancelada&apos;</code> e data de cancelamento registrada para auditoria.</p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+              <button
+                type="button"
+                disabled={isCancelling}
+                onClick={() => setCancellingMeeting(null)}
+                className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs cursor-pointer transition-colors disabled:opacity-50"
+              >
+                Voltar
+              </button>
+              <button
+                type="button"
+                disabled={isCancelling}
+                onClick={() => handleCancelMeeting(cancellingMeeting.id)}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-xs cursor-pointer transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>{isCancelling ? "Cancelando..." : "Confirmar Cancelamento"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ADICIONAR / EDITAR REUNIÃO */}
+      {isMeetingModalOpen && canManageCalendar && editingMeeting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in">
+          <div className="w-full max-w-xl p-6 sm:p-7 rounded-2xl bg-[#0C1D14] border border-[#D9AA45]/30 shadow-2xl space-y-4 text-white animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="w-5 h-5 text-[#D9AA45]" />
+                <h3 className="text-base font-bold">
+                  {editingMeeting.id ? "Editar Dados da Reunião" : "Cadastrar Nova Reunião"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMeetingModalOpen(false);
+                  setEditingMeeting(null);
+                }}
+                className="text-gray-400 hover:text-white text-xs cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
 
             <form onSubmit={handleSaveMeeting} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-semibold mb-1 text-gray-300">Título da Sessão</label>
+                <label className="block font-semibold mb-1 text-gray-300">Título da Sessão *</label>
                 <input
                   type="text"
                   required
@@ -1717,9 +2755,45 @@ export default function ChamadaPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Categoria e Gestão */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold mb-1 text-gray-300">Data</label>
+                  <label className="block font-semibold mb-1 text-gray-300">Categoria Litúrgica</label>
+                  <select
+                    value={editingMeeting.category || "Sessão Ordinária"}
+                    onChange={(e) =>
+                      setEditingMeeting({ ...editingMeeting, category: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] cursor-pointer"
+                  >
+                    <option value="Sessão Ordinária">Sessão Ordinária</option>
+                    <option value="Sessão Magna de Iniciação">Sessão Magna de Iniciação</option>
+                    <option value="Sessão Magna de Elevação">Sessão Magna de Elevação</option>
+                    <option value="Cerimônia Pública">Cerimônia Pública</option>
+                    <option value="Reunião do Conselho Consultivo">Reunião do Conselho Consultivo</option>
+                    <option value="Assembleia Geral">Assembleia Geral</option>
+                    <option value="Ação Filantrópica">Ação Filantrópica</option>
+                    <option value="Entretenimento">Entretenimento</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold mb-1 text-gray-300">Gestão</label>
+                  <select
+                    value="Gestão XXV (2026.2)"
+                    disabled
+                    className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white/80 focus:outline-none cursor-not-allowed"
+                  >
+                    <option value="Gestão XXV (2026.2)">Gestão XXV (2026.2)</option>
+                  </select>
+                  <span className="text-[10px] text-gray-400 mt-1 block">Vinculada estritamente à gestão ativa do usuário Master.</span>
+                </div>
+              </div>
+
+              {/* Data, Horário de Início e Horário de Término */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1 text-gray-300">Data *</label>
                   <input
                     type="date"
                     required
@@ -1731,7 +2805,7 @@ export default function ChamadaPage() {
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1 text-gray-300">Horário</label>
+                  <label className="block font-semibold mb-1 text-gray-300">Horário Início *</label>
                   <input
                     type="time"
                     required
@@ -1740,6 +2814,18 @@ export default function ChamadaPage() {
                       setEditingMeeting({ ...editingMeeting, time: e.target.value })
                     }
                     className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1 text-gray-300">Horário Término</label>
+                  <input
+                    type="time"
+                    value={editingMeeting.endTime || ""}
+                    onChange={(e) =>
+                      setEditingMeeting({ ...editingMeeting, endTime: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
+                    placeholder="Opcional"
                   />
                 </div>
               </div>
@@ -1777,37 +2863,100 @@ export default function ChamadaPage() {
                 </div>
               )}
 
+              {/* Local e Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block font-semibold mb-1 text-gray-300">Local da Sessão *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingMeeting.location}
+                    onChange={(e) =>
+                      setEditingMeeting({ ...editingMeeting, location: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
+                    placeholder="A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1 text-gray-300">Status da Sessão</label>
+                  <select
+                    value={editingMeeting.status || "agendada"}
+                    onChange={(e) =>
+                      setEditingMeeting({ ...editingMeeting, status: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] cursor-pointer"
+                  >
+                    <option value="agendada">Agendada</option>
+                    <option value="realizada">Realizada</option>
+                    <option value="cancelada">Cancelada</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Descrição / Pauta */}
               <div>
-                <label className="block font-semibold mb-1 text-gray-300">Local da Sessão</label>
-                <input
-                  type="text"
-                  required
-                  value={editingMeeting.location}
+                <label className="block font-semibold mb-1 text-gray-300">Pauta da Reunião / Descrição</label>
+                <textarea
+                  rows={2}
+                  value={editingMeeting.description || ""}
                   onChange={(e) =>
-                    setEditingMeeting({ ...editingMeeting, location: e.target.value })
+                    setEditingMeeting({ ...editingMeeting, description: e.target.value })
                   }
                   className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
-                  placeholder="A∴R∴L∴S∴ Caridade II nº 135 (GOB-PI)"
+                  placeholder="Descreva a ordem dos trabalhos, temas a deliberar ou instruções litúrgicas..."
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMeetingModalOpen(false);
-                    setEditingMeeting(null);
-                  }}
-                  className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold cursor-pointer transition-colors shadow-sm"
-                >
-                  Salvar Reunião
-                </button>
+              {/* Informações Complementares */}
+              <div>
+                <label className="block font-semibold mb-1 text-gray-300">Orientações aos Irmãos (Traje, Materiais)</label>
+                <textarea
+                  rows={2}
+                  value={editingMeeting.complementary_info || ""}
+                  onChange={(e) =>
+                    setEditingMeeting({ ...editingMeeting, complementary_info: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-lg bg-[#08140E] border border-white/15 text-white focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45]"
+                  placeholder="Ex: Traje a rigor completo com capa; levar capa ritualística e joia do cargo..."
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-2 pt-3 border-t border-white/10">
+                {editingMeeting.id && editingMeeting.status !== "cancelada" ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const target = meetings.find((x) => x.id === editingMeeting.id);
+                      setIsMeetingModalOpen(false);
+                      setEditingMeeting(null);
+                      if (target) setCancellingMeeting(target);
+                    }}
+                    className="px-3.5 py-2 rounded-lg bg-red-950/50 hover:bg-red-950 border border-red-500/40 text-red-300 text-xs font-semibold cursor-pointer transition-colors flex items-center gap-1.5"
+                  >
+                    <XCircle className="w-3.5 h-3.5 text-red-400" />
+                    <span>Cancelar Sessão</span>
+                  </button>
+                ) : <div />}
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMeetingModalOpen(false);
+                      setEditingMeeting(null);
+                    }}
+                    className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer transition-colors"
+                  >
+                    Voltar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-lg bg-[#D9AA45] hover:bg-[#e3b64f] text-[#04281A] font-bold cursor-pointer transition-colors shadow-sm"
+                  >
+                    Salvar Reunião
+                  </button>
+                </div>
               </div>
             </form>
           </div>

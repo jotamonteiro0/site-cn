@@ -3,11 +3,14 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ZoomIn, ZoomOut, RotateCw, RefreshCw, Check, X, Camera } from "lucide-react";
 
-interface ProfilePhotoCropperProps {
+export interface ProfilePhotoCropperProps {
   imageSrc: string;
   onCancel: () => void;
   onCropComplete: (croppedBlob: Blob, croppedDataUrl: string) => void;
   isSaving?: boolean;
+  aspectRatio?: "circle" | "3:4" | "4:3" | "1:1";
+  title?: string;
+  subtitle?: string;
 }
 
 export function ProfilePhotoCropper({
@@ -15,6 +18,9 @@ export function ProfilePhotoCropper({
   onCancel,
   onCropComplete,
   isSaving = false,
+  aspectRatio = "circle",
+  title,
+  subtitle,
 }: ProfilePhotoCropperProps) {
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0); // 0, 90, 180, 270
@@ -26,8 +32,9 @@ export function ProfilePhotoCropper({
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
-  // Viewport size in pixels (circle diameter)
-  const CROP_SIZE = 280;
+  const isCircle = aspectRatio === "circle";
+  const cropW = isCircle || aspectRatio === "1:1" ? 280 : 270;
+  const cropH = isCircle || aspectRatio === "1:1" ? 280 : 360;
 
   // Carrega imagem e centraliza escala inicial
   useEffect(() => {
@@ -36,14 +43,13 @@ export function ProfilePhotoCropper({
     img.onload = () => {
       setImageSize({ width: img.naturalWidth, height: img.naturalHeight });
 
-      // Calcula escala inicial para preencher o círculo
-      const minDimension = Math.min(img.naturalWidth, img.naturalHeight);
-      const initialScale = Math.max(1, CROP_SIZE / (minDimension || 1));
-      setScale(initialScale);
+      // Calcula escala inicial para cobrir o viewport
+      const initialScale = Math.max(cropW / (img.naturalWidth || 1), cropH / (img.naturalHeight || 1));
+      setScale(Math.max(1, initialScale));
       setPosition({ x: 0, y: 0 });
       setRotation(0);
     };
-  }, [imageSrc]);
+  }, [imageSrc, cropW, cropH]);
 
   // Manipulação de Arrastar com Mouse
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -101,9 +107,8 @@ export function ProfilePhotoCropper({
   // Resetar ajustes
   const handleReset = () => {
     if (imageSize.width && imageSize.height) {
-      const minDimension = Math.min(imageSize.width, imageSize.height);
-      const initialScale = Math.max(1, CROP_SIZE / (minDimension || 1));
-      setScale(initialScale);
+      const initialScale = Math.max(cropW / (imageSize.width || 1), cropH / (imageSize.height || 1));
+      setScale(Math.max(1, initialScale));
     } else {
       setScale(1);
     }
@@ -117,9 +122,11 @@ export function ProfilePhotoCropper({
 
     const img = imageRef.current;
     const canvas = document.createElement("canvas");
-    const OUTPUT_SIZE = 600; // Tamanho ideal nítido para avatares (600x600)
-    canvas.width = OUTPUT_SIZE;
-    canvas.height = OUTPUT_SIZE;
+    const OUTPUT_WIDTH = isCircle || aspectRatio === "1:1" ? 600 : 600;
+    const OUTPUT_HEIGHT = isCircle || aspectRatio === "1:1" ? 600 : 800;
+
+    canvas.width = OUTPUT_WIDTH;
+    canvas.height = OUTPUT_HEIGHT;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -128,17 +135,25 @@ export function ProfilePhotoCropper({
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
 
-    // Cria máscara circular (estilo WhatsApp / Instagram)
-    ctx.beginPath();
-    ctx.arc(OUTPUT_SIZE / 2, OUTPUT_SIZE / 2, OUTPUT_SIZE / 2, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
+    if (isCircle) {
+      // Máscara circular para avatar
+      ctx.beginPath();
+      ctx.arc(OUTPUT_WIDTH / 2, OUTPUT_HEIGHT / 2, OUTPUT_WIDTH / 2, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+    } else {
+      // Retângulo com corte proporcional para fotografias oficiais
+      ctx.beginPath();
+      ctx.rect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+      ctx.closePath();
+      ctx.clip();
+    }
 
-    // Centraliza o sistema de coordenadas no centro do círculo
-    ctx.translate(OUTPUT_SIZE / 2, OUTPUT_SIZE / 2);
+    // Centraliza o sistema de coordenadas no centro do recorte
+    ctx.translate(OUTPUT_WIDTH / 2, OUTPUT_HEIGHT / 2);
 
     // Converte posição e escala para o espaço do Canvas
-    const ratio = OUTPUT_SIZE / CROP_SIZE;
+    const ratio = OUTPUT_WIDTH / cropW;
     ctx.translate(position.x * ratio, position.y * ratio);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.scale(scale * ratio, scale * ratio);
@@ -148,23 +163,23 @@ export function ProfilePhotoCropper({
     const ih = img.naturalHeight;
     ctx.drawImage(img, -iw / 2, -ih / 2, iw, ih);
 
-    // Exporta como blob e dataUrl
-    const dataUrl = canvas.toDataURL("image/webp", 0.92);
+    // Exporta como jpeg de alta fidelidade (ou webp para avatares)
+    const mimeType = isCircle ? "image/webp" : "image/jpeg";
+    const dataUrl = canvas.toDataURL(mimeType, 0.95);
     canvas.toBlob(
       (blob) => {
         if (blob) {
           onCropComplete(blob, dataUrl);
         } else {
-          // Fallback via dataUrl
           fetch(dataUrl)
             .then((res) => res.blob())
             .then((b) => onCropComplete(b, dataUrl));
         }
       },
-      "image/webp",
-      0.92
+      mimeType,
+      0.95
     );
-  }, [position, rotation, scale, onCropComplete]);
+  }, [position, rotation, scale, onCropComplete, isCircle, aspectRatio, cropW]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay animate-in fade-in select-none">
@@ -176,9 +191,11 @@ export function ProfilePhotoCropper({
               <Camera className="w-4 h-4 text-[#D9AA45]" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white tracking-tight">Ajustar Foto de Perfil</h3>
+              <h3 className="text-base font-bold text-white tracking-tight">
+                {title || (isCircle ? "Ajustar Foto de Perfil" : "Ajustar Fotografia Oficial")}
+              </h3>
               <p className="text-[11px] text-emerald-200/75">
-                Arraste e aproxime para enquadrar perfeitamente
+                {subtitle || "Arraste e aproxime para enquadrar perfeitamente"}
               </p>
             </div>
           </div>
@@ -191,7 +208,7 @@ export function ProfilePhotoCropper({
           </button>
         </div>
 
-        {/* Viewport de Enquadramento Circular (Instagram / WhatsApp) */}
+        {/* Viewport de Enquadramento Circular ou Retangular */}
         <div className="flex flex-col items-center justify-center py-2">
           <div
             ref={containerRef}
@@ -203,8 +220,10 @@ export function ProfilePhotoCropper({
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
             onWheel={handleWheel}
-            style={{ width: `${CROP_SIZE}px`, height: `${CROP_SIZE}px` }}
-            className={`relative rounded-full overflow-hidden border-2 border-[#D9AA45] shadow-[0_0_30px_rgba(217,170,69,0.25)] bg-black/40 cursor-grab active:cursor-grabbing touch-none transition-shadow ${
+            style={{ width: `${cropW}px`, height: `${cropH}px` }}
+            className={`relative overflow-hidden border-2 border-[#D9AA45] shadow-[0_0_30px_rgba(217,170,69,0.25)] bg-black/40 cursor-grab active:cursor-grabbing touch-none transition-shadow ${
+              isCircle ? "rounded-full" : "rounded-2xl"
+            } ${
               isDragging ? "shadow-[0_0_35px_rgba(217,170,69,0.5)]" : ""
             }`}
           >
@@ -228,8 +247,10 @@ export function ProfilePhotoCropper({
               className="will-change-transform"
             />
 
-            {/* Linhas de Grade de Terços (Rule of Thirds - WhatsApp/Instagram) */}
-            <div className="absolute inset-0 pointer-events-none rounded-full overflow-hidden">
+            {/* Linhas de Grade de Terços */}
+            <div className={`absolute inset-0 pointer-events-none overflow-hidden ${
+              isCircle ? "rounded-full" : "rounded-2xl"
+            }`}>
               <div className="w-full h-full grid grid-cols-3 grid-rows-3 opacity-25">
                 <div className="border-r border-b border-white/60" />
                 <div className="border-r border-b border-white/60" />

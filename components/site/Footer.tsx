@@ -47,11 +47,6 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/documentos" className="hover:text-[#C59B3F] transition-colors">
-                  Acervo Documental
-                </Link>
-              </li>
-              <li>
                 <Link href="/login" className="hover:text-[#C59B3F] transition-colors">
                   Acesso ao Painel
                 </Link>

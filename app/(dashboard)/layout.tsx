@@ -7,7 +7,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#08140E] text-white flex">
+    <div className="min-h-screen bg-[#08140E] bg-institucional-dark text-white flex">
       {/* Sidebar Lateral Persistente */}
       <Sidebar />
 

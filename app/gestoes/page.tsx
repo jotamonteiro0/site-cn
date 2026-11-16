@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Header } from "@/components/site/Header";
@@ -23,7 +23,7 @@ interface Gestao {
   mc: string;
   periodo: string;
   status: "Past MC" | "Atual" | "Eleita";
-  foto?: string;
+  foto?: string | null;
   destaque?: boolean;
 }
 
@@ -42,16 +42,15 @@ const gestaoData: Gestao[] = [
   {
     numero: "XXVI",
     romano: "Gestão XXVI",
-    mc: "João Guilherme Martins Lopes Monteiro",
+    mc: "A definir",
     periodo: "2027.1",
     status: "Eleita",
-    foto: "/gestoes/joao-guilherme.2027.1.jpg",
-    destaque: true,
+    destaque: false,
   },
   {
     numero: "XXIV",
     romano: "Gestão XXIV",
-    mc: "José Keltton Cardoso da Silva Viana",
+    mc: "José Keltton da Silva Cardoso Viana",
     periodo: "2026.1",
     status: "Past MC",
     foto: "/gestoes/jose-keltton.2026.1.jpg",
@@ -112,7 +111,7 @@ const gestaoData: Gestao[] = [
     mc: "Gabriel Dias",
     periodo: "2020.1",
     status: "Past MC",
-    foto: "/gestoes/gabriel-dias.2020.1.jpg",
+    foto: null,
   },
   {
     numero: "XVI",
@@ -120,7 +119,7 @@ const gestaoData: Gestao[] = [
     mc: "Vinícius Linhares",
     periodo: "2019.2",
     status: "Past MC",
-    foto: "/gestoes/vinicius-linhares.2019.2.jpg",
+    foto: null,
   },
   {
     numero: "XV",
@@ -176,7 +175,7 @@ const gestaoData: Gestao[] = [
     mc: "Ericles Guerra",
     periodo: "2016.1",
     status: "Past MC",
-    foto: "/gestoes/ericles-guerra.2016.1.jpg",
+    foto: null,
   },
   {
     numero: "VIII",
@@ -184,7 +183,7 @@ const gestaoData: Gestao[] = [
     mc: "Itamar Filho",
     periodo: "2015.2",
     status: "Past MC",
-    foto: "/gestoes/itamar-filho.2015.2.jpg",
+    foto: null,
   },
   {
     numero: "VII",
@@ -200,7 +199,7 @@ const gestaoData: Gestao[] = [
     mc: "Marcelo Negreiros Júnior",
     periodo: "2014.2",
     status: "Past MC",
-    foto: "/gestoes/marcelo-negreiros.2014.2.jpg",
+    foto: null,
   },
   {
     numero: "V",
@@ -208,7 +207,7 @@ const gestaoData: Gestao[] = [
     mc: "Victor Barros",
     periodo: "2014.1",
     status: "Past MC",
-    foto: "/gestoes/victor-barros.2014.1.jpg",
+    foto: null,
   },
   {
     numero: "IV",
@@ -216,7 +215,7 @@ const gestaoData: Gestao[] = [
     mc: "Arthur Cerqueira",
     periodo: "2013.2",
     status: "Past MC",
-    foto: "/gestoes/arthur-cerqueira.2013.2.jpg",
+    foto: null,
   },
   {
     numero: "III",
@@ -224,7 +223,7 @@ const gestaoData: Gestao[] = [
     mc: "Diógenes Quaresma",
     periodo: "2013.1",
     status: "Past MC",
-    foto: "/gestoes/diogenes-quaresma.2013.1.jpg",
+    foto: null,
   },
   {
     numero: "I / II",
@@ -239,6 +238,46 @@ const gestaoData: Gestao[] = [
 
 export default function GestoesPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [gestoesList, setGestoesList] = useState<Gestao[]>(gestaoData);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchDynamicPhotos() {
+      try {
+        const res = await fetch("/api/mc-photos");
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.items && Array.isArray(data.items) && isMounted) {
+            setGestoesList((prev) =>
+              prev.map((g) => {
+                const match = data.items.find(
+                  (p: { management_code: string; management_roman?: string; photo_url: string; member_name?: string; status?: "Past MC" | "Atual" | "Eleita" }) =>
+                    p.management_code === g.periodo ||
+                    p.management_roman === g.numero ||
+                    p.management_roman === g.romano
+                );
+                if (match) {
+                  return {
+                    ...g,
+                    foto: match.photo_url || g.foto,
+                    mc: match.member_name || g.mc,
+                    status: (match.status as "Past MC" | "Atual" | "Eleita") || g.status,
+                  };
+                }
+                return g;
+              })
+            );
+          }
+        }
+      } catch (err) {
+        console.warn("Aviso ao sincronizar fotos dinâmicas de MC:", err);
+      }
+    }
+    fetchDynamicPhotos();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filtered = gestaoData.filter(
     (g) =>
@@ -248,8 +287,14 @@ export default function GestoesPage() {
   );
 
   // Separa o MC Atual para destaque
-  const mcAtual = gestaoData.find((g) => g.status === "Atual");
-  const filteredWithoutAtual = filtered.filter((g) => g.status !== "Atual");
+  const mcAtual = gestoesList.find((g) => g.status === "Atual") || gestaoData.find((g) => g.status === "Atual");
+  const filteredFromList = gestoesList.filter(
+    (g) =>
+      g.mc.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.periodo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.romano.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const filteredWithoutAtual = filteredFromList.filter((g) => g.status !== "Atual");
   const showAtual = mcAtual && (searchTerm === "" ||
     mcAtual.mc.toLowerCase().includes(searchTerm.toLowerCase()) ||
     mcAtual.periodo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -262,7 +307,7 @@ export default function GestoesPage() {
 
       <main className="flex-1">
         {/* HERO BANNER DA GALERIA */}
-        <section className="relative bg-[#052E1D] text-white py-20 px-4 sm:px-6 lg:px-8 overflow-hidden text-center border-b border-white/10">
+        <section className="relative bg-institucional-dark text-white py-20 px-4 sm:px-6 lg:px-8 overflow-hidden text-center border-b border-white/10">
           <div className="max-w-4xl mx-auto relative z-10">
             <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
               <Link

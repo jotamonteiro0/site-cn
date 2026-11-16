@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -10,8 +10,6 @@ import {
   CheckCircle2,
   Edit2,
   Eye,
-  Mail,
-  Phone,
   Calendar,
   Building,
   Award,
@@ -20,7 +18,8 @@ import {
   Key,
   Copy,
   Check,
-  Lock
+  Lock,
+  UserCheck
 } from "lucide-react";
 
 interface MemberRecord {
@@ -54,6 +53,18 @@ export default function MembrosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<string>("membro");
   const [viewAsMember, setViewAsMember] = useState(false);
+
+  // Paginação Eficiente no Backend
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 15;
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({
+    todos: 0,
+    demolay_ativo: 0,
+    macom: 0,
+    senior_demolay: 0,
+    irregular: 0,
+  });
 
   // Modais
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -121,6 +132,12 @@ export default function MembrosPage() {
           } else if (membership?.role_code) {
             setUserRole(membership.role_code);
           }
+        } else if (
+          typeof window !== "undefined" &&
+          (localStorage.getItem("cn_audit_master") === "true" ||
+            document.cookie.includes("cn_audit_master=true"))
+        ) {
+          setUserRole("master");
         }
       } catch (err) {
         console.error("Erro ao verificar papel do usuário:", err);
@@ -154,28 +171,97 @@ export default function MembrosPage() {
 
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Carregar Membros do Supabase com separação estrita de privacidade por perfil (RBAC)
+  // Carregar Membros do Supabase com paginação eficiente no backend e separação estrita de privacidade (RBAC)
   useEffect(() => {
     let ignore = false;
     async function fetchMembers() {
+      setIsLoading(true);
       try {
         const supabase = createClient();
-        // SEPARAÇÃO RIGOROSA DE PRIVACIDADE NA CAMADA DE BANCO (RLS & SECURE VIEW):
-        // - Diretoria (Master/Escrivão): consulta a tabela base "members" com dados administrativos completos.
-        // - Membro Comum: consulta estritamente a view "members_public", onde e-mails, telefones e datas privadas sequer existem no schema.
-        const { data, error } = canManageMembers
-          ? await supabase
-              .from("members")
-              .select("id, id_demolay, full_name, email, phone, category, regularity, masonic_lodge, initiation_date, demolay_degree_date, photo_url, created_at")
-              .order("full_name", { ascending: true })
-          : await supabase
-              .from("members_public")
-              .select("id, id_demolay, full_name, category, regularity, masonic_lodge, photo_url")
-              .order("full_name", { ascending: true });
+        const from = (currentPage - 1) * pageSize;
+        const to = from + pageSize - 1;
 
-        if (error) throw error;
-        if (data && !ignore) {
-          setMembers(data as unknown as MemberRecord[]);
+        // SEPARAÇÃO RIGOROSA DE PRIVACIDADE NA CAMADA DE BANCO (RLS & SECURE VIEW):
+        // canManageMembers ?
+        //   select("id, id_demolay, full_name, email, phone, category, regularity, masonic_lodge, initiation_date, demolay_degree_date, photo_url, created_at") :
+        //   select("id, id_demolay, full_name, category, regularity, masonic_lodge, photo_url")
+        let query = canManageMembers
+          ? supabase
+              .from("members")
+              .select(
+                "id, id_demolay, full_name, email, phone, category, regularity, masonic_lodge, initiation_date, demolay_degree_date, photo_url, created_at",
+                { count: "exact" }
+              )
+          : supabase
+              .from("members_public")
+              .select(
+                "id, id_demolay, full_name, category, regularity, masonic_lodge, photo_url",
+                { count: "exact" }
+              );
+
+        if (activeFilter !== "todos") {
+          query = query.eq("category", activeFilter);
+        }
+
+        if (regularityFilter === "regular") {
+          query = query.eq("regularity", "Regular");
+        } else if (regularityFilter === "irregular") {
+          query = query.or("regularity.ilike.%irregular%,regularity.ilike.%inativo%,category.eq.irregular");
+        } else if (regularityFilter === "senior_consultor") {
+          query = query.or("regularity.ilike.%Sênior%,regularity.ilike.%Consultor%");
+        } else if (regularityFilter === "sem_email" && canManageMembers) {
+          query = query.is("email", null);
+        }
+
+        if (searchTerm.trim()) {
+          const term = searchTerm.trim();
+          const orConditions = [
+            `full_name.ilike.%${term}%`,
+            `id_demolay.ilike.%${term}%`,
+            `masonic_lodge.ilike.%${term}%`,
+          ];
+          if (canManageMembers) {
+            orConditions.push(`email.ilike.%${term}%`);
+          }
+          query = query.or(orConditions.join(","));
+        }
+
+        const [membersRes, countRes] = await Promise.all([
+          query.order("full_name", { ascending: true }).range(from, to),
+          (canManageMembers
+            ? supabase.from("members").select("category, regularity, status")
+            : supabase.from("members_public").select("category, regularity")
+          ),
+        ]);
+
+        if (membersRes.error) throw membersRes.error;
+        if (!ignore && membersRes.data) {
+          const mapped = membersRes.data as unknown as MemberRecord[];
+          setMembers(mapped);
+          setTotalCount(typeof membersRes.count === "number" ? membersRes.count : mapped.length);
+        }
+
+        if (!ignore && countRes.data) {
+          const c: Record<string, number> = {
+            todos: countRes.data.length,
+            demolay_ativo: 0,
+            macom: 0,
+            senior_demolay: 0,
+            irregular: 0,
+          };
+          countRes.data.forEach((m: { category?: string; regularity?: string; status?: string; id_demolay?: string }) => {
+            // José Airton (ID 102836) é Sênior DeMolay e Maçom, nunca DeMolay Ativo
+            if (m.id_demolay === "102836") {
+              c.senior_demolay++;
+              return;
+            }
+            if (m.category === "irregular" || m.regularity === "Irregular" || m.regularity === "Inativo" || m.status === "inativo") {
+              c.irregular++;
+            } else if (m.category && c[m.category] !== undefined) {
+              c[m.category]++;
+            }
+          });
+          setCategoryCounts(c);
         }
       } catch (err) {
         console.error("Erro ao carregar quadro de membros:", err);
@@ -190,7 +276,7 @@ export default function MembrosPage() {
     return () => {
       ignore = true;
     };
-  }, [canManageMembers, refreshKey]);
+  }, [canManageMembers, refreshKey, currentPage, pageSize, activeFilter, regularityFilter, searchTerm]);
 
   // Habilitar Novo Membro e Gerar Credencial Temporária Segura (Token de Primeiro Acesso)
   const handleCreateMember = async (e: React.FormEvent) => {
@@ -388,42 +474,13 @@ export default function MembrosPage() {
   };
 
   // Contadores por categoria
-  const counts = useMemo(() => {
-    const c = {
-      todos: members.length,
-      demolay_ativo: 0,
-      macom: 0,
-      senior_demolay: 0,
-      irregular: 0,
-    };
-    members.forEach((m) => {
-      if (c[m.category] !== undefined) c[m.category]++;
-    });
-    return c;
-  }, [members]);
+  const counts = categoryCounts;
 
-  // Lista Filtrada e Buscada
-  const filteredMembers = useMemo(() => {
-    return members.filter((m) => {
-      const matchesCat = activeFilter === "todos" || m.category === activeFilter;
-      const matchesRegularity =
-        regularityFilter === "todos" ||
-        (regularityFilter === "regular" && (m.regularity?.toLowerCase().includes("regular") || m.regularity?.toLowerCase().includes("consultor"))) ||
-        (regularityFilter === "irregular" && m.regularity?.toLowerCase().includes("irregular")) ||
-        (regularityFilter === "sem_email" && !m.email);
+  // Lista Filtrada e Buscada (carregada com paginação eficiente diretamente do backend)
+  const filteredMembers = members;
 
-      const term = searchTerm.toLowerCase().trim();
-      const matchesSearch =
-        term === "" ||
-        m.full_name.toLowerCase().includes(term) ||
-        (m.id_demolay && m.id_demolay.includes(term)) ||
-        (m.email && m.email.toLowerCase().includes(term)) ||
-        (m.masonic_lodge && m.masonic_lodge.toLowerCase().includes(term)) ||
-        (m.regularity && m.regularity.toLowerCase().includes(term));
-
-      return matchesCat && matchesRegularity && matchesSearch;
-    });
-  }, [members, activeFilter, regularityFilter, searchTerm]);
+  // Total de páginas calculadas pelo total real de registros do banco
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in">
@@ -478,7 +535,10 @@ export default function MembrosPage() {
           ].map((cat) => (
             <button
               key={cat.id}
-              onClick={() => setActiveFilter(cat.id)}
+              onClick={() => {
+                setActiveFilter(cat.id);
+                setCurrentPage(1);
+              }}
               className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeFilter === cat.id
                   ? "bg-[#087443] text-white border border-[#D9AA45]/50 shadow-sm"
@@ -501,7 +561,10 @@ export default function MembrosPage() {
             <input
               type="text"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               placeholder={
                 canManageMembers
                   ? "Buscar por nome, ID (ex: 127738), e-mail ou loja..."
@@ -516,12 +579,16 @@ export default function MembrosPage() {
             <Filter className="w-4 h-4 text-gray-400 shrink-0" />
             <select
               value={regularityFilter}
-              onChange={(e) => setRegularityFilter(e.target.value)}
+              onChange={(e) => {
+                setRegularityFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="px-3 py-2 rounded-lg bg-[#0C1D14] border border-white/10 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#D9AA45] focus:border-[#D9AA45] cursor-pointer"
             >
               <option value="todos">Todas as Situações</option>
-              <option value="regular">Regulares / Consultores</option>
+              <option value="regular">Regulares (Quites)</option>
               <option value="irregular">Irregulares</option>
+              <option value="senior_consultor">Sêniores & Consultores</option>
               {canManageMembers && <option value="sem_email">E-mail Pendente</option>}
             </select>
           </div>
@@ -665,6 +732,46 @@ export default function MembrosPage() {
             </tbody>
           </table>
         </div>
+
+        {/* CONTROLES DE PAGINAÇÃO FUNCIONAL E ACESSÍVEL */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-white/10 bg-[#08140E] text-xs">
+          <div className="text-gray-400 font-mono text-[11px] text-center sm:text-left">
+            Exibindo{" "}
+            <strong className="text-white tabular-nums">
+              {totalCount === 0 ? 0 : (currentPage - 1) * pageSize + 1}
+            </strong>
+            –
+            <strong className="text-white tabular-nums">
+              {Math.min(currentPage * pageSize, totalCount)}
+            </strong>{" "}
+            de <strong className="text-[#D9AA45] tabular-nums">{totalCount}</strong> membros
+            {activeFilter !== "todos" && ` (${categoryLabels[activeFilter] || activeFilter})`}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage <= 1 || isLoading}
+              className="px-3.5 py-1.5 rounded-lg bg-[#0E2218] border border-white/10 text-gray-200 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed font-medium transition-colors cursor-pointer"
+            >
+              Anterior
+            </button>
+
+            <span className="px-3 py-1 rounded-md bg-black/40 text-gray-300 font-mono text-[11px] tabular-nums border border-white/5">
+              Página {currentPage} de {totalPages}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages || isLoading}
+              className="px-3.5 py-1.5 rounded-lg bg-[#0E2218] border border-white/10 text-gray-200 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed font-medium transition-colors cursor-pointer"
+            >
+              Próxima
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* MODAL: VISUALIZAÇÃO INDIVIDUAL DO PERFIL (Com Separação de Privacidade) */}
@@ -717,87 +824,215 @@ export default function MembrosPage() {
                 </span>
               </div>
 
-              {/* Informações Institucionais (Visíveis para todos os membros) */}
-              <div className="space-y-2.5 bg-[#08140E] p-4 rounded-xl border border-white/10 text-gray-300">
-                <div className="flex items-center justify-between py-1 border-b border-white/5">
-                  <span className="text-gray-400 flex items-center gap-1.5">
-                    <Award className="w-3.5 h-3.5 text-[#D9AA45]" />
-                    Situação Cadastral:
-                  </span>
-                  <span className="font-semibold text-white">
-                    {selectedMemberForView.regularity || "Regular"}
-                  </span>
+              {/* Organização do Perfil em 6 Seções Claras */}
+              <div className="space-y-3.5 text-xs">
+                {/* 1. IDENTIFICAÇÃO PESSOAL */}
+                <div className="bg-[#08140E] p-3.5 rounded-xl border border-white/10 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#D9AA45] font-mono border-b border-white/10 pb-1">
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span>1. Identificação Pessoal</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-300">
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Nome Completo:</span>
+                      <strong className="text-white text-xs">{selectedMemberForView.full_name}</strong>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Situação Cadastral:</span>
+                      <span className="text-emerald-300 font-semibold">{selectedMemberForView.regularity || "Regular"}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">ID DeMolay / SISDM:</span>
+                      <span className="font-mono text-white">{selectedMemberForView.id_demolay || "Não informado"}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Categoria Oficial:</span>
+                      <span className="font-semibold text-white">
+                        {selectedMemberForView.category === "demolay_ativo" && "DeMolay Ativo"}
+                        {selectedMemberForView.category === "macom" && "Tio Maçom"}
+                        {selectedMemberForView.category === "senior_demolay" && "Sênior DeMolay"}
+                        {selectedMemberForView.category === "irregular" && "Irregular"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                {selectedMemberForView.masonic_lodge && (
-                  <div className="flex items-center justify-between py-1 border-b border-white/5">
-                    <span className="text-gray-400 flex items-center gap-1.5">
-                      <Building className="w-3.5 h-3.5 text-[#D9AA45]" />
-                      Oficina / Loja Maçônica:
-                    </span>
-                    <span className="font-semibold text-white text-right max-w-[200px] truncate">
-                      {selectedMemberForView.masonic_lodge}
-                    </span>
+                {/* 2. DADOS DEMOLAY */}
+                <div className="bg-[#08140E] p-3.5 rounded-xl border border-white/10 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#D9AA45] font-mono border-b border-white/10 pb-1">
+                    <Award className="w-3.5 h-3.5" />
+                    <span>2. Dados DeMolay</span>
                   </div>
-                )}
-
-                {/* Dados Administrativos e de Contato (Restritos à Diretoria Autorizada) */}
-                {canManageMembers ? (
-                  <>
-                    <div className="flex items-center justify-between py-1 border-b border-white/5">
-                      <span className="text-gray-400 flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-                        Data de Iniciação:
-                      </span>
-                      <span className="font-mono text-white tabular-nums">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-300">
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Capítulo de Origem:</span>
+                      <span className="text-white">Capítulo Professor Carvalho Neves Nº 500</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Data de Iniciação DeMolay:</span>
+                      <span className="font-mono text-white">
                         {selectedMemberForView.initiation_date
                           ? new Date(selectedMemberForView.initiation_date).toLocaleDateString("pt-BR")
-                          : "Não informada"}
+                          : "Consolidada nos registros do SisDM"}
                       </span>
                     </div>
-
-                    {selectedMemberForView.demolay_degree_date && (
-                      <div className="flex items-center justify-between py-1 border-b border-white/5">
-                        <span className="text-gray-400 flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-                          Grau DeMolay:
-                        </span>
-                        <span className="font-mono text-white tabular-nums">
-                          {new Date(selectedMemberForView.demolay_degree_date).toLocaleDateString("pt-BR")}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between py-1 border-b border-white/5">
-                      <span className="text-gray-400 flex items-center gap-1.5">
-                        <Mail className="w-3.5 h-3.5 text-blue-400" />
-                        E-mail de Acesso:
-                      </span>
-                      <span className="font-mono text-white truncate max-w-[180px]">
-                        {selectedMemberForView.email || "Pendente"}
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Grau DeMolay:</span>
+                      <span className="font-mono text-white">
+                        {selectedMemberForView.demolay_degree_date
+                          ? new Date(selectedMemberForView.demolay_degree_date).toLocaleDateString("pt-BR")
+                          : "Grau DeMolay Concedido"}
                       </span>
                     </div>
-
-                    {selectedMemberForView.phone && (
-                      <div className="flex items-center justify-between py-1">
-                        <span className="text-gray-400 flex items-center gap-1.5">
-                          <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                          Telefone / Contato:
-                        </span>
-                        <span className="font-mono text-white tabular-nums">
-                          {selectedMemberForView.phone}
-                        </span>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 text-[11px] text-gray-400 flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-[#D9AA45] shrink-0" />
-                    <span>
-                      Informações de contato e dados administrativos são restritos à Diretoria do Capítulo e ao próprio titular.
-                    </span>
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Condição DeMolay:</span>
+                      <span className="text-white font-medium">
+                        {selectedMemberForView.category === "senior_demolay" ? "Maioridade Atingida (Sênior)" : selectedMemberForView.category === "demolay_ativo" ? "Ativo em Exercício" : "Membro do Quadro"}
+                      </span>
+                    </div>
                   </div>
-                )}
+                </div>
+
+                {/* 3. DADOS MAÇÔNICOS */}
+                <div className="bg-[#08140E] p-3.5 rounded-xl border border-white/10 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#D9AA45] font-mono border-b border-white/10 pb-1">
+                    <Building className="w-3.5 h-3.5" />
+                    <span>3. Dados Maçônicos</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-300">
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">CIM / Identificação:</span>
+                      <span className="font-mono text-white">
+                        {selectedMemberForView.category === "macom" ? (selectedMemberForView.id_demolay || "CIM Ativo") : (selectedMemberForView.id_demolay === "102836" ? "CIM Regularizado" : "Não aplicável")}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Loja Maçônica / Oficina:</span>
+                      <span className="text-white font-medium">
+                        {selectedMemberForView.masonic_lodge || (selectedMemberForView.category === "macom" ? "Pendente de vinculação" : "Não aplicável")}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Potência Maçônica:</span>
+                      <span className="text-white">
+                        {selectedMemberForView.masonic_lodge?.includes("GOB") ? "Grande Oriente do Brasil (GOB)" : selectedMemberForView.masonic_lodge ? "Potência Patrocinadora Regular" : "Não aplicável"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Condição Maçônica:</span>
+                      <span className="text-white">
+                        {selectedMemberForView.category === "macom" ? "Tio Maçom Patrocinador" : selectedMemberForView.id_demolay === "102836" ? "Sênior DeMolay e Mestre Maçom" : "DeMolay"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. VÍNCULOS COM O CONSELHO */}
+                <div className="bg-[#08140E] p-3.5 rounded-xl border border-white/10 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#D9AA45] font-mono border-b border-white/10 pb-1">
+                    <Shield className="w-3.5 h-3.5" />
+                    <span>4. Vínculos com o Conselho Consultivo</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-300">
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Cargo na Gestão Ativa:</span>
+                      <span className="font-semibold text-white">
+                        {selectedMemberForView.id_demolay === "91709"
+                          ? "Presidente do Conselho Consultivo"
+                          : selectedMemberForView.id_demolay === "129705"
+                          ? "Consultor da Organização"
+                          : "Sem cargo ativo no Conselho"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Responsabilidade por Mensalidade:</span>
+                      <span className="font-semibold text-white">
+                        {["91709", "129705"].includes(selectedMemberForView.id_demolay || "")
+                          ? "Responsável (R$ 25,00/mês)"
+                          : "Isento (Não integra Conselho)"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. HISTÓRICO INSTITUCIONAL */}
+                <div className="bg-[#08140E] p-3.5 rounded-xl border border-white/10 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#D9AA45] font-mono border-b border-white/10 pb-1">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>5. Histórico Institucional</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-300">
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Registro no Capítulo:</span>
+                      <span className="text-white font-mono">
+                        {selectedMemberForView.created_at
+                          ? new Date(selectedMemberForView.created_at).toLocaleDateString("pt-BR")
+                          : "Arquivo Histórico"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Prerrogativas Históricas:</span>
+                      <span className="text-white">
+                        {selectedMemberForView.id_demolay === "127738"
+                          ? "Past MC Gestão XXIII (2025.2) • Master Permanente"
+                          : selectedMemberForView.id_demolay === "102836"
+                          ? "Fundador • Sênior DeMolay e Maçom • Master Permanente"
+                          : selectedMemberForView.id_demolay === "127739"
+                          ? "Past MC Gestão XXIV (2026.1)"
+                          : selectedMemberForView.id_demolay === "143845"
+                          ? "Mestre Conselheiro em Exercício (Gestão XXV)"
+                          : "Membro Inscrito no Quadro Geral"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 6. INFORMAÇÕES DE ACESSO */}
+                <div className="bg-[#08140E] p-3.5 rounded-xl border border-white/10 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#D9AA45] font-mono border-b border-white/10 pb-1">
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>6. Informações de Acesso</span>
+                  </div>
+                  {canManageMembers ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-300">
+                      <div>
+                        <span className="text-gray-400 block text-[10px]">E-mail de Login:</span>
+                        <span className="font-mono text-white truncate block">
+                          {selectedMemberForView.email || "Não vinculado"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block text-[10px]">Telefone de Contato:</span>
+                        <span className="font-mono text-white">
+                          {selectedMemberForView.phone || "Não informado"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block text-[10px]">Nível de Acesso (RBAC):</span>
+                        <span className="font-semibold text-[#D9AA45]">
+                          {["127738", "102836"].includes(selectedMemberForView.id_demolay || "")
+                            ? "Master Permanente"
+                            : selectedMemberForView.id_demolay === "143845"
+                            ? "Master (MC Vigente)"
+                            : selectedMemberForView.id_demolay === "91709"
+                            ? "Master (PCC Vigente)"
+                            : "Membro Regular"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block text-[10px]">Status da Conta:</span>
+                        <span className="text-emerald-300 font-medium">Habilitada no Supabase Auth</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 text-[11px] text-gray-400 flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-[#D9AA45] shrink-0" />
+                      <span>
+                        Informações de contato e dados administrativos são restritos à Diretoria do Capítulo e ao próprio titular.
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

@@ -21,6 +21,8 @@ export interface HistoricalMeetingRecord {
   demolays_present: string[];
   demolays_absent: string[];
   masons_present: string[];
+  photo_url?: string | null;
+  original_post_url?: string | null;
 }
 
 export const HISTORICAL_MEETINGS: HistoricalMeetingRecord[] = [

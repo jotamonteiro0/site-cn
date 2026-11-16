@@ -18,7 +18,8 @@ import {
   FileText,
   UserCheck,
   Crown,
-  Camera,
+  Newspaper,
+  CalendarCheck,
   type LucideIcon
 } from "lucide-react";
 
@@ -34,13 +35,6 @@ interface SidebarProps {
   user?: DashboardUser | null;
 }
 
-const roleLabels: Record<string, string> = {
-  master: "Master (Administrador)",
-  escrivao: "Escrivão",
-  tesoureiro: "Tesoureiro",
-  membro: "Membro",
-};
-
 interface NavItem {
   name: string;
   href: string;
@@ -51,6 +45,8 @@ interface NavItem {
 const navigation: readonly NavItem[] = [
   { name: "Visão Geral", href: "/dashboard", icon: LayoutDashboard },
   { name: "Meu Autoatendimento", href: "/dashboard/membro", icon: UserCheck },
+  { name: "Atividades do Capítulo", href: "/dashboard/atividades", icon: CalendarCheck },
+  { name: "Publicações do Site", href: "/dashboard/publicacoes", icon: Newspaper },
   { name: "Gestões & Nominata", href: "/dashboard/nominata", icon: Crown },
   { name: "Atas & Chamada da Reunião", href: "/dashboard/chamada", icon: ClipboardCheck },
   { name: "Quadro de Membros", href: "/dashboard/membros", icon: Users },
@@ -59,10 +55,12 @@ const navigation: readonly NavItem[] = [
   { name: "Tesouraria", href: "/dashboard/tesouraria", icon: Wallet },
 ] as const;
 
+let globalSidebarUserCache: DashboardUser | null = null;
+
 export function Sidebar({ user: initialUser }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<DashboardUser | null>(initialUser || null);
+  const [currentUser, setCurrentUser] = useState<DashboardUser | null>(initialUser || globalSidebarUserCache || null);
   const [isOpen, setIsOpen] = useState(false);
   const [viewAsMember, setViewAsMember] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -124,13 +122,15 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
 
           const roleCode = isPermanentMaster ? "master" : (membership?.role_code || "membro");
 
-          setCurrentUser({
+          const userData: DashboardUser = {
             id: user.id,
             email: user.email,
             fullName: profile?.full_name || (user.user_metadata?.full_name as string) || user.email?.split("@")[0] || "Membro",
             roleCode,
             avatarPath: profile?.avatar_path || cachedAvatar,
-          });
+          };
+          globalSidebarUserCache = userData;
+          setCurrentUser(userData);
         }
       } catch (err) {
         console.error("Erro ao carregar dados do usuário na Sidebar:", err);
@@ -167,22 +167,6 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
     window.addEventListener("cn_avatar_updated", handleAvatarUpdate);
     return () => window.removeEventListener("cn_avatar_updated", handleAvatarUpdate);
   }, [currentUser?.id]);
-
-  const handleSidebarAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !currentUser) return;
-    if (file.size > 15 * 1024 * 1024) {
-      alert("A imagem selecionada excede 15MB. Por favor, escolha uma foto menor.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setTempPhotoSrc(reader.result as string);
-      setIsCroppingPhoto(true);
-    };
-    reader.readAsDataURL(file);
-    e.target.value = "";
-  };
 
   const handleSaveCroppedAvatar = async (croppedBlob: Blob, croppedDataUrl: string) => {
     if (!currentUser) return;
@@ -232,22 +216,15 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
     }
   };
 
-  const getInitials = (name?: string) => {
-    if (!name) return "CN";
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
-
   const currentRole = currentUser?.roleCode || "membro";
   const effectiveRole = viewAsMember ? "membro" : currentRole;
-  const displayName = currentUser?.fullName || "Carregando...";
 
   const allowedNavigation = useMemo(() => {
     return navigation.filter((item) => {
       if (
         item.href === "/dashboard" ||
         item.href === "/dashboard/membro" ||
+        item.href === "/dashboard/atividades" ||
         item.href === "/dashboard/nominata" ||
         item.href === "/dashboard/documentos"
       ) {
@@ -371,60 +348,13 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
           })}
         </nav>
 
-        {/* Rodapé: Perfil Logado & Ações */}
-        <div className="p-4 border-t border-white/10 space-y-3 bg-[#06140D]/60">
-          {/* Cartão de Identificação do Membro */}
-          <div className="p-3 rounded-lg bg-[#0B1F16] border border-white/10 hover:border-[#C59B3F]/40 transition-colors flex items-center gap-3 group">
-            {/* Avatar com Botão de Upload de Foto Instantâneo */}
-            <div className="relative shrink-0">
-              <div className="w-10 h-10 rounded-full bg-[#087443] border border-[#C59B3F]/60 flex items-center justify-center font-bold text-white text-xs overflow-hidden shadow-sm">
-                {currentUser?.avatarPath ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={currentUser.avatarPath}
-                    alt={displayName}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  getInitials(displayName)
-                )}
-              </div>
-              <label
-                htmlFor="sidebar-photo-input"
-                className="absolute -bottom-1 -right-1 p-1 rounded-full bg-[#C59B3F] hover:bg-[#D4AF37] text-[#052E1D] shadow-sm cursor-pointer transition-colors flex items-center justify-center"
-                title="Adicionar ou alterar foto de perfil"
-              >
-                <Camera className="w-2.5 h-2.5" />
-                <input
-                  id="sidebar-photo-input"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={handleSidebarAvatarSelect}
-                  className="hidden"
-                />
-              </label>
-            </div>
-
-            <Link
-              href="/dashboard/membro"
-              onClick={() => setIsOpen(false)}
-              className="flex-1 min-w-0"
-              title="Acessar Meu Perfil e Autoatendimento"
-            >
-              <p className="text-xs font-bold text-white truncate">
-                {displayName}
-              </p>
-              <p className="text-[10px] text-[#C59B3F] font-semibold truncate font-mono">
-                {viewAsMember ? "Ver como Membro" : (roleLabels[currentRole] || currentRole)}
-              </p>
-            </Link>
-          </div>
-
+        {/* Rodapé: Ações Rápidas */}
+        <div className="p-4 border-t border-white/10 space-y-2 bg-[#06140D]/60">
           {/* Links de Ação: Ver Site e Sair */}
           <div className="grid grid-cols-2 gap-2 text-xs">
             <Link
               href="/"
-              className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-emerald-200 hover:text-white border border-white/10 transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-emerald-200 hover:text-white border border-white/10 transition-colors"
             >
               <ExternalLink className="w-3.5 h-3.5 text-[#C59B3F]" />
               <span>Ver Site</span>
@@ -433,7 +363,7 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
               type="button"
               onClick={handleSignOut}
               disabled={isLoggingOut}
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 transition-colors border border-red-500/20 disabled:opacity-50 cursor-pointer"
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 transition-colors border border-red-500/20 disabled:opacity-50 cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>{isLoggingOut ? "Saindo..." : "Sair"}</span>

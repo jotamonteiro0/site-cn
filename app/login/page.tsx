@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Shield, Lock, Mail, ArrowLeft, Eye, EyeOff, KeyRound, CheckCircle2 } from "lucide-react";
 
@@ -27,12 +26,31 @@ declare global {
 }
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Redireciona imediatamente se já houver sessão ativa válida
+  useEffect(() => {
+    async function checkExistingSession() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const nowUnix = Math.floor(Date.now() / 1000);
+        if (session?.user && session.expires_at && session.expires_at > nowUnix) {
+          // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+          window.location.href = "/dashboard";
+        }
+      } catch {
+        // Ignora erro preliminar
+      }
+    }
+    checkExistingSession();
+  }, []);
 
   // Estado do Primeiro Acesso (Ativação e Criação de Senha)
   const [isFirstAccessOpen, setIsFirstAccessOpen] = useState(false);
@@ -225,8 +243,8 @@ export default function LoginPage() {
       });
 
       if (!signInError && authData?.user) {
-        router.replace("/dashboard");
-        router.refresh();
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+        window.location.href = "/dashboard";
         return;
       }
 

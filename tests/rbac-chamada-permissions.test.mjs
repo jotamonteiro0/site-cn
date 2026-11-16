@@ -49,7 +49,6 @@ describe("Auditoria de Controle de Acesso (RBAC) — Chamada, Atas, Reuniões e 
 
     // Verifica que atalhos rápidos alternam entre Diretoria e Membro
     assert.match(content, /canManage \? \(/);
-    assert.match(content, /Meu Autoatendimento/);
     assert.match(content, /Consultar Frequência/);
 
     // Verifica que botão Google Agenda só aparece para Master

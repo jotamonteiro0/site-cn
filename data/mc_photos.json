@@ -1,0 +1,127 @@
+[
+  {
+    "management_code": "2026.2",
+    "management_roman": "XXV",
+    "management_title": "Gestão XXV",
+    "member_id_demolay": "143845",
+    "member_name": "Rafael Inácio do Nascimento de Morais",
+    "periodo": "2026.2",
+    "status": "Atual",
+    "photo_url": "/gestoes/rafael-inacio.2026.2.jpg",
+    "destaque": true
+  },
+  {
+    "management_code": "2027.1",
+    "management_roman": "XXVI",
+    "management_title": "Gestão XXVI",
+    "member_id_demolay": null,
+    "member_name": "A definir",
+    "periodo": "2027.1",
+    "status": "Planejada",
+    "photo_url": null,
+    "destaque": false
+  },
+  {
+    "management_code": "2026.1",
+    "management_roman": "XXIV",
+    "management_title": "Gestão XXIV",
+    "member_id_demolay": "127739",
+    "member_name": "José Keltton da Silva Cardoso Viana",
+    "periodo": "2026.1",
+    "status": "Past MC",
+    "photo_url": "/gestoes/jose-keltton.2026.1.jpg",
+    "destaque": true
+  },
+  {
+    "management_code": "2025.2",
+    "management_roman": "XXIII",
+    "management_title": "Gestão XXIII",
+    "member_id_demolay": "127738",
+    "member_name": "João Guilherme Martins Lopes Monteiro",
+    "periodo": "2025.2",
+    "status": "Past MC",
+    "photo_url": "/gestoes/joao-guilherme.2025.2.jpg",
+    "destaque": true
+  },
+  {
+    "management_code": "2025.1",
+    "management_roman": "XXII",
+    "management_title": "Gestão XXII",
+    "member_name": "Epaminondas Coutinho Feitosa Júnior",
+    "periodo": "2025.1",
+    "status": "Past MC",
+    "photo_url": "/gestoes/epaminondas-junior.2025.1.jpg"
+  },
+  {
+    "management_code": "2024.2",
+    "management_roman": "XXI",
+    "management_title": "Gestão XXI",
+    "member_name": "Fábio Anicácio Brito Correia",
+    "periodo": "2024.2",
+    "status": "Past MC",
+    "photo_url": "/gestoes/fabio-anicacio.2024.2.jpg"
+  },
+  {
+    "management_code": "2024.1",
+    "management_roman": "XX",
+    "management_title": "Gestão XX",
+    "member_name": "Wesley de Sousa Pinheiro de Abreu",
+    "periodo": "2024.1",
+    "status": "Past MC",
+    "photo_url": "/gestoes/wesley-abreu.2024.1.jpg"
+  },
+  {
+    "management_code": "2023.2",
+    "management_roman": "XIX",
+    "management_title": "Gestão XIX",
+    "member_name": "Caio Carvalho Fonseca Lima",
+    "periodo": "2023.2",
+    "status": "Past MC",
+    "photo_url": "/gestoes/caio-carvalho.2023.2.jpg"
+  },
+  {
+    "management_code": "2023.1",
+    "management_roman": "XVIII",
+    "management_title": "Gestão XVIII",
+    "member_name": "Wesley de Sousa Pinheiro de Abreu",
+    "periodo": "2023.1",
+    "status": "Past MC",
+    "photo_url": "/gestoes/wesley-abreu.2023.1.jpg"
+  },
+  {
+    "management_code": "2020.1",
+    "management_roman": "XVII",
+    "management_title": "Gestão XVII",
+    "member_name": "Gabriel Dias",
+    "periodo": "2020.1",
+    "status": "Past MC",
+    "photo_url": null
+  },
+  {
+    "management_code": "2019.2",
+    "management_roman": "XVI",
+    "management_title": "Gestão XVI",
+    "member_name": "Vinícius Linhares",
+    "periodo": "2019.2",
+    "status": "Past MC",
+    "photo_url": null
+  },
+  {
+    "management_code": "2019.1",
+    "management_roman": "XV",
+    "management_title": "Gestão XV",
+    "member_name": "Gustavo Vilarinho",
+    "periodo": "2019.1",
+    "status": "Past MC",
+    "photo_url": "/gestoes/gustavo-vilarinho.2019.1.jpg"
+  },
+  {
+    "management_code": "2018.2",
+    "management_roman": "XIV",
+    "management_title": "Gestão XIV",
+    "member_name": "Tomaz Neto",
+    "periodo": "2018.2",
+    "status": "Past MC",
+    "photo_url": "/gestoes/tomaz-neto.2018.2.jpg"
+  }
+]

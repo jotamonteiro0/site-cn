@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { formatCivilDate } from "@/lib/gestao-vigencia";
 import {
   Crown,
   Shield,
@@ -11,8 +12,7 @@ import {
   CheckCircle2,
   PlusCircle,
   Users,
-  KeyRound,
-  Scroll
+  KeyRound
 } from "lucide-react";
 
 interface Management {
@@ -210,17 +210,28 @@ export default function NominataPage() {
         .order("sort_order", { ascending: true });
 
       if (pData) {
+        const isGestaoXXV = selectedManagementId === "00000000-0000-0000-0000-000000002026";
+        const canonicalFallback: Record<string, { name: string; id_demolay: string }> = {
+          "Porta-Estandarte": { name: "Moisés Escórcio Fonseca", id_demolay: "154238" },
+          "Porta-Bandeira": { name: "Moisés Escórcio Fonseca", id_demolay: "154238" },
+          "Sentinela": { name: "Wendel de Sousa Pinheiro de Abreu", id_demolay: "122802" },
+        };
+
         const typed = pData as unknown as RawPositionItem[];
         const formatted: Position[] = typed.map((p) => {
           const assignment = p.member_management_positions?.[0];
+          const canonical = isGestaoXXV && !assignment?.member?.full_name && canonicalFallback[p.name]
+            ? canonicalFallback[p.name]
+            : null;
+
           return {
             id: p.id,
             name: p.name,
             sort_order: p.sort_order,
-            assigned_member_id: assignment?.member_id || "",
-            assigned_member_name: assignment?.member?.full_name || "",
-            assigned_member_id_demolay: assignment?.member?.id_demolay || "",
-            assigned_member_category: assignment?.member?.category || "",
+            assigned_member_id: assignment?.member_id || (canonical ? `canonical-${p.name}` : ""),
+            assigned_member_name: assignment?.member?.full_name || (canonical ? canonical.name : ""),
+            assigned_member_id_demolay: assignment?.member?.id_demolay || (canonical ? canonical.id_demolay : ""),
+            assigned_member_category: assignment?.member?.category || (canonical ? "demolay_ativo" : ""),
           };
         });
         setPositions(formatted);
@@ -257,17 +268,28 @@ export default function NominataPage() {
           .order("sort_order", { ascending: true });
 
         if (!ignore && pData) {
+          const isGestaoXXV = selectedManagementId === "00000000-0000-0000-0000-000000002026";
+          const canonicalFallback: Record<string, { name: string; id_demolay: string }> = {
+            "Porta-Estandarte": { name: "Moisés Escórcio Fonseca", id_demolay: "154238" },
+            "Porta-Bandeira": { name: "Moisés Escórcio Fonseca", id_demolay: "154238" },
+            "Sentinela": { name: "Wendel de Sousa Pinheiro de Abreu", id_demolay: "122802" },
+          };
+
           const typed = pData as unknown as RawPositionItem[];
           const formatted: Position[] = typed.map((p) => {
             const assignment = p.member_management_positions?.[0];
+            const canonical = isGestaoXXV && !assignment?.member?.full_name && canonicalFallback[p.name]
+              ? canonicalFallback[p.name]
+              : null;
+
             return {
               id: p.id,
               name: p.name,
               sort_order: p.sort_order,
-              assigned_member_id: assignment?.member_id || "",
-              assigned_member_name: assignment?.member?.full_name || "",
-              assigned_member_id_demolay: assignment?.member?.id_demolay || "",
-              assigned_member_category: assignment?.member?.category || "",
+              assigned_member_id: assignment?.member_id || (canonical ? `canonical-${p.name}` : ""),
+              assigned_member_name: assignment?.member?.full_name || (canonical ? canonical.name : ""),
+              assigned_member_id_demolay: assignment?.member?.id_demolay || (canonical ? canonical.id_demolay : ""),
+              assigned_member_category: assignment?.member?.category || (canonical ? "demolay_ativo" : ""),
             };
           });
           setPositions(formatted);
@@ -430,30 +452,55 @@ export default function NominataPage() {
   };
 
   // Separação Canônica dos Cargos por Bloco Litúrgico
-  const executivePositions = useMemo(() => {
-    return positions.filter((p) =>
-      ["Mestre Conselheiro", "Primeiro Conselheiro", "Segundo Conselheiro", "Escrivão", "Tesoureiro"].includes(p.name)
-    );
-  }, [positions]);
-
+  // 1. Liderança do Conselho Consultivo: PCC e Consultor Geral / da Organização
   const councilPositions = useMemo(() => {
-    return positions.filter((p) =>
-      ["Presidente do Conselho Consultivo", "PCC", "Consultor da Organização"].includes(p.name)
-    );
+    const councilNames = ["Presidente do Conselho Consultivo", "PCC", "Consultor da Organização"];
+    return positions
+      .filter((p) => councilNames.includes(p.name))
+      .sort((a, b) => {
+        if (a.name.includes("Presidente") || a.name === "PCC") return -1;
+        if (b.name.includes("Presidente") || b.name === "PCC") return 1;
+        return a.sort_order - b.sort_order;
+      });
   }, [positions]);
 
-  const preceptorPositions = useMemo(() => {
-    return positions.filter((p) => p.name.includes("Preceptor"));
+  // 2. Diretoria Capitular: Exclusivamente os 6 oficiais (MC, 1C, 2C, Escrivão, Tesoureiro e Hospitaleiro)
+  const executivePositions = useMemo(() => {
+    const canonicalOrder = [
+      "Mestre Conselheiro",
+      "Primeiro Conselheiro",
+      "Segundo Conselheiro",
+      "Escrivão",
+      "Tesoureiro",
+      "Hospitaleiro",
+    ];
+    return positions
+      .filter((p) => canonicalOrder.includes(p.name))
+      .sort((a, b) => canonicalOrder.indexOf(a.name) - canonicalOrder.indexOf(b.name));
   }, [positions]);
 
-  const ritualPositions = useMemo(() => {
+  // 3. Oficiais da Gestão (Relação unificada: Preceptores, Diáconos, Mordomos, Harmonia, etc.)
+  const oficiaisGestaoPositions = useMemo(() => {
     return positions.filter(
       (p) =>
-        !["Mestre Conselheiro", "Primeiro Conselheiro", "Segundo Conselheiro", "Escrivão", "Tesoureiro"].includes(p.name) &&
-        !["Presidente do Conselho Consultivo", "PCC", "Consultor da Organização"].includes(p.name) &&
-        !p.name.includes("Preceptor")
+        ![
+          "Mestre Conselheiro",
+          "Primeiro Conselheiro",
+          "Segundo Conselheiro",
+          "Escrivão",
+          "Tesoureiro",
+          "Hospitaleiro",
+        ].includes(p.name) &&
+        !["Presidente do Conselho Consultivo", "PCC", "Consultor da Organização"].includes(p.name)
     );
   }, [positions]);
+
+  // Gestões ativas e planejadas (sem repetir histórico que já pertence à galeria)
+  const visibleManagements = useMemo(() => {
+    return managements.filter(
+      (m) => m.status === "ativa" || (canCreateMgmt && m.status === "planejada")
+    );
+  }, [managements, canCreateMgmt]);
 
   if (isLoading || !isRoleChecked) {
     return (
@@ -506,12 +553,12 @@ export default function NominataPage() {
         </div>
       )}
 
-      {/* SELETOR DE GESTÃO (ATUAL E GESTÕES ANTERIORES) */}
+      {/* SELETOR DE GESTÃO (ATUAL VIGENTE / PLANEJADA) */}
       <div className="card-heraldico-dark p-5 sm:p-6 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#D9AA45]">
-              Gestão em Visualização (Atual e Anteriores)
+              Gestão Oficial Vigente
             </span>
             <div className="flex items-center gap-3 mt-1.5">
               <Calendar className="w-5 h-5 text-emerald-300" />
@@ -520,9 +567,9 @@ export default function NominataPage() {
                 onChange={(e) => setSelectedManagementId(e.target.value)}
                 className="bg-[#064D32] border border-emerald-500/40 rounded-xl px-4 py-2 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer"
               >
-                {managements.map((m) => (
+                {visibleManagements.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.title || `Gestão ${m.code}`} ({m.status === "ativa" ? "Atual / Ativa" : m.status === "planejada" ? "Planejada" : "Encerrada"})
+                    {m.title || `Gestão ${m.code}`} ({m.status === "ativa" ? "Atual / Ativa" : "Programada"})
                   </option>
                 ))}
               </select>
@@ -530,30 +577,25 @@ export default function NominataPage() {
           </div>
 
           {selectedManagement && (
-            <div className="pt-2 sm:pt-4">
-              <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                  selectedManagement.status === "ativa"
-                    ? "selo-vidro-cn text-emerald-300 border-emerald-500/40"
-                    : selectedManagement.status === "planejada"
-                    ? "bg-blue-500/20 text-blue-300 border border-blue-500/40"
-                    : "bg-gray-500/20 text-gray-300 border border-gray-500/40"
-                }`}
-              >
-                {selectedManagement.status === "ativa" ? (
-                  <>
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                    <span>Gestão Ativa Vigente</span>
-                  </>
-                ) : selectedManagement.status === "planejada" ? (
-                  <>
+            <div className="pt-2 sm:pt-4 flex flex-wrap items-center gap-3">
+              {selectedManagement.status === "ativa" ? (
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs text-emerald-200/90 font-mono font-medium">
+                    Instalação Oficial: 08/08/2026
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">
                     <Calendar className="w-3.5 h-3.5 text-blue-400" />
-                    <span>Gestão Planejada</span>
-                  </>
-                ) : (
-                  <span>Gestão Histórica Anterior</span>
-                )}
-              </span>
+                    <span>Gestão Programada</span>
+                  </span>
+                  <span className="text-xs text-emerald-200/80 font-mono">
+                    Previsão de Instalação: {formatCivilDate(selectedManagement.starts_on)}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -571,11 +613,76 @@ export default function NominataPage() {
         )}
       </div>
 
-      {/* SEÇÃO 1: DIRETORIA EXECUTIVA */}
+      {/* SEÇÃO 1: CONSELHO CONSULTIVO (POSICIONADO NO TOPO) */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
+          <Shield className="w-5 h-5 text-[#D9AA45]" />
+          <h2 className="text-lg font-bold text-white">Liderança do Conselho Consultivo</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {councilPositions.map((pos) => {
+            const linkedBadge = roleBadges[pos.name] || roleBadges.PCC;
+            const eligibleMembers = members.filter((m) => m.category === "macom");
+
+            return (
+              <div
+                key={pos.id}
+                className="card-heraldico-dark p-5 rounded-2xl space-y-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-bold text-white">
+                      {pos.name}
+                    </h3>
+                    {canEdit && linkedBadge && (
+                      <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold font-mono border ${linkedBadge.bg} ${linkedBadge.text} ${linkedBadge.border}`}>
+                        {linkedBadge.label}
+                      </span>
+                    )}
+                  </div>
+
+                  {pos.assigned_member_id_demolay && (
+                    <span className="text-[10px] font-mono text-[#D9AA45] bg-[#0C1D14] px-2 py-0.5 rounded border border-[#D9AA45]/30">
+                      ID {pos.assigned_member_id_demolay}
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-1.5 pt-1">
+                  {canEdit && selectedManagement?.status === "ativa" ? (
+                    <select
+                      value={pos.assigned_member_id || ""}
+                      onChange={(e) => handleAssignMember(pos.name, e.target.value)}
+                      disabled={isSaving}
+                      className="w-full bg-[#08140E] border border-white/20 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer disabled:opacity-50"
+                    >
+                      <option value="">-- Cargo Vago / Não Designado --</option>
+                      {eligibleMembers.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.full_name} ({m.id_demolay})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div>
+                      <p className="text-sm font-bold text-white">
+                        {pos.assigned_member_name || "Cargo Vago"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* SEÇÃO 2: DIRETORIA CAPITULAR (EXCLUSIVAMENTE OS 6 OFICIAIS) */}
+      <div className="space-y-4 pt-4 border-t border-white/10">
+        <div className="flex items-center gap-2">
           <Crown className="w-5 h-5 text-[#D9AA45]" />
-          <h2 className="text-lg font-bold text-white">Diretoria Executiva & Administração</h2>
+          <h2 className="text-lg font-bold text-white">Diretoria Capitular</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -593,16 +700,16 @@ export default function NominataPage() {
                     <h3 className="text-sm font-bold text-white">
                       {pos.name}
                     </h3>
-                    {linkedBadge && (
+                    {canEdit && linkedBadge && (
                       <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold font-mono border ${linkedBadge.bg} ${linkedBadge.text} ${linkedBadge.border}`}>
                         {linkedBadge.label}
                       </span>
                     )}
                   </div>
 
-                  {pos.assigned_member_id && (
-                    <span className="text-[10px] font-mono text-[#D9AA45] bg-black/30 px-2 py-0.5 rounded border border-white/10">
-                      ID {pos.assigned_member_id_demolay || "—"}
+                  {pos.assigned_member_id_demolay && (
+                    <span className="text-[10px] font-mono text-[#D9AA45] bg-[#0C1D14] px-2 py-0.5 rounded border border-[#D9AA45]/30">
+                      ID {pos.assigned_member_id_demolay}
                     </span>
                   )}
                 </div>
@@ -628,11 +735,6 @@ export default function NominataPage() {
                       <p className="text-sm font-bold text-white">
                         {pos.assigned_member_name || "Cargo Vago"}
                       </p>
-                      {pos.assigned_member_id_demolay && (
-                        <p className="text-[11px] font-mono text-emerald-300/80 mt-0.5">
-                          ID {pos.assigned_member_id_demolay} • Regular
-                        </p>
-                      )}
                     </div>
                   )}
                 </div>
@@ -642,149 +744,18 @@ export default function NominataPage() {
         </div>
       </div>
 
-      {/* SEÇÃO 2: CONSELHO CONSULTIVO */}
-      <div className="space-y-4 pt-4 border-t border-white/10">
-        <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-[#D9AA45]" />
-          <h2 className="text-lg font-bold text-white">Liderança do Conselho Consultivo</h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {councilPositions.map((pos) => {
-            const linkedBadge = roleBadges[pos.name] || roleBadges.PCC;
-            const eligibleMembers = members.filter((m) => m.category === "macom");
-
-            return (
-              <div
-                key={pos.id}
-                className="card-heraldico-dark p-5 rounded-2xl space-y-3"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="text-sm font-bold text-white">
-                      {pos.name}
-                    </h3>
-                    {linkedBadge && (
-                      <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold font-mono border ${linkedBadge.bg} ${linkedBadge.text} ${linkedBadge.border}`}>
-                        {linkedBadge.label}
-                      </span>
-                    )}
-                  </div>
-
-                  {pos.assigned_member_id && (
-                    <span className="text-[10px] font-mono text-[#D9AA45] bg-black/30 px-2 py-0.5 rounded border border-white/10">
-                      ID {pos.assigned_member_id_demolay || "—"}
-                    </span>
-                  )}
-                </div>
-
-                <div className="space-y-1.5 pt-1">
-                  {canEdit && selectedManagement?.status === "ativa" ? (
-                    <select
-                      value={pos.assigned_member_id || ""}
-                      onChange={(e) => handleAssignMember(pos.name, e.target.value)}
-                      disabled={isSaving}
-                      className="w-full bg-[#08140E] border border-white/20 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:ring-2 focus:ring-[#D9AA45] cursor-pointer disabled:opacity-50"
-                    >
-                      <option value="">-- Cargo Vago / Não Designado --</option>
-                      {eligibleMembers.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.full_name} ({m.id_demolay})
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div>
-                      <p className="text-sm font-bold text-white">
-                        {pos.assigned_member_name || "Cargo Vago"}
-                      </p>
-                      {pos.assigned_member_id_demolay && (
-                        <p className="text-[11px] font-mono text-emerald-300/80 mt-0.5">
-                          Tio Consultor • ID {pos.assigned_member_id_demolay}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* SEÇÃO 3: OS SETE PRECEPTORES */}
-      {preceptorPositions.length > 0 && (
-        <div className="space-y-4 pt-4 border-t border-white/10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Scroll className="w-5 h-5 text-[#D9AA45]" />
-              <h2 className="text-lg font-bold text-white">Os Sete Preceptores das Sete Virtudes</h2>
-            </div>
-            <span className="text-xs text-emerald-200/70">{preceptorPositions.length} preceptores</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {preceptorPositions.map((pos) => {
-              const eligibleMembers = members.filter((m) => m.category === "demolay_ativo");
-              return (
-                <div
-                  key={pos.id}
-                  className="p-4 rounded-xl card-heraldico-dark space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-300">{pos.name}</span>
-                    {pos.assigned_member_id && (
-                      <span className="text-[9px] font-mono text-[#D9AA45]">
-                        ID {pos.assigned_member_id_demolay || "—"}
-                      </span>
-                    )}
-                  </div>
-
-                  {canEdit && selectedManagement?.status === "ativa" ? (
-                    <select
-                      value={pos.assigned_member_id || ""}
-                      onChange={(e) => handleAssignMember(pos.name, e.target.value)}
-                      disabled={isSaving}
-                      className="w-full bg-[#08140E] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#D9AA45] cursor-pointer"
-                    >
-                      <option value="">-- Vago --</option>
-                      {eligibleMembers.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.full_name}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div>
-                      <p className="text-xs font-bold text-white">
-                        {pos.assigned_member_name || "Vago"}
-                      </p>
-                      {pos.assigned_member_id_demolay && (
-                        <p className="text-[10px] font-mono text-[#D9AA45] mt-0.5">
-                          ID {pos.assigned_member_id_demolay}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* SEÇÃO 4: OFICIAIS CAPITULARES & RITUALÍSTICOS */}
+      {/* SEÇÃO 3: OFICIAIS DA GESTÃO (RELAÇÃO UNIFICADA) */}
       <div className="space-y-4 pt-4 border-t border-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-lg font-bold text-white">Oficiais Ritualísticos & Coluna da Harmonia</h2>
+            <Users className="w-5 h-5 text-[#D9AA45]" />
+            <h2 className="text-lg font-bold text-white">Oficiais da Gestão</h2>
           </div>
-          <span className="text-xs text-emerald-200/70">{ritualPositions.length} oficiais</span>
+          <span className="text-xs text-emerald-200/70">{oficiaisGestaoPositions.length} oficiais</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {ritualPositions.map((pos) => {
+          {oficiaisGestaoPositions.map((pos) => {
             const eligibleMembers = members.filter((m) => m.category === "demolay_ativo");
 
             return (
@@ -794,9 +765,9 @@ export default function NominataPage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-emerald-300">{pos.name}</span>
-                  {pos.assigned_member_id && (
-                    <span className="text-[9px] font-mono text-[#D9AA45]">
-                      ID {pos.assigned_member_id_demolay || "—"}
+                  {pos.assigned_member_id_demolay && (
+                    <span className="text-[9px] font-mono text-[#D9AA45] bg-[#0C1D14] px-1.5 py-0.5 rounded border border-[#D9AA45]/30">
+                      ID {pos.assigned_member_id_demolay}
                     </span>
                   )}
                 </div>
@@ -820,11 +791,6 @@ export default function NominataPage() {
                     <p className="text-xs font-bold text-white">
                       {pos.assigned_member_name || "Vago"}
                     </p>
-                    {pos.assigned_member_id_demolay && (
-                      <p className="text-[10px] font-mono text-[#D9AA45] mt-0.5">
-                        ID {pos.assigned_member_id_demolay}
-                      </p>
-                    )}
                   </div>
                 )}
               </div>

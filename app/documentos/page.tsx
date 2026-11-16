@@ -138,7 +138,7 @@ export default function DocumentosPublicosPage() {
 
       <main className="flex-1">
         {/* HERO SECTION */}
-        <section className="relative bg-[#052E1D] text-white py-12 sm:py-16 px-3 sm:px-6 lg:px-8 border-b border-white/10">
+        <section className="relative bg-institucional-dark text-white py-12 sm:py-16 px-3 sm:px-6 lg:px-8 border-b border-white/10">
           <div className="max-w-5xl mx-auto text-center space-y-4">
             <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 mb-2">
               <Link

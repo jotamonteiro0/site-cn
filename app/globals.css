@@ -343,6 +343,15 @@ body {
   font-weight: 600;
 }
 
+/* 14. Gradiente e Textura Oficial Institucional */
+.bg-institucional-dark {
+  background-color: #08140E;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(28, 51, 42, 0.45) 0%, transparent 70%),
+    radial-gradient(rgba(217, 170, 69, 0.07) 1px, transparent 1px);
+  background-size: 100% 100%, 20px 20px;
+}
+
 /* 14. Divisor Ornamental DeMolay */
 .divisor-heraldico {
   display: flex;
