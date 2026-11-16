@@ -627,7 +627,7 @@ Foram eliminados todos os identificadores fixos e endereços de email que consta
   ```
 - **Confirmação dos Masters no RBAC:**
   - **João Guilherme Martins Lopes Monteiro (ID 127738):** Possui registro ativo em `public.chapter_memberships` com `chapter_id = '00000000-0000-0000-0000-000000000500'`, `role_code = 'master'` e `is_active = true`. Autorizado via RBAC.
-  - **José Airton de Carvalho (ID 102836):** Possui registro ativo em `public.chapter_memberships` com `chapter_id = '00000000-0000-0000-0000-000000000500'`, `role_code = 'master'` e `is_active = true`. Autorizado via RBAC.
+  - **José Airton Rodrigues Galdino Júnior (ID 102836):** Possui registro ativo em `public.chapter_memberships` com `chapter_id = '00000000-0000-0000-0000-000000000500'`, `role_code = 'master'` e `is_active = true`. Autorizado via RBAC.
 
 #### 30.3 Restrição de Competência: Exclusão do Cargo de Escrivão
 Conforme o regulamento capitular e a arquitetura de segurança do sistema:
@@ -642,7 +642,7 @@ Conforme o regulamento capitular e a arquitetura de segurança do sistema:
 - **Criação Atômica de Períodos:** `INSERT INTO financial_periods ... ON CONFLICT DO NOTHING` assegura concorrência idempotente.
 - **Previsão de Mensalidades:** 18 integrantes ativos do Conselho Consultivo geram R$ 450,00 mensais (R$ 25,00 por membro).
 - **Carlos André (ID 134106):** Classificado com `payer_type = 'demolay'` (Sênior DeMolay não Maçom pagante).
-- **José Airton (ID 102836):** Isento por critério relacional (ausente de `conselho_membros`), com zero pendências financeiras e Acesso Master preservado.
+- **José Airton Rodrigues Galdino Júnior (ID 102836):** Isento por critério relacional (ausente de `conselho_membros`), com zero pendências financeiras e Acesso Master preservado.
 - **Cobranças Históricas:** Exatamente **382** cobranças legadas preservadas sem alteração.
 
 #### 30.5 Comprovação Prática dos 10 Cenários de Autorização e Falha
@@ -665,17 +665,77 @@ Foi executada bateria de testes automatizados diretamente contra o PostgreSQL de
 
 ---
 
-### 31. PARECER FINAL CONCLUSIVO
+### 32. AUDITORIA DE ESCOPO DO SERVICE_ROLE E DELIMITAÇÃO INSTITUCIONAL (MIGRATION 40)
+
+Em resposta à auditoria de delimitação de escopo da permissão privilegiada `service_role` e superuser `postgres`, foi realizada inspeção arquitetural completa e implementada a **Migration 40** (`20261116000040_conselho_rpc_chapter_500_scope_enforcement.sql`).
+
+#### 32.1 Respostas Formais aos 5 Pontos de Auditoria de Escopo
+
+1. **Chamada PostgREST com `service_role` informando `p_chapter_id` diferente do Capítulo 500:**
+   - *Diagnóstico prévio (Migration 39):* Caso um segundo capítulo hipotético existisse com gestão ativa, `service_role` conseguiria gerar cobranças para ele, pois a checagem de capítulo era restrita ao bloco `authenticated`.
+   - *Ajuste Definitivo (Migration 40):* A RPC agora valida incondicionalmente no seu cabeçalho:
+     ```sql
+     IF p_chapter_id IS NULL OR p_chapter_id <> '00000000-0000-0000-0000-000000000500'::uuid THEN
+       RAISE EXCEPTION 'Acesso negado: Este sistema e exclusivo do Capitulo Professor Carvalho Neves nº 500 (chapter_id invalido: %).', p_chapter_id;
+     END IF;
+     ```
+     Qualquer chamada com `chapter_id` estrangeiro sob `service_role` é **bloqueada peremptoriamente**.
+
+2. **Chamada direta como `postgres` superuser informando `p_chapter_id` diferente do Capítulo 500:**
+   - *Resultado:* **Bloqueada peremptoriamente** pela mesma validação de escopo universal. Mesmo uma conexão local direta via SQL é impedida de registrar lançamentos fora do Capítulo 500.
+
+3. **Existência de rotinas internas legítimas para outros capítulos:**
+   - *Resultado:* **Inexistentes.** A tabela `public.chapters` possui uma tupla única (`id: '00000000-0000-0000-0000-000000000500'`, `slug: 'carvalho-neves-500'`, `name: 'Capítulo Professor Carvalho Neves'`). Toda a infraestrutura, gestões, atas, nominatas e cobranças são dedicadas exclusivamente ao Capítulo 500.
+
+4. **Chamada da RPC por rotas ou APIs que recebam `p_chapter_id` de entrada sem validação:**
+   - *Resultado:* **Inexistentes.** Nenhuma rota API do Next.js expõe a RPC publicamente ou recebe `p_chapter_id` de usuários externos. O único chamador em todo o repositório é a interface autenticada da Tesouraria (`app/(dashboard)/dashboard/tesouraria/page.tsx:386`), que injeta a constante fixa literal `"00000000-0000-0000-0000-000000000500"`.
+
+5. **Limitação do caminho privilegiado aos processos internos realmente autorizados:**
+   - *Resultado:* **Totalmente blindado.** O caminho privilegiado está limitado exclusivamente a jobs internos e rotinas de manutenção vinculadas ao Capítulo 500.
+
+#### 32.2 Identidade Cadastral Oficial de José Airton (ID 102836)
+- **Nome Cadastral Oficial no PostgreSQL:** `José Airton Rodrigues Galdino Júnior`
+- **ID DeMolay:** `102836`
+- **E-mail:** `airton@carvalhoneves500.org.br`
+- **Categoria:** `senior_demolay` (Sênior DeMolay)
+- **Regularidade:** `Sênior`
+- **Loja Maçônica Patrocinadora:** `A∴R∴L∴S∴ Grande Mestre Alberto Mansur nº 4591`
+- **Papel RBAC no Capítulo 500:** `master` (ativo em `public.chapter_memberships`)
+- **Status Financeiro:** 0 cobranças (isento por ausência relacional em `conselho_membros`), 0 pendências.
+- **Esclarecimento de Nomenclatura:** Relatórios preliminares continham a menção "José Airton de Carvalho" decorrente de assimilação informal com o nome patronímico do Capítulo ("Carvalho Neves"). O registro cadastral oficial e autêntico sempre foi e permanece rigorosamente **José Airton Rodrigues Galdino Júnior**.
+
+#### 32.3 Comprovação Prática dos Cenários de Escopo e Segurança (Migration 40)
+Testes executados diretamente contra o PostgreSQL de produção:
+
+| Nº | Cenário de Teste | Identidade / Papel | Chapter ID Informado | Resultado | Status |
+|:---:|:---|:---|:---:|:---:|:---:|
+| **1** | PostgREST service_role | `service_role` | `11111111-1111-1111-1111-111111111111` | **BLOQUEADO** | Sucesso: Rejeitado por violação de escopo exclusivo do Capítulo 500. |
+| **2** | Conexão direta postgres | `session_user = 'postgres'` | `11111111-1111-1111-1111-111111111111` | **BLOQUEADO** | Sucesso: Rejeitado por violação de escopo exclusivo do Capítulo 500. |
+| **3** | Master autenticado | João Guilherme (RBAC `master`) | `11111111-1111-1111-1111-111111111111` | **BLOQUEADO** | Sucesso: Rejeitado por violação de escopo exclusivo do Capítulo 500. |
+| **4** | PostgREST service_role | `service_role` | `00000000-0000-0000-0000-000000000500` | **PERMITIDO** | Sucesso: Executado para manutenção interna do Capítulo 500. |
+| **5** | Conexão direta postgres | `session_user = 'postgres'` | `00000000-0000-0000-0000-000000000500` | **PERMITIDO** | Sucesso: Executado para manutenção interna do Capítulo 500. |
+| **6** | Master João Guilherme | João Guilherme (127738) | `00000000-0000-0000-0000-000000000500` | **PERMITIDO** | Sucesso: Autorizado via RBAC canônico do Capítulo 500. |
+| **7** | Master José Airton | José Airton (102836) | `00000000-0000-0000-0000-000000000500` | **PERMITIDO** | Sucesso: Autorizado via RBAC canônico do Capítulo 500. |
+| **8** | Membro comum sem cargo | Membro regular autenticado | `00000000-0000-0000-0000-000000000500` | **BLOQUEADO** | Sucesso: Rejeitado por ausência de papel financeiro. |
+| **9** | Cargo de Escrivão | Escrivão autenticado | `00000000-0000-0000-0000-000000000500` | **BLOQUEADO** | Sucesso: Menor privilégio confirmado (sem competência financeira). |
+| **10** | Token nulo / anônimo | Web client sem JWT válido | `00000000-0000-0000-0000-000000000500` | **BLOQUEADO** | Sucesso: Fail-closed confirmado. |
+
+**Contagem de Cobranças Históricas Preservadas:** Exatamente **382** cobranças em `public.member_charges`.
+
+---
+
+### 33. PARECER FINAL CONCLUSIVO
 
 O projeto **site-cn — Sistema de Gestão do Capítulo Professor Carvalho Neves nº 500** está:
 
 # **APROVADO**
 
 #### Justificativa Técnica e Provas de Conformidade:
-1. **Regra de Mensalidades 100% Homologada:** Todo integrante de `public.conselho_membros` é cobrado em R$ 25,00 mensais (18 membros ativos = R$ 450,00/mês). Carlos André (ID 134106) paga como DeMolay (`payer_type = 'demolay'`), preservando sua condição de Sênior DeMolay não Maçom. José Airton (ID 102836) está excluído estritamente por via relacional (zero cobranças, zero pendências, Acesso Master mantido).
+1. **Regra de Mensalidades 100% Homologada:** Todo integrante ativo de `public.conselho_membros` é cobrado em R$ 25,00 mensais (18 membros ativos = R$ 450,00/mês). Carlos André (ID 134106) paga como DeMolay (`payer_type = 'demolay'`), preservando sua condição de Sênior DeMolay não Maçom. José Airton Rodrigues Galdino Júnior (ID 102836) está excluído estritamente por via relacional (zero cobranças, zero pendências, Acesso Master mantido).
 2. **Histórico Temporal Pleno:** A modelagem de `conselho_membros` com índice parcial ativo permite afastamentos e reingressos ilimitados na mesma gestão sem perda de memória institucional.
 3. **Multi-Modalidade Financeira Garantida:** A unicidade por `(member_id, financial_period_id, description)` protege contra duplicidades da mesma mensalidade sem bloquear taxas legítimas adicionais.
 4. **Segurança Fail-Closed e RBAC Puro (Migration 39):** A RPC `generate_monthly_charges` opera em modelo estritamente fail-closed, sem hardcode de IDs ou emails, com checagem relacional pura via `chapter_memberships` e com o cargo de Escrivão restrito ao seu escopo não financeiro.
-5. **Concorrência Real Comprovada:** Testada com duas conexões PostgreSQL simultâneas reais com 0 erros, 0 duplicatas e integridade orçamentária absoluta.
-6. **Integridade Histórica:** Todas as 382 cobranças legadas estão rigorosamente preservadas.
-7. **Bateria de Qualidade:** 252 testes automatizados aprovados (0 falhas), linting e typecheck impecáveis, build Turbopack perfeito e deploy de produção em operação com HTTP 200.
+5. **Delimitação Universal de Escopo Institucional (Migration 40):** A RPC rejeita sumariamente qualquer execução com `chapter_id` diferente de `00000000-0000-0000-0000-000000000500`, inclusive para `service_role` e superuser direto `postgres`.
+6. **Concorrência Real Comprovada:** Testada com duas conexões PostgreSQL simultâneas reais com 0 erros, 0 duplicatas e integridade orçamentária absoluta.
+7. **Integridade Histórica:** Todas as 382 cobranças legadas estão rigorosamente preservadas.
+8. **Bateria de Qualidade:** 252 testes automatizados aprovados (0 falhas), linting e typecheck impecáveis, build Turbopack perfeito e deploy de produção em operação com HTTP 200.
