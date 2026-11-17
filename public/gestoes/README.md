@@ -36,7 +36,7 @@ Basta salvar a imagem na pasta `public/gestoes/` com o nome indicado abaixo. O s
 | **XIII** | 2018.1 | Ezequias Júnior | `ezequias-junior.2018.1.jpg` | ✅ **Presente** |
 | **XII** | 2017.2 | Rafael Rocha | `rafael-rocha.2017.2.jpg` | ✅ **Presente** |
 | **XI** | 2017.1 | Breno Correia | `breno-correia.2017.1.jpg` | ✅ **Presente** |
-| **X** | 2016.2 | Cleilson Almeida | `cleilson-almeida.2016.2.jpg` | ✅ **Presente** |
+| **X** | 2016.2 | Cleison Almeida | `cleison-almeida.2016.2.jpg` | ✅ **Presente** |
 | **IX** | 2016.1 | Ericles Guerra | `ericles-guerra.2016.1.jpg` | ⏳ Pendente |
 | **VIII** | 2015.2 | Itamar Filho | `itamar-filho.2015.2.jpg` | ⏳ Pendente |
 | **VII** | 2015.1 | Renandro Reis | `renandro-reis.2015.1.jpg` | ✅ **Presente** |

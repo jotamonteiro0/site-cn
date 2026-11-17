@@ -48,7 +48,7 @@ async function run() {
   const mcs = await client.query(`
     SELECT management_code, member_name, photo_url 
     FROM public.management_mc_photos 
-    WHERE member_name ILIKE ANY(ARRAY['%Wesley%', '%Caio Carvalho%', '%Gustavo Vilarinho%', '%Cleilson%', '%Tiago Moreira%'])
+    WHERE member_name ILIKE ANY(ARRAY['%Wesley%', '%Caio Carvalho%', '%Gustavo Vilarinho%', '%Cleison%', '%Tiago Moreira%'])
     ORDER BY management_code;
   `);
   console.log('MCs verified in DB:');

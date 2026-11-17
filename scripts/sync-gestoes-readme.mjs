@@ -23,7 +23,7 @@ const gestaoData = [
   { numero: "XIII", periodo: "2018.1", mc: "Ezequias Júnior", file: "ezequias-junior.2018.1.jpg" },
   { numero: "XII", periodo: "2017.2", mc: "Rafael Rocha", file: "rafael-rocha.2017.2.jpg" },
   { numero: "XI", periodo: "2017.1", mc: "Breno Correia", file: "breno-correia.2017.1.jpg" },
-  { numero: "X", periodo: "2016.2", mc: "Cleilson Almeida", file: "cleilson-almeida.2016.2.jpg" },
+  { numero: "X", periodo: "2016.2", mc: "Cleison Almeida", file: "cleison-almeida.2016.2.jpg" },
   { numero: "IX", periodo: "2016.1", mc: "Ericles Guerra", file: "ericles-guerra.2016.1.jpg" },
   { numero: "VIII", periodo: "2015.2", mc: "Itamar Filho", file: "itamar-filho.2015.2.jpg" },
   { numero: "VII", periodo: "2015.1", mc: "Renandro Reis", file: "renandro-reis.2015.1.jpg" },

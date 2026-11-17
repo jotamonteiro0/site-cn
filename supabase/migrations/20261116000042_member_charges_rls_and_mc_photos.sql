@@ -19,7 +19,7 @@
 --      consultarem o quadro completo.
 --
 -- 4. Sincronização definitiva das fotos históricas de Mestres Conselheiros:
---    - Registra e atualiza fotos em public.management_mc_photos para Cleilson Almeida,
+--    - Registra e atualiza fotos em public.management_mc_photos para Cleison Almeida,
 --      Tiago Moreira, Renandro Reis, Breno Correia, Rafael Rocha e Ezequias Júnior,
 --      preservando as de Wesley Abreu, Caio Carvalho, Gustavo Vilarinho, João Guilherme,
 --      José Keltton e Rafael Inácio.
@@ -172,7 +172,7 @@ $$;
 INSERT INTO public.management_mc_photos 
   (chapter_id, management_code, management_roman, management_title, periodo, status, destaque, member_name, photo_url, updated_at)
 VALUES 
-  ('00000000-0000-0000-0000-000000000500', '2016.2', 'X', 'Gestão X', '2016.2', 'Past MC', false, 'Cleilson Almeida', '/gestoes/cleilson-almeida.2016.2.jpg', now()),
+  ('00000000-0000-0000-0000-000000000500', '2016.2', 'X', 'Gestão X', '2016.2', 'Past MC', false, 'Cleison Almeida', '/gestoes/cleison-almeida.2016.2.jpg', now()),
   ('00000000-0000-0000-0000-000000000500', '2017.1', 'XI', 'Gestão XI', '2017.1', 'Past MC', false, 'Breno Correia', '/gestoes/breno-correia.2017.1.jpg', now()),
   ('00000000-0000-0000-0000-000000000500', '2017.2', 'XII', 'Gestão XII', '2017.2', 'Past MC', false, 'Rafael Rocha', '/gestoes/rafael-rocha.2017.2.jpg', now()),
   ('00000000-0000-0000-0000-000000000500', '2018.1', 'XIII', 'Gestão XIII', '2018.1', 'Past MC', false, 'Ezequias Júnior', '/gestoes/ezequias-junior.2018.1.jpg', now()),

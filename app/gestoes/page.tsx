@@ -164,10 +164,10 @@ const gestaoData: Gestao[] = [
   {
     numero: "X",
     romano: "Gestão X",
-    mc: "Cleilson Almeida",
+    mc: "Cleison Almeida",
     periodo: "2016.2",
     status: "Past MC",
-    foto: "/gestoes/cleilson-almeida.2016.2.jpg",
+    foto: "/gestoes/cleison-almeida.2016.2.jpg",
   },
   {
     numero: "IX",

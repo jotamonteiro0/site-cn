@@ -391,7 +391,7 @@ Exemplo: **Gestão XXIII — MC João Guilherme Martins Lopes Monteiro (2025.2)*
 | VII | Renandro Reis | 2015.1 |
 | VIII | Itamar Filho | 2015.2 |
 | IX | Ericles Guerra | 2016.1 |
-| X | Cleilson Almeida | 2016.2 |
+| X | Cleison Almeida | 2016.2 |
 | XI | Breno Correia | 2017.1 |
 | XII | Rafael Rocha | 2017.2 |
 | XIII | Ezequias Júnior | 2018.1 |
