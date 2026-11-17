@@ -7,8 +7,6 @@ import {
   ShieldCheck,
   Building2,
   ArrowLeft,
-  Search,
-  Users,
   Award,
   Crown,
   Edit3,
@@ -106,12 +104,6 @@ export default function ConselhoPage() {
   // RBAC & Modo Membro
   const [userRole, setUserRole] = useState<string>("membro");
   const [viewAsMember, setViewAsMember] = useState(false);
-
-  // Filtros e Abas
-  const [activeTab, setActiveTab] = useState<"lojas" | "quadro">("lojas");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedLodgeFilter, setSelectedLodgeFilter] = useState<string>("todos");
-  const [selectedRegularityFilter, setSelectedRegularityFilter] = useState<string>("todos");
 
   // Feedback de Operações
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
@@ -326,36 +318,6 @@ export default function ConselhoPage() {
   // Consultores aguardando alocação preservados no modelo de dados (sem exibição na interface visual)
   const unallocatedMembers = useMemo(() => members.filter((m) => !m.masonic_lodge), [members]);
   void unallocatedMembers;
-
-  // Filtragem para o Quadro Completo
-  const filteredMembers = useMemo(() => {
-    return members.filter((m) => {
-      // Filtro de Loja
-      if (selectedLodgeFilter !== "todos") {
-        if (selectedLodgeFilter === "sem_loja") {
-          if (m.masonic_lodge && lodgeMap[m.masonic_lodge]) return false;
-        } else if (m.masonic_lodge !== selectedLodgeFilter) {
-          return false;
-        }
-      }
-
-      // Filtro de Regularidade
-      if (selectedRegularityFilter !== "todos") {
-        if (m.regularity !== selectedRegularityFilter) return false;
-      }
-
-      // Busca por texto
-      if (searchTerm.trim() !== "") {
-        const query = searchTerm.toLowerCase().trim();
-        const matchesName = m.full_name.toLowerCase().includes(query);
-        const matchesId = m.id_demolay.toLowerCase().includes(query);
-        const matchesLodge = (m.masonic_lodge || "").toLowerCase().includes(query);
-        return matchesName || matchesId || matchesLodge;
-      }
-
-      return true;
-    });
-  }, [members, selectedLodgeFilter, selectedRegularityFilter, searchTerm, lodgeMap]);
 
   // Handlers de Gerenciamento
   const handleOpenEditLodge = (member: MemberRecord) => {
@@ -628,60 +590,33 @@ export default function ConselhoPage() {
 
       {/* NAVEGAÇÃO DE ABAS E CONTROLES */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
-        <div className="flex items-center gap-2 p-1 bg-[#0A1411] border border-[#162923] rounded-xl w-fit">
-          <button
-            onClick={() => setActiveTab("lojas")}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 ${
-              activeTab === "lojas"
-                ? "bg-[#142822] text-[#D9AA45] shadow-sm border border-[#234237]"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            <span>4 Lojas Patrocinadoras</span>
-            <span className="font-mono tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-[#0A1512] text-gray-300">
-              {totalAllocated}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("quadro")}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 ${
-              activeTab === "quadro"
-                ? "bg-[#142822] text-[#D9AA45] shadow-sm border border-[#234237]"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>Quadro Geral</span>
-            <span className="font-mono tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-[#0A1512] text-gray-300">
-              {members.length}
-            </span>
-          </button>
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#101E1A] border border-[#1C362D] text-xs font-bold text-[#D9AA45]">
+          <Building2 className="w-4 h-4 text-[#D9AA45]" />
+          <span>4 Lojas Maçônicas Patrocinadoras Oficiais</span>
+          <span className="font-mono tabular-nums text-[10px] px-2 py-0.5 rounded bg-[#0A1512] text-emerald-200">
+            {totalAllocated} Maçons Alocados
+          </span>
         </div>
       </div>
 
-      {/* ABA 1: VISÃO PELAS 4 LOJAS PATROCINADORAS */}
-      {activeTab === "lojas" && (
-        <div className="space-y-6">
-          {isLoading ? (
-            <div className="py-16 text-center text-xs text-gray-400 bg-[#0B1512] border border-[#162822] rounded-2xl">
-              Carregando dados das 4 Lojas Maçônicas Patrocinadoras e do Conselho Consultivo...
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {OFFICIAL_LODGES.map((lodge) => {
-                  const brothers = lodgeMap[lodge.name] || [];
-                  const isHq = lodge.isHeadquarters;
+      {/* VISÃO PELAS 4 LOJAS PATROCINADORAS */}
+      <div className="space-y-6">
+        {isLoading ? (
+          <div className="py-16 text-center text-xs text-gray-400 bg-[#0B1512] border border-[#162822] rounded-2xl">
+            Carregando dados das 4 Lojas Maçônicas Patrocinadoras e do Conselho Consultivo...
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {OFFICIAL_LODGES.map((lodge) => {
+                const brothers = lodgeMap[lodge.name] || [];
+                const isHq = lodge.isHeadquarters;
 
-                  return (
-                    <div
-                      key={lodge.name}
-                      className={`bg-[#0D1815] border rounded-2xl p-6 flex flex-col justify-between shadow-lg hover:border-[#2C4D41] transition-all relative ${
-                        isHq ? "border-[#6E551C] ring-1 ring-[#D9AA45]/20" : "border-[#1A2E26]"
-                      }`}
-                    >
+                return (
+                  <div
+                    key={lodge.name}
+                    className="bg-[#0D1815] border border-[#1A2E26] rounded-2xl p-6 flex flex-col justify-between shadow-lg hover:border-[#D9AA45] hover:ring-1 hover:ring-[#D9AA45]/40 transition-all relative group"
+                  >
                       <div>
                         {/* Header do Card da Loja */}
                         <div className="flex items-start justify-between gap-3 pb-4 border-b border-[#172B23]">
@@ -765,134 +700,6 @@ export default function ConselhoPage() {
             </>
           )}
         </div>
-      )}
-
-      {/* ABA 2: QUADRO GERAL DE CONSULTORES (BUSCA E FILTROS) */}
-      {activeTab === "quadro" && (
-        <div className="space-y-4">
-          {/* Barra de Filtros e Busca */}
-          <div className="bg-[#0D1815] border border-[#1A2E26] p-4 rounded-xl flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-            {/* Input de Busca */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar por nome, ID DeMolay ou Loja..."
-                className="w-full bg-[#08120F] border border-[#1C332A] rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#D9AA45] transition-colors"
-              />
-            </div>
-
-            {/* Selects de Filtro */}
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={selectedLodgeFilter}
-                onChange={(e) => setSelectedLodgeFilter(e.target.value)}
-                className="bg-[#08120F] border border-[#1C332A] text-gray-300 text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#D9AA45]"
-              >
-                <option value="todos">Todas as Lojas</option>
-                {OFFICIAL_LODGES.map((l) => (
-                  <option key={l.name} value={l.name}>
-                    {l.name}
-                  </option>
-                ))}
-                <option value="sem_loja">Sem Loja Alocada</option>
-              </select>
-
-              <select
-                value={selectedRegularityFilter}
-                onChange={(e) => setSelectedRegularityFilter(e.target.value)}
-                className="bg-[#08120F] border border-[#1C332A] text-gray-300 text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#D9AA45]"
-              >
-                <option value="todos">Todas as Qualificações</option>
-                <option value="Consultor">Consultor</option>
-                <option value="Sênior/Consultor">Sênior/Consultor</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Tabela de Conselheiros */}
-          <div className="bg-[#0D1815] border border-[#1A2E26] rounded-2xl overflow-hidden shadow-lg">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-gray-300">
-                <thead className="bg-[#09120F] border-b border-[#172B23] text-gray-400 uppercase text-[10px] tracking-wider font-mono">
-                  <tr>
-                    <th className="py-3 px-4">Conselheiro / Tio Maçom</th>
-                    <th className="py-3 px-4">ID SISDM</th>
-                    <th className="py-3 px-4">Qualificação</th>
-                    <th className="py-3 px-4">Loja Patrocinadora</th>
-                    <th className="py-3 px-4">Potência</th>
-                    {canManage && <th className="py-3 px-4 text-right">Ações</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#142620]">
-                  {filteredMembers.length === 0 ? (
-                    <tr>
-                      <td colSpan={canManage ? 6 : 5} className="py-10 text-center text-gray-500 italic">
-                        Nenhum consultor encontrado para os critérios selecionados.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredMembers.map((m) => (
-                      <tr key={m.id} className="hover:bg-[#101F1B] transition-colors">
-                        <td className="py-3 px-4 font-bold text-white">
-                          {m.full_name}
-                        </td>
-                        <td className="py-3 px-4 font-mono text-gray-400">
-                          {m.id_demolay}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                              m.regularity === "Sênior/Consultor"
-                                ? "bg-[#182613] text-[#A7F3D0] border-[#254223]"
-                                : "bg-[#0F221B] text-emerald-300 border-[#1B3D30]"
-                            }`}
-                          >
-                            {m.regularity || "Consultor"}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 font-medium">
-                          {m.masonic_lodge ? (
-                            <span className="text-white flex items-center gap-1.5">
-                              {m.masonic_lodge === "A∴R∴L∴S∴ Caridade II nº 135" && (
-                                <Shield className="w-3 h-3 text-[#D9AA45]" />
-                              )}
-                              <span>{m.masonic_lodge}</span>
-                            </span>
-                          ) : (
-                            <span className="text-amber-400/80 italic">Aguardando Alocação</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 font-mono text-gray-400">
-                          {m.masonic_lodge ? "GOB-PI" : "—"}
-                        </td>
-                        {canManage && (
-                          <td className="py-3 px-4 text-right">
-                            <button
-                              onClick={() => handleOpenEditLodge(m)}
-                              className="px-2.5 py-1 rounded bg-[#101F1B] hover:bg-[#172E26] text-xs font-semibold text-[#D9AA45] border border-[#234237] transition-colors inline-flex items-center gap-1 cursor-pointer"
-                            >
-                              <Edit3 className="w-3 h-3" />
-                              <span>{m.masonic_lodge ? "Alterar" : "Alocar"}</span>
-                            </button>
-                          </td>
-                        )}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="py-3 px-4 border-t border-[#172B23] bg-[#0A1310] flex items-center justify-between text-[11px] text-gray-400 font-mono">
-              <span>Total exibido: {filteredMembers.length} de {members.length} consultores</span>
-              <span className="text-emerald-400">100% Censo Conforme SCDB</span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* MODAL 1: ALOCAÇÃO DE LOJA MAÇÔNICA PATROCINADORA */}
       {isLodgeModalOpen && memberToEditLodge && canManage && (

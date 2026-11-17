@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -199,8 +199,9 @@ export default function DashboardOverviewPage() {
           ) || memRes.data?.[0];
 
           if (userMember) {
-            // Regra Institucional Definitiva: Todo integrante ativo do Conselho Consultivo deve pagar mensalidade (R$ 25,00),
-            // independentemente de ser Maçom ou Sênior DeMolay. José Airton (102836) e demais membros são isentos.
+            // Regra Institucional: Todo integrante ativo do Conselho Consultivo deve pagar mensalidade (R$ 25,00),
+            // assim como todo DeMolay Ativo deve pagar mensalidade capitular (R$ 22,00).
+            // José Airton (102836) e membros fora do Conselho que não sejam DeMolays ativos são isentos.
             const { data: conselhoRecord } = await supabase
               .from("conselho_membros")
               .select("id")
@@ -209,7 +210,9 @@ export default function DashboardOverviewPage() {
               .maybeSingle();
 
             const isConselhoAtivo = !!conselhoRecord && userMember.id_demolay !== "102836";
-            const isExemptFromDues = !isConselhoAtivo;
+            const isDemolayAtivo = userMember.category === "demolay_ativo";
+            const isApplicableForDues = (isConselhoAtivo || isDemolayAtivo) && userMember.id_demolay !== "102836";
+            const isExemptFromDues = !isApplicableForDues;
 
             const [chargesRes, attRes] = await Promise.all([
               isExemptFromDues
@@ -263,20 +266,19 @@ export default function DashboardOverviewPage() {
     [members]
   );
 
-  const [clientNow, setClientNow] = useState<number | null>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setClientNow(Date.now()), 0);
-    return () => clearTimeout(timer);
-  }, []);
+  const clientNow = useSyncExternalStore(
+    () => () => {},
+    () => Date.now(),
+    () => 0
+  );
 
   // Próxima Reunião Oficial (Estritamente com data/horário futuros)
   const nextMeeting = useMemo(() => {
-    const threshold = clientNow || 0;
+    if (clientNow === 0) return null;
     const upcoming = meetings
       .filter((m) => {
         const mDate = new Date(m.starts_at);
-        return mDate.getTime() > threshold && m.status !== "cancelada" && m.status !== "realizada";
+        return mDate.getTime() > clientNow && m.status !== "cancelada" && m.status !== "realizada";
       })
       .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
 
@@ -285,10 +287,10 @@ export default function DashboardOverviewPage() {
 
   // Próximas Obrigações Litúrgicas e Calendário
   const upcomingObligations = useMemo(() => {
-    const threshold = clientNow || 0;
+    if (clientNow === 0) return [];
     return meetings.filter((m) => {
       const mDate = new Date(m.starts_at);
-      return mDate.getTime() > threshold && m.status !== "cancelada" && m.status !== "realizada";
+      return mDate.getTime() > clientNow && m.status !== "cancelada" && m.status !== "realizada";
     });
   }, [meetings, clientNow]);
 

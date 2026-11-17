@@ -267,10 +267,18 @@ export default function MemberSelfServicePage() {
           });
           setAllMembers(typedMembers);
 
-          // Tenta encontrar o membro vinculado ao usuário logado
-          let userMember = typedMembers.find((m) => m.email && user?.email && m.email.toLowerCase() === user.email.toLowerCase());
+          // Tenta encontrar o membro vinculado ao usuário logado por id_demolay, email ou profile_id
+          const userMetaId = user?.user_metadata?.id_demolay || user?.app_metadata?.id_demolay;
+          const userEmail = user?.email?.toLowerCase();
+          const userId = user?.id;
+
+          let userMember = typedMembers.find((m) =>
+            (userMetaId && m.id_demolay === userMetaId) ||
+            (userEmail && m.email && m.email.toLowerCase() === userEmail) ||
+            (userId && (m as unknown as { profile_id?: string }).profile_id === userId)
+          );
           if (!userMember) {
-            // Se não encontrou por email direto, usa o primeiro DeMolay Ativo como padrão
+            // Se não encontrou por correspondência direta, usa o primeiro DeMolay Ativo como padrão
             userMember = typedMembers.find((m) => m.category === "demolay_ativo") || typedMembers[0];
           }
 
@@ -375,11 +383,10 @@ export default function MemberSelfServicePage() {
 
         // B. Mensalidades / Cobranças
         if (chgRes.data) {
-          // Regra Institucional: José Airton (102836) não possui cobranças ativas
-          if (member.id_demolay === "102836" || member.full_name?.toLowerCase().includes("airton")) {
+          // Salvaguarda institucional de isenção: José Airton (ID 102836) não possui cobranças no painel
+          if (member.id_demolay === "102836") {
             setCharges([]);
           } else {
-            // Membros elegíveis (DeMolays ativos e integrantes do Conselho) visualizam suas respectivas cobranças
             setCharges((chgRes.data as ChargeItem[]) || []);
           }
         }

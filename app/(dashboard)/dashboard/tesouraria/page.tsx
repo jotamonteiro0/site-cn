@@ -300,6 +300,43 @@ export default function TesourariaPage() {
   const [conselhoMemberIds, setConselhoMemberIds] = useState<Set<string>>(new Set());
   const [conselhoMembersMap, setConselhoMembersMap] = useState<Map<string, { sponsoring_lodge: string; role_name: string }>>(new Map());
 
+  // Contagem Oficial de Membros Cadastrados e Censo
+  const [memberMetrics, setMemberMetrics] = useState({
+    totalMembers: 117,
+    activeDemolays: 35,
+    seniorDemolays: 18,
+    macons: 26,
+  });
+
+  // Carrega Censo e Métricas de Membros Cadastrados
+  useEffect(() => {
+    async function loadMemberMetrics() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("members")
+          .select("category, member_type, is_active");
+
+        if (data && !error) {
+          const total = data.length;
+          const activeDeMolay = data.filter((m) => m.category === "demolay_ativo" && m.is_active).length;
+          const seniors = data.filter((m) => m.category === "senior_demolay" && m.is_active).length;
+          const macons = data.filter((m) => m.member_type === "macom" && m.is_active).length;
+
+          setMemberMetrics({
+            totalMembers: total,
+            activeDemolays: activeDeMolay,
+            seniorDemolays: seniors,
+            macons: macons,
+          });
+        }
+      } catch (err) {
+        console.warn("Aviso ao carregar métricas de membros na Tesouraria:", err);
+      }
+    }
+    loadMemberMetrics();
+  }, []);
+
   // Carrega Composição Oficial do Conselho Consultivo da tabela relacional conselho_membros
   useEffect(() => {
     async function loadConselhoMembros() {
@@ -336,10 +373,9 @@ export default function TesourariaPage() {
   }, [charges]);
 
   // Listagem do Conselho Consultivo (R$ 25,00)
+  // Elegibilidade decorre exclusivamente do vínculo ativo em conselho_membros
   const conselhoCharges = useMemo(() => {
     return charges.filter((c) => {
-      // Exclui expressamente José Airton e pessoas fora do Conselho
-      if (c.member?.id_demolay === "102836" || c.payer_name?.toLowerCase().includes("airton")) return false;
       return c.member_id && conselhoMemberIds.has(c.member_id);
     });
   }, [charges, conselhoMemberIds]);
@@ -809,6 +845,31 @@ export default function TesourariaPage() {
         </div>
       </div>
 
+      {/* BARRA DE CENSO E ELEGIBILIDADE INSTITUCIONAL */}
+      <div className="p-3.5 sm:p-4 rounded-xl bg-black/40 border border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5 text-emerald-300">
+            <Users className="w-4 h-4 text-[#D9AA45]" />
+            <span className="font-bold">Censo Ativo:</span>
+            <span className="font-mono bg-[#064D32] px-2 py-0.5 rounded text-white font-bold">{memberMetrics.activeDemolays} DeMolays Ativos</span>
+          </div>
+          <span className="text-gray-600 hidden sm:inline">•</span>
+          <div className="flex items-center gap-1.5 text-[#D9AA45]">
+            <Building className="w-4 h-4 text-[#D9AA45]" />
+            <span className="font-bold">Conselho Consultivo:</span>
+            <span className="font-mono bg-[#2A230E] border border-[#8C6D23]/40 px-2 py-0.5 rounded text-[#D9AA45] font-bold">{conselhoMemberIds.size} Integrantes Ativos</span>
+          </div>
+          <span className="text-gray-600 hidden sm:inline">•</span>
+          <div className="flex items-center gap-1.5 text-gray-400">
+            <span>Quadro Geral:</span>
+            <span className="font-mono text-gray-200">{memberMetrics.totalMembers} Membros Cadastrados</span>
+          </div>
+        </div>
+        <div className="text-[11px] text-emerald-200/70 font-mono">
+          Elegíveis para cobrança: <strong className="text-white font-bold">{memberMetrics.activeDemolays + conselhoMemberIds.size}</strong> membros
+        </div>
+      </div>
+
       {/* 4 CARDS RESUMO DO MÊS SELECIONADO */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card-heraldico-dark p-5 rounded-xl space-y-1">
@@ -819,7 +880,7 @@ export default function TesourariaPage() {
             R$ {stats.totalPrevisto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
           <p className="text-[11px] text-emerald-200/60 font-mono tabular-nums">
-            {stats.qtdTotal} pagantes {activeSheet === "demolay" ? "(DeMolays Ativos)" : activeSheet === "conselho" ? "(Conselho Consultivo)" : "(Geral)"}
+            {stats.qtdTotal} cobranças geradas {activeSheet === "demolay" ? `(Censo: ${memberMetrics.activeDemolays} DeMolays)` : activeSheet === "conselho" ? `(${conselhoMemberIds.size} no Conselho)` : `(${memberMetrics.activeDemolays + conselhoMemberIds.size} elegíveis)`}
           </p>
         </div>
 
@@ -831,7 +892,7 @@ export default function TesourariaPage() {
             R$ {stats.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
           <p className="text-[11px] text-emerald-200/60 font-mono tabular-nums">
-            {stats.qtdPago} quitadas
+            {stats.qtdPago} cobranças quitadas
           </p>
         </div>
 
@@ -843,7 +904,7 @@ export default function TesourariaPage() {
             R$ {stats.totalPendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
           <p className="text-[11px] text-amber-200/60 font-mono tabular-nums">
-            {stats.qtdTotal - stats.qtdPago} mensalidades em aberto
+            {stats.qtdTotal - stats.qtdPago} cobranças em aberto
           </p>
         </div>
 
@@ -882,7 +943,7 @@ export default function TesourariaPage() {
               <Users className="w-4 h-4 text-emerald-300" />
               <span>DeMolays Ativos (R$ 22,00)</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/40 text-emerald-200 font-mono tabular-nums">
-                {demolayCharges.length}
+                {demolayCharges.length} cobranças • Censo: {memberMetrics.activeDemolays}
               </span>
             </button>
 
@@ -902,7 +963,7 @@ export default function TesourariaPage() {
               <Building className="w-4 h-4 text-[#D9AA45]" />
               <span>Conselho Consultivo (R$ 25,00)</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/40 text-emerald-200 font-mono tabular-nums">
-                {conselhoCharges.length}
+                {conselhoCharges.length} cobranças • {conselhoMemberIds.size} ativos
               </span>
             </button>
 

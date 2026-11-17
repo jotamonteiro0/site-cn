@@ -580,19 +580,19 @@ export default function NominataPage() {
             <div className="pt-2 sm:pt-4 flex flex-wrap items-center gap-3">
               {selectedManagement.status === "ativa" ? (
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-xs text-emerald-200/90 font-mono font-medium">
-                    Instalação Oficial: 08/08/2026
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <span className="text-xs text-emerald-200/90 font-mono font-medium whitespace-normal">
+                    Cerimônia de Instalação e Posse dos Oficiais: 08/08/2026
                   </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40 shrink-0">
                     <Calendar className="w-3.5 h-3.5 text-blue-400" />
                     <span>Gestão Programada</span>
                   </span>
-                  <span className="text-xs text-emerald-200/80 font-mono">
-                    Previsão de Instalação: {formatCivilDate(selectedManagement.starts_on)}
+                  <span className="text-xs text-emerald-200/80 font-mono whitespace-normal">
+                    Previsão de Instalação e Posse dos Oficiais: {formatCivilDate(selectedManagement.starts_on)}
                   </span>
                 </div>
               )}

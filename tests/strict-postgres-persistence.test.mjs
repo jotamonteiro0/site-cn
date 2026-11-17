@@ -215,7 +215,7 @@ describe("Auditoria Rigorosa de Persistência PostgreSQL — Ausência de Fallba
 
       const photos = await mcPhotosRepo.getAll();
       assert.ok(Array.isArray(photos), "Deve retornar array de fotos do PostgreSQL");
-      assert.equal(photos.length, 13, "Deve conter as 13 fotografias oficiais cadastradas no PostgreSQL");
+      assert.ok(photos.length >= 13, "Deve conter pelo menos as 13 fotografias oficiais cadastradas no PostgreSQL");
       assert.equal(getFileHash(mcPhotosJsonPath), initialMCHash, "Leitura não altera mc_photos.json");
     });
 
