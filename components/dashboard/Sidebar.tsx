@@ -18,7 +18,6 @@ import {
   X,
   FileText,
   UserCheck,
-  User,
   Crown,
   Newspaper,
   CalendarCheck,
@@ -46,7 +45,6 @@ interface NavItem {
 
 const navigation: readonly NavItem[] = [
   { name: "Visão Geral", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Meu Perfil", href: "/dashboard/perfil", icon: User },
   { name: "Meu Autoatendimento", href: "/dashboard/membro", icon: UserCheck },
   { name: "Atividades do Capítulo", href: "/dashboard/atividades", icon: CalendarCheck },
   { name: "Publicações do Site", href: "/dashboard/publicacoes", icon: Newspaper },
@@ -219,7 +217,6 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
     return navigation.filter((item) => {
       if (
         item.href === "/dashboard" ||
-        item.href === "/dashboard/perfil" ||
         item.href === "/dashboard/membro" ||
         item.href === "/dashboard/atividades" ||
         item.href === "/dashboard/nominata" ||

@@ -116,4 +116,24 @@ describe("Resiliência de Autenticação, Navegação, Sessão e Armazenamento S
       "Módulo do Conselho Consultivo deve validar papel real via Supabase Auth",
     );
   });
+
+  test("7. Visão Geral (/dashboard) não usa useSyncExternalStore com Date.now() (previne React Error #185) e Meu Perfil fica exclusivamente no canto superior direito", () => {
+    const dashCode = fs.readFileSync(path.join(rootDir, "app/(dashboard)/dashboard/page.tsx"), "utf-8");
+    assert.ok(
+      !dashCode.includes("useSyncExternalStore"),
+      "Visão Geral não deve usar useSyncExternalStore sem cache estático para Date.now()",
+    );
+
+    const sidebarCode = fs.readFileSync(path.join(rootDir, "components/dashboard/Sidebar.tsx"), "utf-8");
+    assert.ok(
+      !sidebarCode.includes('"Meu Perfil"') && !sidebarCode.includes('"/dashboard/perfil"'),
+      "Menu lateral (Sidebar) não deve exibir item Meu Perfil",
+    );
+
+    const headerCode = fs.readFileSync(path.join(rootDir, "components/dashboard/DashboardHeader.tsx"), "utf-8");
+    assert.ok(
+      headerCode.includes('href="/dashboard/perfil"') && headerCode.includes('aria-label="Acessar Meu Perfil"'),
+      "Ícone de perfil no canto superior direito (DashboardHeader) deve abrir /dashboard/perfil",
+    );
+  });
 });

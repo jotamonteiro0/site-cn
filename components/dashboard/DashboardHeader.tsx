@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { safeStorage } from "@/lib/safe-storage";
 import { 
@@ -19,6 +20,7 @@ const roleDisplayMap: Record<string, { label: string; color: string }> = {
 };
 
 export function DashboardHeader() {
+  const pathname = usePathname();
   const [userName, setUserName] = useState<string>("Membro");
   const [userRole, setUserRole] = useState<string>("membro");
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
@@ -144,11 +146,16 @@ export function DashboardHeader() {
           <span>Ver Site</span>
         </Link>
 
-        {/* Chip do Usuário Logado */}
+        {/* Chip / Ícone de Perfil do Usuário Logado (Canto Superior Direito) */}
         <Link
           href="/dashboard/perfil"
-          className="flex items-center gap-2.5 p-1 sm:px-2.5 sm:py-1 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C59B3F]"
+          aria-label="Acessar Meu Perfil"
           title="Acessar Meu Perfil"
+          className={`flex items-center gap-2.5 p-1 sm:px-2.5 sm:py-1 rounded-lg transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C59B3F] cursor-pointer ${
+            pathname === "/dashboard/perfil"
+              ? "bg-[#087443]/30 border-[#C59B3F]/60"
+              : "border-transparent hover:bg-white/5 hover:border-white/10"
+          }`}
         >
           <div className="w-8 h-8 rounded-full bg-[#087443] border border-[#C59B3F]/60 flex items-center justify-center text-xs font-bold text-white overflow-hidden shrink-0">
             {avatarPath ? (

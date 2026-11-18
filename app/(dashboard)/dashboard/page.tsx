@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useSyncExternalStore } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { safeStorage } from "@/lib/safe-storage";
@@ -68,6 +68,7 @@ export default function DashboardOverviewPage() {
   const [pendingAdminCount, setPendingAdminCount] = useState<number>(0);
   const [viewingSessionModal, setViewingSessionModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [clientNow, setClientNow] = useState<number>(0);
 
   // Permissões e Perfis (RBAC Guard)
   const [userRole, setUserRole] = useState<string>(() => {
@@ -101,7 +102,10 @@ export default function DashboardOverviewPage() {
       const stored = safeStorage.getItem("cn_view_as_member");
       setViewAsMember(stored === "true");
     };
-    const frameId = requestAnimationFrame(checkViewAsMember);
+    const frameId = requestAnimationFrame(() => {
+      setClientNow(Date.now());
+      checkViewAsMember();
+    });
     window.addEventListener("cn_view_as_member_change", checkViewAsMember);
     window.addEventListener("storage", checkViewAsMember);
     return () => {
@@ -257,7 +261,10 @@ export default function DashboardOverviewPage() {
       } catch (err) {
         console.error("Erro ao carregar dados do dashboard:", err);
       } finally {
-        if (!ignore) setIsLoading(false);
+        if (!ignore) {
+          setClientNow(Date.now());
+          setIsLoading(false);
+        }
       }
     }
     loadDashboardData();
@@ -270,12 +277,6 @@ export default function DashboardOverviewPage() {
   const demolaysAtivos = useMemo(
     () => members.filter((m) => m.category === "demolay_ativo" && m.id_demolay !== "102836"),
     [members]
-  );
-
-  const clientNow = useSyncExternalStore(
-    () => () => {},
-    () => Date.now(),
-    () => 0
   );
 
   // Próxima Reunião Oficial (Estritamente com data/horário futuros)
