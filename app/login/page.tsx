@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Shield, Lock, Mail, ArrowLeft, Eye, EyeOff, KeyRound, CheckCircle2 } from "lucide-react";
 
@@ -32,25 +31,145 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Redireciona imediatamente se já houver sessão ativa válida
+  // Estado de Redefinição Efetiva de Senha (?redefinir=1 / PASSWORD_RECOVERY)
+  const [isNewPasswordModalOpen, setIsNewPasswordModalOpen] = useState(false);
+  const [recoveryPassword, setRecoveryPassword] = useState("");
+  const [recoveryConfirmPassword, setRecoveryConfirmPassword] = useState("");
+  const [isSavingNewPassword, setIsSavingNewPassword] = useState(false);
+  const [recoveryError, setRecoveryError] = useState("");
+  const [recoverySuccess, setRecoverySuccess] = useState("");
+
+  // Valida sessão ativa de forma estrita no servidor (getUser) e trata parâmetros de retorno
   useEffect(() => {
+    let isMounted = true;
+    let unsubscribe: (() => void) | null = null;
+
     async function checkExistingSession() {
       try {
+        const params = new URLSearchParams(window.location.search);
+        const erroParam = params.get("erro");
+        const isRecoveryFlow =
+          params.get("redefinir") === "1" ||
+          window.location.hash.includes("type=recovery");
+
+        if (erroParam === "configuracao") {
+          if (isMounted) {
+            setError("Serviço de autenticação indisponível por configuração de ambiente. Contate a administração.");
+          }
+          return;
+        }
+
+        if (erroParam === "temporario") {
+          if (isMounted) {
+            setError("Oscilação momentânea na conexão com o servidor de autenticação. Por favor, autentique-se novamente.");
+          }
+          return;
+        }
+
         const supabase = createClient();
+
+        const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+          if (event === "PASSWORD_RECOVERY" && isMounted) {
+            setIsNewPasswordModalOpen(true);
+          }
+        });
+        unsubscribe = () => listener.subscription.unsubscribe();
+
+        if (isRecoveryFlow) {
+          if (isMounted) {
+            setIsNewPasswordModalOpen(true);
+          }
+          return;
+        }
+
+        if (erroParam === "sessao_expirada") {
+          await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+          if (isMounted) {
+            setError("Sua sessão expirou. Por segurança, faça login novamente.");
+          }
+          return;
+        }
+
+        const hasAuthCookie = document.cookie
+          .split(";")
+          .some((c) => c.trim().startsWith("sb-") && c.includes("token"));
+
+        if (!hasAuthCookie) {
+          return;
+        }
+
         const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        const nowUnix = Math.floor(Date.now() / 1000);
-        if (session?.user && session.expires_at && session.expires_at > nowUnix) {
+          data: { user },
+          error: userErr,
+        } = await supabase.auth.getUser();
+
+        if (user && !userErr) {
           // eslint-disable-next-line @next/next/no-location-assign-relative-destination
           window.location.href = "/dashboard";
+        } else if (userErr) {
+          await supabase.auth.signOut({ scope: "local" }).catch(() => {});
         }
       } catch {
-        // Ignora erro preliminar
+        // Ignora erro preliminar sem gerar loop de redirecionamento
       }
     }
     checkExistingSession();
+
+    return () => {
+      isMounted = false;
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
+
+  const handleSaveRecoveredPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRecoveryError("");
+    setRecoverySuccess("");
+
+    if (recoveryPassword.length < 6) {
+      setRecoveryError("A nova senha deve possuir no mínimo 6 caracteres.");
+      return;
+    }
+
+    if (recoveryPassword !== recoveryConfirmPassword) {
+      setRecoveryError("A confirmação da senha não coincide com a nova senha digitada.");
+      return;
+    }
+
+    setIsSavingNewPassword(true);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const userIdDemolay = user?.user_metadata?.id_demolay;
+      if (userIdDemolay && recoveryPassword.trim() === String(userIdDemolay).trim()) {
+        setRecoveryError("Por segurança, sua senha não pode ser igual à sua ID DeMolay.");
+        setIsSavingNewPassword(false);
+        return;
+      }
+
+      const { error: updateErr } = await supabase.auth.updateUser({
+        password: recoveryPassword.trim(),
+      });
+
+      if (updateErr) {
+        setRecoveryError(updateErr.message || "Não foi possível redefinir a senha. Solicite um novo link.");
+        return;
+      }
+
+      setRecoverySuccess("Nova senha definida com sucesso! Redirecionando para o painel...");
+      setTimeout(() => {
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+        window.location.href = "/dashboard";
+      }, 1200);
+    } catch {
+      setRecoveryError("Falha ao comunicar com o servidor de autenticação.");
+    } finally {
+      setIsSavingNewPassword(false);
+    }
+  };
 
   // Estado do Primeiro Acesso (Ativação e Criação de Senha)
   const [isFirstAccessOpen, setIsFirstAccessOpen] = useState(false);
@@ -328,14 +447,15 @@ export default function LoginPage() {
       {/* Background Decorativo Solene */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(8,116,67,0.18),transparent_50%)] pointer-events-none" />
 
-      {/* Link para voltar ao portal público */}
-      <Link
+      {/* Link para voltar ao portal público (navegação documental limpa) */}
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+      <a
         href="/"
         className="relative z-10 mb-8 inline-flex items-center gap-2 text-sm font-medium text-emerald-200 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full border border-white/10"
       >
         <ArrowLeft className="w-4 h-4 text-[#C59B3F]" />
         <span>Voltar ao portal público</span>
-      </Link>
+      </a>
 
       {/* Card Institucional de Login */}
       <div className="relative z-10 w-full max-w-md bg-[#0B1F16] border border-white/10 rounded-3xl p-8 shadow-2xl text-white">
@@ -692,6 +812,93 @@ export default function LoginPage() {
                     className="px-5 py-2.5 rounded-lg bg-[#D9AA45] hover:bg-amber-400 text-black font-bold cursor-pointer disabled:opacity-50 transition-all shadow"
                   >
                     {isResetting ? "Enviando..." : "Enviar Link de Recuperação"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE DEFINIÇÃO DE NOVA SENHA (?redefinir=1 / PASSWORD_RECOVERY) */}
+      {isNewPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#0E2018] border border-white/[0.08] rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-white space-y-4">
+            <button
+              type="button"
+              onClick={() => setIsNewPasswordModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white text-xs cursor-pointer"
+            >
+              ✕
+            </button>
+
+            <div className="text-center space-y-1 pb-2 border-b border-white/10">
+              <div className="inline-flex w-12 h-12 rounded-xl bg-[#087443] border border-[#D9AA45] items-center justify-center text-[#D9AA45] shadow mb-1">
+                <KeyRound className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Definir Nova Senha</h3>
+              <p className="text-xs text-emerald-200/80">
+                Cadastre sua nova senha pessoal para concluir a recuperação de acesso.
+              </p>
+            </div>
+
+            {recoverySuccess ? (
+              <div className="p-4 rounded-xl bg-emerald-900/60 border border-emerald-500 text-emerald-200 text-xs space-y-3 text-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+                <p className="font-semibold leading-relaxed">{recoverySuccess}</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSaveRecoveredPassword} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="block text-emerald-200 font-semibold mb-1">
+                    Nova Senha de Acesso *
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={recoveryPassword}
+                    onChange={(e) => setRecoveryPassword(e.target.value)}
+                    placeholder="Mínimo de 6 caracteres"
+                    className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-emerald-200 font-semibold mb-1">
+                    Confirmar Nova Senha *
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={recoveryConfirmPassword}
+                    onChange={(e) => setRecoveryConfirmPassword(e.target.value)}
+                    placeholder="Repita a nova senha"
+                    className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#D9AA45]"
+                  />
+                </div>
+
+                {recoveryError && (
+                  <p className="p-2.5 rounded-lg bg-red-950/50 border border-red-500/40 text-red-200 text-[11px] text-center">
+                    {recoveryError}
+                  </p>
+                )}
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setIsNewPasswordModalOpen(false)}
+                    className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingNewPassword}
+                    className="px-5 py-2.5 rounded-lg bg-[#D9AA45] hover:bg-amber-400 text-black font-bold cursor-pointer disabled:opacity-50 transition-all shadow"
+                  >
+                    {isSavingNewPassword ? "Salvando..." : "Salvar Nova Senha"}
                   </button>
                 </div>
               </form>

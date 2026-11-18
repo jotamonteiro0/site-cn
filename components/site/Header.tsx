@@ -51,13 +51,13 @@ export function Header() {
 
         {/* Área de Membro Desktop + Botão Hamburger Mobile */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <Link
+          <a
             href="/login"
             className="hidden sm:inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-lg bg-[#087443] text-white hover:bg-[#065F36] border border-[#C59B3F]/40 shadow-sm transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C59B3F]"
           >
             <Lock className="w-3.5 h-3.5 text-[#C59B3F]" />
             <span>Área de Membro</span>
-          </Link>
+          </a>
 
           {/* Botão Mobile Menu */}
           <button
@@ -89,14 +89,14 @@ export function Header() {
             </Link>
           ))}
           <div className="pt-3 border-t border-white/10 mt-2">
-            <Link
+            <a
               href="/login"
               onClick={() => setMobileMenuOpen(false)}
               className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#087443] hover:bg-[#065F36] text-white font-semibold text-sm border border-[#C59B3F]/40 shadow-sm transition-colors"
             >
               <Lock className="w-4 h-4 text-[#C59B3F]" />
               <span>Acessar Área de Membro</span>
-            </Link>
+            </a>
           </div>
         </div>
       )}

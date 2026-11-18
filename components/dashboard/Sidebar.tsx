@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { safeStorage } from "@/lib/safe-storage";
 import { ProfilePhotoCropper } from "@/components/ui/ProfilePhotoCropper";
 import { 
   Shield, 
@@ -61,7 +62,6 @@ let globalSidebarUserCache: DashboardUser | null = null;
 
 export function Sidebar({ user: initialUser }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [currentUser, setCurrentUser] = useState<DashboardUser | null>(initialUser || globalSidebarUserCache || null);
   const [isOpen, setIsOpen] = useState(false);
   const [viewAsMember, setViewAsMember] = useState(false);
@@ -78,13 +78,9 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
-      try {
-        const stored = localStorage.getItem("cn_view_as_member");
-        if (stored === "true") {
-          setViewAsMember(true);
-        }
-      } catch {
-        // storage quota fallback
+      const stored = safeStorage.getItem("cn_view_as_member");
+      if (stored === "true") {
+        setViewAsMember(true);
       }
     });
     return () => cancelAnimationFrame(frame);
@@ -113,13 +109,14 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
           const profile = profileRes.data;
           const membership = membershipRes.data;
 
-          const cachedAvatar = typeof window !== "undefined" ? localStorage.getItem(`cn_member_avatar_${user.id}`) : null;
+          const cachedAvatar = safeStorage.getItem(`cn_member_avatar_${user.id}`);
 
           const isPermanentMaster =
             user.user_metadata?.id_demolay === "127738" ||
             user.user_metadata?.id_demolay === "102836" ||
             user.email === "joaomonteiro0@icloud.com" ||
             user.email === "airton@carvalhoneves500.org.br" ||
+            user.email === "jarodriguesj1@gmail.com" ||
             membership?.role_code === "master";
 
           const roleCode = isPermanentMaster ? "master" : (membership?.role_code || "membro");
@@ -147,10 +144,11 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
   const handleSignOut = async () => {
     setIsLoggingOut(true);
     try {
+      globalSidebarUserCache = null;
       const supabase = createClient();
       await supabase.auth.signOut();
-      router.replace("/login");
-      router.refresh();
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = "/login";
     } catch (err) {
       console.error("Erro ao encerrar sessão:", err);
       setIsLoggingOut(false);
@@ -160,7 +158,7 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
   useEffect(() => {
     const handleAvatarUpdate = () => {
       if (currentUser?.id) {
-        const cached = localStorage.getItem(`cn_member_avatar_${currentUser.id}`);
+        const cached = safeStorage.getItem(`cn_member_avatar_${currentUser.id}`);
         if (cached) {
           setCurrentUser((prev) => (prev ? { ...prev, avatarPath: cached } : null));
         }
@@ -174,11 +172,7 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
     if (!currentUser) return;
     setIsSavingCrop(true);
     try {
-      try {
-        localStorage.setItem(`cn_member_avatar_${currentUser.id}`, croppedDataUrl);
-      } catch {
-        // storage quota fallback
-      }
+      safeStorage.setItem(`cn_member_avatar_${currentUser.id}`, croppedDataUrl);
       setCurrentUser((prev) => (prev ? { ...prev, avatarPath: croppedDataUrl } : null));
 
       const supabase = createClient();
@@ -300,12 +294,8 @@ export function Sidebar({ user: initialUser }: SidebarProps) {
               onClick={() => {
                 const nextState = !viewAsMember;
                 setViewAsMember(nextState);
-                try {
-                  localStorage.setItem("cn_view_as_member", String(nextState));
-                  window.dispatchEvent(new Event("cn_view_as_member_change"));
-                } catch {
-                  // ignore
-                }
+                safeStorage.setItem("cn_view_as_member", String(nextState));
+                window.dispatchEvent(new Event("cn_view_as_member_change"));
               }}
               className={`w-9 h-5 rounded-full transition-colors relative p-0.5 cursor-pointer ${
                 viewAsMember ? "bg-[#C59B3F]" : "bg-white/20"

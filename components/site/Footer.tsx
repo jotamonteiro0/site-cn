@@ -47,9 +47,9 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/login" className="hover:text-[#C59B3F] transition-colors">
+                <a href="/login" className="hover:text-[#C59B3F] transition-colors">
                   Acesso ao Painel
-                </Link>
+                </a>
               </li>
             </ul>
           </div>

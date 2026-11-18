@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { safeStorage } from "@/lib/safe-storage";
 import { authenticGestaoDocuments } from "@/lib/data/historicalGestaoDocs";
 import { authenticAtasDocuments } from "@/lib/data/historicalAtasDocs";
 import { scdbPublicCeremonies, scdbGeneralManuals } from "@/lib/data/scdbDocs";
@@ -81,20 +82,20 @@ export default function DashboardDocumentosPage() {
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       try {
-        const savedAttachments = localStorage.getItem("cn_doc_attachments");
+        const savedAttachments = safeStorage.getItem("cn_doc_attachments");
         if (savedAttachments) {
           setAttachments(JSON.parse(savedAttachments));
         }
-        const savedDeleted = localStorage.getItem("cn_deleted_doc_ids");
+        const savedDeleted = safeStorage.getItem("cn_deleted_doc_ids");
         if (savedDeleted) {
           setDeletedIds(JSON.parse(savedDeleted));
         }
-        const savedUploaded = localStorage.getItem("cn_custom_uploaded_docs");
+        const savedUploaded = safeStorage.getItem("cn_custom_uploaded_docs");
         if (savedUploaded) {
           setUploadedDocs(JSON.parse(savedUploaded));
         }
       } catch {
-        // localStorage indisponível ou quota excedida
+        // JSON inválido ou armazenamento indisponível
       }
     });
     return () => cancelAnimationFrame(frame);
@@ -111,7 +112,8 @@ export default function DashboardDocumentosPage() {
             user.user_metadata?.id_demolay === "127738" ||
             user.user_metadata?.id_demolay === "102836" ||
             user.email === "joaomonteiro0@icloud.com" ||
-            user.email === "airton@carvalhoneves500.org.br";
+            user.email === "airton@carvalhoneves500.org.br" ||
+            user.email === "jarodriguesj1@gmail.com";
 
           const { data: membership } = await supabase
             .from("chapter_memberships")
@@ -133,15 +135,11 @@ export default function DashboardDocumentosPage() {
     loadRole();
   }, []);
 
-  // Sincroniza o modo "Ver como Membro" com a Sidebar e localStorage
+  // Sincroniza o modo "Ver como Membro" com a Sidebar e safeStorage
   useEffect(() => {
     const checkViewAsMember = () => {
-      try {
-        const stored = localStorage.getItem("cn_view_as_member");
-        setViewAsMember(stored === "true");
-      } catch {
-        // storage quota fallback
-      }
+      const stored = safeStorage.getItem("cn_view_as_member");
+      setViewAsMember(stored === "true");
     };
     const frameId = requestAnimationFrame(checkViewAsMember);
     window.addEventListener("cn_view_as_member_change", checkViewAsMember);
@@ -323,11 +321,7 @@ export default function DashboardDocumentosPage() {
 
       const updated = { ...attachments, [docId]: publicUrl };
       setAttachments(updated);
-      try {
-        localStorage.setItem("cn_doc_attachments", JSON.stringify(updated));
-      } catch {
-        // quota
-      }
+      safeStorage.setItem("cn_doc_attachments", JSON.stringify(updated));
 
       if (viewingDoc && viewingDoc.id === docId) {
         setViewingDoc({ ...viewingDoc, downloadUrl: publicUrl });
@@ -352,20 +346,12 @@ export default function DashboardDocumentosPage() {
 
       const newDeleted = [...deletedIds, docToDelete.id];
       setDeletedIds(newDeleted);
-      try {
-        localStorage.setItem("cn_deleted_doc_ids", JSON.stringify(newDeleted));
-      } catch {
-        // quota
-      }
+      safeStorage.setItem("cn_deleted_doc_ids", JSON.stringify(newDeleted));
 
       // Se estiver em uploadedDocs, remove do estado e storage
       setUploadedDocs((prev) => {
         const filtered = prev.filter((d) => d.id !== docToDelete.id);
-        try {
-          localStorage.setItem("cn_custom_uploaded_docs", JSON.stringify(filtered));
-        } catch {
-          // quota
-        }
+        safeStorage.setItem("cn_custom_uploaded_docs", JSON.stringify(filtered));
         return filtered;
       });
 
@@ -435,11 +421,7 @@ export default function DashboardDocumentosPage() {
 
       setUploadedDocs((prev) => {
         const updated = [newRecord, ...prev];
-        try {
-          localStorage.setItem("cn_custom_uploaded_docs", JSON.stringify(updated));
-        } catch {
-          // quota
-        }
+        safeStorage.setItem("cn_custom_uploaded_docs", JSON.stringify(updated));
         return updated;
       });
 

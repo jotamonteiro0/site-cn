@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     // 1. Busca membro
     const { data: member, error: memberErr } = await supabaseAdmin
       .from("members")
-      .select("id, id_demolay, full_name, category, profile_id")
+      .select("id, id_demolay, full_name, category, profile_id, email")
       .eq("id", member_id)
       .single();
 
@@ -77,8 +77,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Membro não encontrado." }, { status: 404 });
     }
 
-    // Permissão: O próprio membro OU Diretoria (Master, Escrivão, Tesoureiro)
-    const isOwner = member.profile_id && member.profile_id === callerUser.id;
+    // Permissão: O próprio membro (por profile_id, email ou id_demolay) OU Diretoria (Master, Escrivão, Tesoureiro)
+    const callerMetaId = String(
+      callerUser.user_metadata?.id_demolay || callerUser.app_metadata?.id_demolay || "",
+    ).trim();
+    const callerEmail = (callerUser.email || "").trim().toLowerCase();
+    const isOwner = Boolean(
+      (member.profile_id && member.profile_id === callerUser.id) ||
+        (callerEmail && member.email && member.email.trim().toLowerCase() === callerEmail) ||
+        (callerMetaId && member.id_demolay && String(member.id_demolay).trim() === callerMetaId),
+    );
     let isAuthorized = isOwner;
 
     if (!isAuthorized) {
@@ -86,7 +94,8 @@ export async function POST(request: Request) {
         callerUser.user_metadata?.id_demolay === "127738" ||
         callerUser.user_metadata?.id_demolay === "102836" ||
         callerUser.email === "joaomonteiro0@icloud.com" ||
-        callerUser.email === "airton@carvalhoneves500.org.br";
+        callerUser.email === "airton@carvalhoneves500.org.br" ||
+        callerUser.email === "jarodriguesj1@gmail.com";
 
       if (isPermanentMaster) {
         isAuthorized = true;

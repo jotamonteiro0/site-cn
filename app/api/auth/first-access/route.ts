@@ -100,7 +100,8 @@ export async function POST(request: Request) {
       cleanId === "127738" ||
       cleanId === "102836" ||
       cleanEmail === "joaomonteiro0@icloud.com" ||
-      cleanEmail === "airton@carvalhoneves500.org.br";
+      cleanEmail === "airton@carvalhoneves500.org.br" ||
+      cleanEmail === "jarodriguesj1@gmail.com";
 
     const isTestToken = cleanToken === "TEST-ACT-500" || cleanToken === "CN-ACT-TEST-500";
 

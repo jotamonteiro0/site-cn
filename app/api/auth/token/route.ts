@@ -70,7 +70,8 @@ export async function POST(request: Request) {
       callerUser.user_metadata?.id_demolay === "127738" ||
       callerUser.user_metadata?.id_demolay === "102836" ||
       callerUser.email === "joaomonteiro0@icloud.com" ||
-      callerUser.email === "airton@carvalhoneves500.org.br";
+      callerUser.email === "airton@carvalhoneves500.org.br" ||
+      callerUser.email === "jarodriguesj1@gmail.com";
 
     let isAuthorized = isPermanentMaster;
 

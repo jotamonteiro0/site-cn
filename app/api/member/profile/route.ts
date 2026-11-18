@@ -42,12 +42,33 @@ async function getCallerUser(request: Request) {
   }
 }
 
+function buildSafeMemberIdentityFilter(user: {
+  id: string;
+  email?: string;
+  user_metadata?: Record<string, unknown>;
+  app_metadata?: Record<string, unknown>;
+}): string {
+  const clauses: string[] = [`profile_id.eq.${user.id}`];
+  const rawId = String(
+    user.user_metadata?.id_demolay || user.app_metadata?.id_demolay || "",
+  ).trim();
+  if (rawId && /^[A-Za-z0-9_-]+$/.test(rawId)) {
+    clauses.push(`id_demolay.eq.${rawId}`);
+  }
+  const rawEmail = String(user.email || "").trim().toLowerCase();
+  if (rawEmail && /^[^\s,()]+@[^\s,()]+$/.test(rawEmail)) {
+    clauses.push(`email.ilike.${rawEmail}`);
+  }
+  return clauses.join(",");
+}
+
 async function isMasterUser(user: { id: string; email?: string; user_metadata?: Record<string, unknown> }): Promise<boolean> {
   if (
     user.user_metadata?.id_demolay === "127738" ||
     user.user_metadata?.id_demolay === "102836" ||
     user.email === "joaomonteiro0@icloud.com" ||
-    user.email === "airton@carvalhoneves500.org.br"
+    user.email === "airton@carvalhoneves500.org.br" ||
+    user.email === "jarodriguesj1@gmail.com"
   ) {
     return true;
   }
@@ -85,10 +106,8 @@ export async function GET(request: Request) {
     if (targetMemberId && isMaster) {
       memberQuery = memberQuery.eq("id", targetMemberId);
     } else {
-      // Busca o membro vinculado ao usuário autenticado por profile_id, id_demolay ou email
-      memberQuery = memberQuery.or(
-        `profile_id.eq.${user.id},id_demolay.eq.${user.user_metadata?.id_demolay || ""},email.eq.${user.email || ""}`
-      );
+      // Busca o membro vinculado ao usuário autenticado apenas por campos efetivamente preenchidos
+      memberQuery = memberQuery.or(buildSafeMemberIdentityFilter(user));
     }
 
     const { data: member, error: memberErr } = await memberQuery.limit(1).maybeSingle();
@@ -175,7 +194,7 @@ export async function PUT(request: Request) {
       const { data } = await admin
         .from("members")
         .select("*")
-        .or(`profile_id.eq.${user.id},id_demolay.eq.${user.user_metadata?.id_demolay || ""},email.eq.${user.email || ""}`)
+        .or(buildSafeMemberIdentityFilter(user))
         .limit(1)
         .maybeSingle();
 

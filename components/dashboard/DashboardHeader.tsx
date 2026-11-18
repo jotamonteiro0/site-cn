@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { safeStorage } from "@/lib/safe-storage";
 import { 
   Menu, 
   ExternalLink, 
@@ -19,7 +19,6 @@ const roleDisplayMap: Record<string, { label: string; color: string }> = {
 };
 
 export function DashboardHeader() {
-  const router = useRouter();
   const [userName, setUserName] = useState<string>("Membro");
   const [userRole, setUserRole] = useState<string>("membro");
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
@@ -39,13 +38,14 @@ export function DashboardHeader() {
 
           const profile = profileRes.data;
           const membership = memberRes.data;
-          const cachedAvatar = typeof window !== "undefined" ? localStorage.getItem(`cn_member_avatar_${user.id}`) : null;
+          const cachedAvatar = safeStorage.getItem(`cn_member_avatar_${user.id}`);
 
           const isPermanentMaster =
             user.user_metadata?.id_demolay === "127738" ||
             user.user_metadata?.id_demolay === "102836" ||
             user.email === "joaomonteiro0@icloud.com" ||
             user.email === "airton@carvalhoneves500.org.br" ||
+            user.email === "jarodriguesj1@gmail.com" ||
             membership?.role_code === "master";
 
           const roleCode = isPermanentMaster ? "master" : (membership?.role_code || "membro");
@@ -69,12 +69,8 @@ export function DashboardHeader() {
 
     // Sincroniza visão de membro
     const syncViewMode = () => {
-      try {
-        const stored = localStorage.getItem("cn_view_as_member");
-        setViewAsMember(stored === "true");
-      } catch {
-        // ignore
-      }
+      const stored = safeStorage.getItem("cn_view_as_member");
+      setViewAsMember(stored === "true");
     };
     syncViewMode();
     window.addEventListener("cn_view_as_member_change", syncViewMode);
@@ -96,8 +92,8 @@ export function DashboardHeader() {
     try {
       const supabase = createClient();
       await supabase.auth.signOut();
-      router.replace("/login");
-      router.refresh();
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = "/login";
     } catch (err) {
       console.error("Erro ao deslogar:", err);
       setIsLoggingOut(false);

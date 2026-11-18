@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import { safeStorage } from "@/lib/safe-storage";
 import { formatFullDate, parseMeetingTitle } from "@/components/site/EncontrosAtividades";
 import { HISTORICAL_MEETINGS } from "@/lib/data/historicalMeetings";
 import canonicalMCPhotosJson from "@/data/mc_photos.json";
@@ -136,7 +137,8 @@ export default function MasterPublicacoesPage() {
             user.user_metadata?.id_demolay === "127738" ||
             user.user_metadata?.id_demolay === "102836" ||
             user.email === "joaomonteiro0@icloud.com" ||
-            user.email === "airton@carvalhoneves500.org.br";
+            user.email === "airton@carvalhoneves500.org.br" ||
+            user.email === "jarodriguesj1@gmail.com";
 
           const { data: membership } = await supabase
             .from("chapter_memberships")
@@ -152,7 +154,7 @@ export default function MasterPublicacoesPage() {
           }
         } else if (
           typeof window !== "undefined" &&
-          (localStorage.getItem("cn_audit_master") === "true" ||
+          (safeStorage.getItem("cn_audit_master") === "true" ||
             document.cookie.includes("cn_audit_master=true"))
         ) {
           setUserRole("master");
@@ -169,13 +171,9 @@ export default function MasterPublicacoesPage() {
   // Monitora alternador "Ver como Membro"
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
-      try {
-        const stored = localStorage.getItem("cn_view_as_member");
-        if (stored === "true") {
-          setViewAsMember(true);
-        }
-      } catch {
-        // quota fallback
+      const stored = safeStorage.getItem("cn_view_as_member");
+      if (stored === "true") {
+        setViewAsMember(true);
       }
     });
     return () => cancelAnimationFrame(frame);

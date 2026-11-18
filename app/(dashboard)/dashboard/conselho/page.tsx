@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { safeStorage } from "@/lib/safe-storage";
 import {
   ShieldCheck,
   Building2,
@@ -120,32 +121,59 @@ export default function ConselhoPage() {
   const [selectedOfficerMemberId, setSelectedOfficerMemberId] = useState<string>("");
   const [isSavingOfficer, setIsSavingOfficer] = useState(false);
 
-  // 1. Carregar papel inicial do usuário
+  // 1. Carregar papel inicial do usuário (Supabase Auth + sincronização local)
   useEffect(() => {
-    const loadRole = () => {
+    let isMounted = true;
+    async function loadRole() {
+      const storedRole = safeStorage.getItem("cn_user_role");
+      if (storedRole) setUserRole(storedRole);
+      const storedViewAsMember = safeStorage.getItem("cn_view_as_member");
+      setViewAsMember(storedViewAsMember === "true");
+
       try {
-        const storedRole = localStorage.getItem("cn_user_role");
-        if (storedRole) setUserRole(storedRole);
-        const storedViewAsMember = localStorage.getItem("cn_view_as_member");
-        setViewAsMember(storedViewAsMember === "true");
-      } catch {
-        // Fallback silencioso
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!isMounted || !user) return;
+
+        const isPermanentMaster =
+          user.user_metadata?.id_demolay === "127738" ||
+          user.user_metadata?.id_demolay === "102836" ||
+          user.email === "joaomonteiro0@icloud.com" ||
+          user.email === "airton@carvalhoneves500.org.br" ||
+          user.email === "jarodriguesj1@gmail.com";
+
+        const { data: membership } = await supabase
+          .from("chapter_memberships")
+          .select("role_code")
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (!isMounted) return;
+        if (isPermanentMaster || membership?.role_code === "master") {
+          setUserRole("master");
+        } else if (membership?.role_code) {
+          setUserRole(membership.role_code);
+        }
+      } catch (err) {
+        console.error("Erro ao verificar papel do usuário no Conselho:", err);
       }
-    };
+    }
     loadRole();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // 2. Sincronizar simulação de papel do usuário
   useEffect(() => {
     const handleRoleChange = () => {
-      try {
-        const storedView = localStorage.getItem("cn_view_as_member");
-        setViewAsMember(storedView === "true");
-        const storedRole = localStorage.getItem("cn_user_role");
-        if (storedRole) setUserRole(storedRole);
-      } catch {
-        // ignore
-      }
+      const storedView = safeStorage.getItem("cn_view_as_member");
+      setViewAsMember(storedView === "true");
+      const storedRole = safeStorage.getItem("cn_user_role");
+      if (storedRole) setUserRole(storedRole);
     };
     window.addEventListener("cn_view_as_member_change", handleRoleChange);
     window.addEventListener("storage", handleRoleChange);

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { safeStorage } from "@/lib/safe-storage";
 import { ProfilePhotoCropper } from "@/components/ui/ProfilePhotoCropper";
 import {
   Calendar,
@@ -52,6 +53,7 @@ interface MemberData {
   email?: string;
   phone?: string;
   photo_url?: string;
+  profile_id?: string | null;
 }
 
 interface MeetingItem {
@@ -238,7 +240,7 @@ export default function MemberSelfServicePage() {
           supabase.auth.getUser(),
           supabase
             .from("members")
-            .select("id, id_demolay, photo_url, full_name, category, regularity, masonic_lodge, initiation_date, demolay_degree_date, birth_date, email, phone")
+            .select("id, id_demolay, profile_id, photo_url, full_name, category, regularity, masonic_lodge, initiation_date, demolay_degree_date, birth_date, email, phone")
             .order("full_name", { ascending: true }),
           supabase
             .from("meetings")
@@ -273,9 +275,9 @@ export default function MemberSelfServicePage() {
           const userId = user?.id;
 
           let userMember = typedMembers.find((m) =>
-            (userMetaId && m.id_demolay === userMetaId) ||
-            (userEmail && m.email && m.email.toLowerCase() === userEmail) ||
-            (userId && (m as unknown as { profile_id?: string }).profile_id === userId)
+            (userId && m.profile_id === userId) ||
+            (userMetaId && m.id_demolay === String(userMetaId)) ||
+            (userEmail && m.email && m.email.toLowerCase() === userEmail)
           );
           if (!userMember) {
             // Se não encontrou por correspondência direta, usa o primeiro DeMolay Ativo como padrão
@@ -292,8 +294,8 @@ export default function MemberSelfServicePage() {
               .maybeSingle();
             if (prof?.avatar_path) profilePhoto = prof.avatar_path;
           }
-          if (!profilePhoto && typeof window !== "undefined") {
-            const cached = localStorage.getItem(`cn_member_avatar_${userMember.id}`);
+          if (!profilePhoto) {
+            const cached = safeStorage.getItem(`cn_member_avatar_${userMember.id}`);
             if (cached) profilePhoto = cached;
           }
 
@@ -690,11 +692,7 @@ export default function MemberSelfServicePage() {
       const { data: { user } } = await supabase.auth.getUser();
 
       // Salva localmente de imediato para feedback instantâneo na tela
-      try {
-        localStorage.setItem(`cn_member_avatar_${currentMember.id}`, croppedDataUrl);
-      } catch {
-        // ignore quota
-      }
+      safeStorage.setItem(`cn_member_avatar_${currentMember.id}`, croppedDataUrl);
 
       setCurrentMember((prev) => (prev ? { ...prev, photo_url: croppedDataUrl } : null));
 

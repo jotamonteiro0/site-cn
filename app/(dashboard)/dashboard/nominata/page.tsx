@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { safeStorage } from "@/lib/safe-storage";
 import { formatCivilDate } from "@/lib/gestao-vigencia";
 import {
   Crown,
@@ -106,7 +107,8 @@ export default function NominataPage() {
             user.user_metadata?.id_demolay === "127738" ||
             user.user_metadata?.id_demolay === "102836" ||
             user.email === "joaomonteiro0@icloud.com" ||
-            user.email === "airton@carvalhoneves500.org.br";
+            user.email === "airton@carvalhoneves500.org.br" ||
+            user.email === "jarodriguesj1@gmail.com";
 
           const { data: membership } = await supabase
             .from("chapter_memberships")
@@ -309,15 +311,11 @@ export default function NominataPage() {
     return managements.find((m) => m.id === selectedManagementId);
   }, [managements, selectedManagementId]);
 
-  // Sincroniza o modo "Ver como Membro" com a Sidebar e localStorage
+  // Sincroniza o modo "Ver como Membro" com a Sidebar e safeStorage
   useEffect(() => {
     const checkViewAsMember = () => {
-      try {
-        const stored = localStorage.getItem("cn_view_as_member");
-        setViewAsMember(stored === "true");
-      } catch {
-        // ignore
-      }
+      const stored = safeStorage.getItem("cn_view_as_member");
+      setViewAsMember(stored === "true");
     };
     const frameId = requestAnimationFrame(checkViewAsMember);
     window.addEventListener("cn_view_as_member_change", checkViewAsMember);

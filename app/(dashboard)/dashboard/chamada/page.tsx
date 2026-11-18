@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { safeStorage } from "@/lib/safe-storage";
 import {
   Calendar as CalendarIcon,
   Users,
@@ -287,7 +288,7 @@ export default function ChamadaPage() {
   // Permissões e Perfis (RBAC Guard)
   const [userRole, setUserRole] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      if (localStorage.getItem("cn_audit_master") === "true" || localStorage.getItem("cn_user_role") === "master") {
+      if (safeStorage.getItem("cn_audit_master") === "true" || safeStorage.getItem("cn_user_role") === "master") {
         return "master";
       }
     }
@@ -309,7 +310,8 @@ export default function ChamadaPage() {
             user.user_metadata?.id_demolay === "127738" ||
             user.user_metadata?.id_demolay === "102836" ||
             user.email === "joaomonteiro0@icloud.com" ||
-            user.email === "airton@carvalhoneves500.org.br";
+            user.email === "airton@carvalhoneves500.org.br" ||
+            user.email === "jarodriguesj1@gmail.com";
 
           const { data: membership } = await supabase
             .from("chapter_memberships")
@@ -331,15 +333,11 @@ export default function ChamadaPage() {
     checkRole();
   }, []);
 
-  // Sincroniza o modo "Ver como Membro" com a Sidebar e localStorage
+  // Sincroniza o modo "Ver como Membro" com a Sidebar e safeStorage
   useEffect(() => {
     const checkViewAsMember = () => {
-      try {
-        const stored = localStorage.getItem("cn_view_as_member");
-        setViewAsMember(stored === "true");
-      } catch {
-        // ignore
-      }
+      const stored = safeStorage.getItem("cn_view_as_member");
+      setViewAsMember(stored === "true");
     };
     const frameId = requestAnimationFrame(checkViewAsMember);
     window.addEventListener("cn_view_as_member_change", checkViewAsMember);
@@ -458,7 +456,7 @@ export default function ChamadaPage() {
         if (!dmVisRes.error && dmVisData) {
           setVisitingDemolays(dmVisData as VisitingDemolayRecord[]);
         } else {
-          const localData = localStorage.getItem(`cn_visiting_dm_${selectedMeetingId}`);
+          const localData = safeStorage.getItem(`cn_visiting_dm_${selectedMeetingId}`);
           if (localData) {
             setVisitingDemolays(JSON.parse(localData));
           } else {
@@ -474,7 +472,7 @@ export default function ChamadaPage() {
 
         const minData = minRes.data;
 
-        const savedAta = localStorage.getItem(`cn_meeting_minute_${selectedMeetingId}`);
+        const savedAta = safeStorage.getItem(`cn_meeting_minute_${selectedMeetingId}`);
         if (savedAta) {
           const parsed = JSON.parse(savedAta);
           setMinuteData({
@@ -616,7 +614,7 @@ export default function ChamadaPage() {
     setIsSavingMinute(true);
 
     try {
-      localStorage.setItem(`cn_meeting_minute_${selectedMeetingId}`, JSON.stringify(minuteData));
+      safeStorage.setItem(`cn_meeting_minute_${selectedMeetingId}`, JSON.stringify(minuteData));
 
       // Atualiza descrição na tabela meetings
       const supabase = createClient();
@@ -1055,12 +1053,12 @@ export default function ChamadaPage() {
         // Fallback local
         const updated = [...visitingDemolays, newRecord];
         setVisitingDemolays(updated);
-        localStorage.setItem(`cn_visiting_dm_${selectedMeetingId}`, JSON.stringify(updated));
+        safeStorage.setItem(`cn_visiting_dm_${selectedMeetingId}`, JSON.stringify(updated));
       }
     } catch {
       const updated = [...visitingDemolays, newRecord];
       setVisitingDemolays(updated);
-      localStorage.setItem(`cn_visiting_dm_${selectedMeetingId}`, JSON.stringify(updated));
+      safeStorage.setItem(`cn_visiting_dm_${selectedMeetingId}`, JSON.stringify(updated));
     }
 
     setNewDemolayVisitor({ id_demolay: "", name: "", chapter: "" });
@@ -1079,7 +1077,7 @@ export default function ChamadaPage() {
     }
     const updated = visitingDemolays.filter((v) => v.id !== visitorId);
     setVisitingDemolays(updated);
-    localStorage.setItem(`cn_visiting_dm_${selectedMeetingId}`, JSON.stringify(updated));
+    safeStorage.setItem(`cn_visiting_dm_${selectedMeetingId}`, JSON.stringify(updated));
   };
 
   // Gerador de Link para o Google Agenda

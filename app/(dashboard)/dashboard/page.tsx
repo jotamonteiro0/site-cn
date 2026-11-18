@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { safeStorage } from "@/lib/safe-storage";
 import {
   Users,
   ShieldCheck,
@@ -28,6 +29,8 @@ interface MemberRecord {
   full_name: string;
   category: "demolay_ativo" | "senior_demolay" | "macom" | "irregular";
   masonic_lodge?: string;
+  profile_id?: string | null;
+  email?: string | null;
 }
 
 interface MeetingRecord {
@@ -69,7 +72,7 @@ export default function DashboardOverviewPage() {
   // Permissões e Perfis (RBAC Guard)
   const [userRole, setUserRole] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      if (localStorage.getItem("cn_audit_master") === "true" || localStorage.getItem("cn_user_role") === "master") {
+      if (safeStorage.getItem("cn_audit_master") === "true" || safeStorage.getItem("cn_user_role") === "master") {
         return "master";
       }
     }
@@ -95,12 +98,8 @@ export default function DashboardOverviewPage() {
   // Sincroniza o modo "Ver como Membro" com a Sidebar e localStorage
   useEffect(() => {
     const checkViewAsMember = () => {
-      try {
-        const stored = localStorage.getItem("cn_view_as_member");
-        setViewAsMember(stored === "true");
-      } catch {
-        // ignore
-      }
+      const stored = safeStorage.getItem("cn_view_as_member");
+      setViewAsMember(stored === "true");
     };
     const frameId = requestAnimationFrame(checkViewAsMember);
     window.addEventListener("cn_view_as_member_change", checkViewAsMember);
@@ -132,7 +131,7 @@ export default function DashboardOverviewPage() {
             .order("starts_at", { ascending: true }),
           supabase
             .from("members")
-            .select("id, id_demolay, full_name, category, masonic_lodge"),
+            .select("id, id_demolay, full_name, category, masonic_lodge, profile_id, email"),
           supabase
             .from("view_member_birthdays")
             .select("member_id, full_name, id_demolay, birthday_formatted, birth_day, birth_month")
@@ -177,7 +176,8 @@ export default function DashboardOverviewPage() {
             currentUser.user_metadata?.id_demolay === "127738" ||
             currentUser.user_metadata?.id_demolay === "102836" ||
             currentUser.email === "joaomonteiro0@icloud.com" ||
-            currentUser.email === "airton@carvalhoneves500.org.br";
+            currentUser.email === "airton@carvalhoneves500.org.br" ||
+            currentUser.email === "jarodriguesj1@gmail.com";
 
           const { data: membership } = await supabase
             .from("chapter_memberships")
@@ -192,10 +192,16 @@ export default function DashboardOverviewPage() {
             setUserRole(membership.role_code);
           }
 
-          const userMember = memRes.data?.find(
+          const currentMetaId =
+            currentUser.user_metadata?.id_demolay || currentUser.app_metadata?.id_demolay;
+          const currentEmailLower = currentUser.email?.toLowerCase();
+
+          const userMember = (memRes.data as MemberRecord[] | null)?.find(
             (m) =>
-              (currentUser.user_metadata?.id_demolay && m.id_demolay === currentUser.user_metadata.id_demolay) ||
-              (currentUser.email && m.full_name?.toLowerCase().includes(currentUser.email.split("@")[0].toLowerCase()))
+              (m.profile_id && m.profile_id === currentUser.id) ||
+              (currentMetaId && m.id_demolay === String(currentMetaId)) ||
+              (currentEmailLower && m.email && m.email.toLowerCase() === currentEmailLower) ||
+              (currentEmailLower && m.full_name?.toLowerCase().includes(currentEmailLower.split("@")[0]))
           ) || memRes.data?.[0];
 
           if (userMember) {

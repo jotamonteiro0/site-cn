@@ -145,13 +145,13 @@ export default function Home() {
                 <BookOpen className="w-4 h-4 text-[#087443]" />
                 <span>Conheça Nossa História</span>
               </a>
-              <Link
+              <a
                 href="/login"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 rounded-xl bg-[#087443] text-white font-semibold text-sm hover:bg-[#065F36] border border-[#C59B3F]/40 transition-colors shadow-sm cursor-pointer min-h-[46px]"
               >
                 <Lock className="w-4 h-4 text-[#C59B3F]" />
                 <span>Acessar Área Restrita</span>
-              </Link>
+              </a>
             </div>
           </div>
         </section>

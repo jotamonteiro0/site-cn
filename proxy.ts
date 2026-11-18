@@ -3,6 +3,36 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isLocalAuditBypassAllowed } from "@/lib/proxy-utils";
 
+function buildUncachedRedirect(
+  destination: string,
+  request: NextRequest,
+  clearAuthCookies = false,
+  isHttps = false,
+) {
+  const redirectResponse = NextResponse.redirect(new URL(destination, request.url));
+  redirectResponse.headers.set(
+    "Cache-Control",
+    "private, no-store, no-cache, max-age=0, must-revalidate",
+  );
+  redirectResponse.headers.set("Vary", "Cookie, RSC, Next-Router-State-Tree");
+
+  if (clearAuthCookies) {
+    for (const cookie of request.cookies.getAll()) {
+      if (cookie.name.startsWith("sb-")) {
+        redirectResponse.cookies.set(cookie.name, "", {
+          maxAge: 0,
+          expires: new Date(0),
+          path: "/",
+          sameSite: "lax",
+          secure: isHttps,
+        });
+      }
+    }
+  }
+
+  return redirectResponse;
+}
+
 export async function proxy(request: NextRequest) {
   // Fast-Path de auditoria local exclusivo para desenvolvimento e testes
   const bypass = isLocalAuditBypassAllowed({
@@ -15,8 +45,16 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  // Determina HTTPS de forma segura e não suscetível a spoofing de cabeçalhos
+  const host = request.headers.get("host") || "";
+  const isLocalhost = host.startsWith("localhost") || host.startsWith("127.0.0.1");
+  const isHttps =
+    !isLocalhost &&
+    (request.nextUrl.protocol === "https:" ||
+      (process.env.VERCEL === "1" && request.headers.get("x-forwarded-proto") === "https"));
+
   if (!isSupabaseConfigured) {
-    return NextResponse.redirect(new URL("/login?erro=configuracao", request.url));
+    return buildUncachedRedirect("/login?erro=configuracao", request, false, isHttps);
   }
 
   // Fast-Path: se não há cookies de autenticação do Supabase, redireciona imediatamente
@@ -26,16 +64,8 @@ export async function proxy(request: NextRequest) {
   );
 
   if (!hasAuthToken) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return buildUncachedRedirect("/login", request, false, isHttps);
   }
-
-  // Determina HTTPS de forma segura e não suscetível a spoofing de cabeçalhos
-  const host = request.headers.get("host") || "";
-  const isLocalhost = host.startsWith("localhost") || host.startsWith("127.0.0.1");
-  const isHttps =
-    !isLocalhost &&
-    (request.nextUrl.protocol === "https:" ||
-      (process.env.VERCEL === "1" && request.headers.get("x-forwarded-proto") === "https"));
 
   let response = NextResponse.next({ request });
   const supabase = createServerClient(
@@ -70,16 +100,17 @@ export async function proxy(request: NextRequest) {
 
     // Se o usuário foi validado com sucesso pelo servidor de autenticação
     if (user && !error) {
+      response.headers.set("Cache-Control", "private, no-store, no-cache, max-age=0, must-revalidate");
       return response;
     }
 
-    // Se houve erro de credencial inválida, token expirado, revogado ou adulterado
-    // Redireciona imediatamente para login
-    return NextResponse.redirect(new URL("/login", request.url));
+    // Se houve erro de credencial inválida, token expirado, revogado ou adulterado:
+    // Limpa cookies sb-* inválidos para impedir loops infinitos entre /login e /dashboard
+    return buildUncachedRedirect("/login?erro=sessao_expirada", request, true, isHttps);
   } catch (err: unknown) {
     // Em indisponibilidade transitória ou falha de conexão, não concede acesso sem validação
     console.error("Erro no proxy de autenticação:", err);
-    return NextResponse.redirect(new URL("/login?erro=temporario", request.url));
+    return buildUncachedRedirect("/login?erro=temporario", request, false, isHttps);
   }
 }
 

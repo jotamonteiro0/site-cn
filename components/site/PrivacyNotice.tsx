@@ -3,19 +3,20 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ShieldCheck, X } from "lucide-react";
+import { safeStorage } from "@/lib/safe-storage";
 
 export function PrivacyNotice() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const accepted = localStorage.getItem("cn_privacy_acknowledged");
+    const accepted = safeStorage.getItem("cn_privacy_acknowledged");
     if (!accepted) {
       requestAnimationFrame(() => setIsVisible(true));
     }
   }, []);
 
   const handleDismiss = () => {
-    localStorage.setItem("cn_privacy_acknowledged", "true");
+    safeStorage.setItem("cn_privacy_acknowledged", "true");
     setIsVisible(false);
   };
 

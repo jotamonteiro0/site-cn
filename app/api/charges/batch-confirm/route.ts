@@ -63,7 +63,8 @@ export async function POST(request: Request) {
       user.user_metadata?.id_demolay === "127738" ||
       user.user_metadata?.id_demolay === "102836" ||
       user.email === "joaomonteiro0@icloud.com" ||
-      user.email === "airton@carvalhoneves500.org.br";
+      user.email === "airton@carvalhoneves500.org.br" ||
+      user.email === "jarodriguesj1@gmail.com";
 
     let hasPermission = isPermanentMaster;
 
